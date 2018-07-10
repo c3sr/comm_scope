@@ -3,16 +3,21 @@
 # see wiki for more info:
 #   https://github.com/ruslo/sugar/wiki/Collecting-sources
 
-if(DEFINED SRC_EXAMPLE2_SUGAR_CMAKE_)
+if(DEFINED COMM_SCOPE_SRC_UM_LATENCY_SUGAR_CMAKE_)
   return()
 else()
-  set(SRC_EXAMPLE2_SUGAR_CMAKE_ 1)
+  set(COMM_SCOPE_SRC_UM_LATENCY_SUGAR_CMAKE_ 1)
 endif()
 
 include(sugar_files)
 
 sugar_files(
-    SCOPE_COMM_SOURCES
-    example.cpp
+    BENCHMARK_HEADERS
+    args.hpp
+)
+
+sugar_files(
+    BENCHMARK_CUDA_SOURCES
+    gpu_to_gpu.cu
 )
 

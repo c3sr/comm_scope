@@ -15,6 +15,7 @@ import sys
 wiki = 'https://github.com/ruslo/sugar/wiki/Collecting-sources'
 path = os.path.dirname(os.path.abspath(__file__))
 base = os.path.basename(__file__)
+project_name = "comm_scope"
 
 
 def first_is_subdirectory_of_second(subdir_name, dir_name):
@@ -51,7 +52,7 @@ class Generator:
             '--var',
             type=str,
             required=False,
-            default='SCOPE_COMM',
+            default='BENCHMARK',
             help='variable name'
         )
 
@@ -80,6 +81,7 @@ class Generator:
         )
 
     def make_header_guard(dir):
+        dir = project_name + "_" + dir
         dir = dir.upper()
         dir = re.sub(r'\W', '_', dir)
         dir = re.sub('_+', '_', dir)
