@@ -1,3 +1,6 @@
+#include "utils/numa.hpp"
+#include "init/numa.hpp"
+
 #define SMALL_ARGS() DenseRange(8, 31, 1)->ArgName("log2(N)")
 
 inline

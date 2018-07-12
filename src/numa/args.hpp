@@ -1,3 +1,6 @@
+#include "utils/numa.hpp"
+#include "init/numa.hpp"
+
 inline
 static void ArgsCountNumaNuma(benchmark::internal::Benchmark* b) {
 

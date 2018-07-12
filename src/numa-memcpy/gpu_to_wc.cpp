@@ -9,6 +9,7 @@
 #include <numa.h>
 
 #include "init/init.hpp"
+#include "init/numa.hpp"
 #include "numa-memcpy/args.hpp"
 #include "utils/utils.hpp"
 

@@ -1,3 +1,6 @@
+#include "utils/numa.hpp"
+#include "init/numa.hpp"
+
 inline
 static void ArgsCountNumaGpu(benchmark::internal::Benchmark* b) {
 

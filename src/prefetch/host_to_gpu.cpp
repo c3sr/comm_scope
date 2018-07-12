@@ -11,7 +11,7 @@
 #include "init/init.hpp"
 #include "utils/utils.hpp"
 
-#include "numaum-prefetch/args.hpp"
+#include "prefetch/args.hpp"
 
 #define NAME "NUMAUM/Prefetch/HostToGPU"
 

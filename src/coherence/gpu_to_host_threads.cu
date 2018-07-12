@@ -9,8 +9,9 @@
 #include <numa.h>
 
 #include "init/init.hpp"
-#include "numaum-coherence/args.hpp"
+#include "coherence/args.hpp"
 #include "utils/utils.hpp"
+#include "utils/omp.hpp"
 
 #define NAME "NUMAUM/Coherence/GPUToHostThreads"
 

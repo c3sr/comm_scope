@@ -9,9 +9,11 @@
 #include <omp.h>
 
 #include "init/init.hpp"
+#include "init/numa.hpp"
 #include "numa/args.hpp"
 #include "ops.hpp"
 #include "utils/utils.hpp"
+#include "utils/omp.hpp"
 
 #define NAME "NUMA/WR"
 

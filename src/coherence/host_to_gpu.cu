@@ -9,7 +9,7 @@
 #include <numa.h>
 
 #include "init/init.hpp"
-#include "numaum-coherence/args.hpp"
+#include "coherence/args.hpp"
 #include "utils/utils.hpp"
 
 #define NAME "NUMAUM/Coherence/HostToGPU"

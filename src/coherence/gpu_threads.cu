@@ -11,7 +11,7 @@
 #include "init/init.hpp"
 #include "utils/utils.hpp"
 
-#include "numaum-coherence/args.hpp"
+#include "coherence/args.hpp"
 
 #define NAME "NUMAUM/Coherence/GPUThreads"
 

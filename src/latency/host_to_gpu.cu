@@ -11,7 +11,7 @@
 #include "init/init.hpp"
 #include "utils/utils.hpp"
 
-#include "numaum-latency/args.hpp"
+#include "latency/args.hpp"
 
 #define NAME "NUMAUM/Latency/HostToGPU"
 

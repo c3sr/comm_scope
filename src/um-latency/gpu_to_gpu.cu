@@ -35,11 +35,6 @@ static void UM_Latency_GPUToGPU(benchmark::State &state) {
     return;
   }
 
-  if (!has_numa) {
-    state.SkipWithError(NAME " NUMA not available");
-    return;
-  }
-
   const size_t steps = state.range(0);
   const int src_id   = state.range(1);
   const int dst_id   = state.range(2);
