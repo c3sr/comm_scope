@@ -52,7 +52,7 @@ class Generator:
             '--var',
             type=str,
             required=False,
-            default='BENCHMARK',
+            default='COMM_SCOPE',
             help='variable name'
         )
 

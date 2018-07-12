@@ -12,12 +12,12 @@ endif()
 include(sugar_files)
 
 sugar_files(
-    BENCHMARK_HEADERS
+    COMM_SCOPE_HEADERS
     args.hpp
 )
 
 sugar_files(
-    BENCHMARK_CUDA_SOURCES
+    COMM_SCOPE_CUDA_SOURCES
     gpu_to_gpu.cu
 )
 
