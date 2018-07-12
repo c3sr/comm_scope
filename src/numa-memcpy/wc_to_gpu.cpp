@@ -11,7 +11,7 @@
 #include "init/init.hpp"
 #include "utils/utils.hpp"
 
-#include "numamemcpy/args.hpp"
+#include "numa-memcpy/args.hpp"
 
 #define NAME "NUMA/Memcpy/WCToGPU"
 

@@ -8,7 +8,7 @@
 #include <cuda_runtime.h>
 
 #include "init/init.hpp"
-#include "numamemcpy/args.hpp"
+#include "numa-memcpy/args.hpp"
 #include "utils/utils.hpp"
 
 #define NAME "NUMA/Memcpy/GPUToGPU"
