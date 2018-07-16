@@ -13,9 +13,9 @@
 #include "numa-memcpy/args.hpp"
 #include "utils/utils.hpp"
 
-#define NAME "NUMA/Memcpy/GPUToWC"
+#define NAME "Comm/NUMAMemcpy/GPUToWC"
 
-static void NUMA_Memcpy_GPUToWC(benchmark::State &state) {
+static void Comm_NUMAMemcpy_GPUToWC(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -92,6 +92,6 @@ static void NUMA_Memcpy_GPUToWC(benchmark::State &state) {
   numa_bind_node(-1);
 }
 
-BENCHMARK(NUMA_Memcpy_GPUToWC)->Apply(ArgsCountNumaGpu)->UseManualTime();
+BENCHMARK(Comm_NUMAMemcpy_GPUToWC)->Apply(ArgsCountNumaGpu)->UseManualTime();
 
 #endif // USE_NUMA == 1

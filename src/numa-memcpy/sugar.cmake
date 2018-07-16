@@ -14,6 +14,7 @@ include(sugar_files)
 sugar_files(
     COMM_SCOPE_HEADERS
     args.hpp
+    name.hpp
 )
 
 sugar_files(

@@ -8,12 +8,12 @@
 #include <cuda_runtime.h>
 #include <numa.h>
 
-#include "init/init.hpp"
 #include "coherence/args.hpp"
-#include "utils/utils.hpp"
+#include "init/init.hpp"
 #include "utils/omp.hpp"
+#include "utils/utils.hpp"
 
-#define NAME "NUMAUM/Coherence/GPUToHostThreads"
+#define NAME "Comm/UM/Coherence/GPUToHostThreads"
 
 template <bool NOOP = false>
 __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
@@ -36,7 +36,7 @@ __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
   }
 }
 
-static void NUMAUM_Coherence_GPUToHostThreads(benchmark::State &state) {
+static void Comm_UM_Coherence_GPUToHostThreads(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -112,6 +112,6 @@ static void NUMAUM_Coherence_GPUToHostThreads(benchmark::State &state) {
   omp_numa_bind_node(-1);
 }
 
-BENCHMARK(NUMAUM_Coherence_GPUToHostThreads)->Apply(ArgsThreadsCountNumaGpu)->UseRealTime();
+BENCHMARK(Comm_UM_Coherence_GPUToHostThreads)->Apply(ArgsThreadsCountNumaGpu)->UseRealTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1 && USE_OPENMP == 1

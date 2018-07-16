@@ -12,9 +12,9 @@
 #include "numa-memcpy/args.hpp"
 #include "utils/utils.hpp"
 
-#define NAME "NUMA/Memcpy/PinnedToGPU"
+#define NAME "Comm/NUMAMemcpy/PinnedToGPU"
 
-static void NUMA_Memcpy_PinnedToGPU(benchmark::State &state) {
+static void Comm_NUMAMemcpy_PinnedToGPU(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -95,6 +95,6 @@ static void NUMA_Memcpy_PinnedToGPU(benchmark::State &state) {
   numa_bind_node(-1);
 }
 
-BENCHMARK(NUMA_Memcpy_PinnedToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
+BENCHMARK(Comm_NUMAMemcpy_PinnedToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
 
 #endif // USE_NUMA == 1

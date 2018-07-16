@@ -13,7 +13,7 @@
 
 #include "coherence/args.hpp"
 
-#define NAME "NUMAUM/Coherence/GPUThreads"
+#define NAME "Comm/UM/Coherence/GPUThreads"
 
 template <bool NOOP = false>
 __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
@@ -61,7 +61,7 @@ __global__ void gpu_write2(char *ptr, const size_t count, const size_t stride) {
   }
 }
 
-static void NUMAUM_Coherence_GPUThreads(benchmark::State &state) {
+static void Comm_UM_Coherence_GPUThreads(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -161,6 +161,6 @@ static void NUMAUM_Coherence_GPUThreads(benchmark::State &state) {
   numa_bind_node(-1);
 }
 
-BENCHMARK(NUMAUM_Coherence_GPUThreads)->Apply(ArgsThreadsNumaGpu)->UseManualTime();
+BENCHMARK(Comm_UM_Coherence_GPUThreads)->Apply(ArgsThreadsNumaGpu)->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1

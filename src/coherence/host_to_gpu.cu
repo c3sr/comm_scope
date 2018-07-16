@@ -8,11 +8,11 @@
 #include <cuda_runtime.h>
 #include <numa.h>
 
-#include "init/init.hpp"
 #include "coherence/args.hpp"
+#include "init/init.hpp"
 #include "utils/utils.hpp"
 
-#define NAME "NUMAUM/Coherence/HostToGPU"
+#define NAME "Comm/UM/Coherence/HostToGPU"
 
 template <bool NOOP = false>
 __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
@@ -35,7 +35,7 @@ __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
   }
 }
 
-static void NUMAUM_Coherence_HostToGPU(benchmark::State &state) {
+static void Comm_UM_Coherence_HostToGPU(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -122,6 +122,6 @@ static void NUMAUM_Coherence_HostToGPU(benchmark::State &state) {
   numa_bind_node(-1);
 }
 
-BENCHMARK(NUMAUM_Coherence_HostToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
+BENCHMARK(Comm_UM_Coherence_HostToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1

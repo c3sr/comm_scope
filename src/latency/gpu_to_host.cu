@@ -13,7 +13,7 @@
 
 #include "latency/args.hpp"
 
-#define NAME "NUMAUM/Latency/GPUToHost"
+#define NAME "Comm/UM/Latency/UM/GPUToHost"
 
 template <bool NOOP = false>
 void cpu_traverse(size_t *ptr, const size_t steps) {
@@ -28,7 +28,7 @@ void cpu_traverse(size_t *ptr, const size_t steps) {
   ptr[next] = 1;
 }
 
-static void NUMAUM_Latency_GPUToHost(benchmark::State &state) {
+static void Comm_UM_Latency_GPUToHost(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -99,6 +99,6 @@ static void NUMAUM_Latency_GPUToHost(benchmark::State &state) {
   numa_bind_node(-1);
 }
 
-BENCHMARK(NUMAUM_Latency_GPUToHost)->Apply(ArgsCountNumaGpu)->MinTime(0.1);
+BENCHMARK(Comm_UM_Latency_GPUToHost)->Apply(ArgsCountNumaGpu)->MinTime(0.1);
 
 #endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1

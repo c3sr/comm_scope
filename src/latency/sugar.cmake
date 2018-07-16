@@ -14,10 +14,12 @@ include(sugar_files)
 sugar_files(
     COMM_SCOPE_HEADERS
     args.hpp
+    name.hpp
 )
 
 sugar_files(
     COMM_SCOPE_CUDA_SOURCES
+    gpu_to_gpu.cu
     gpu_to_host.cu
     host_to_gpu.cu
 )

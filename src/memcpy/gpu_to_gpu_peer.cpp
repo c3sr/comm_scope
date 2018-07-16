@@ -10,7 +10,7 @@
 
 #include "memcpy/args.hpp"
 
-#define NAME "NUMAUM/Coherence/GPUToGPU"
+#define NAME "Comm/Memcpy/GPUToGPUPeer"
 
 static void CUDA_Memcpy_GPUToGPU(benchmark::State &state) {
 
@@ -19,7 +19,7 @@ static void CUDA_Memcpy_GPUToGPU(benchmark::State &state) {
     return;
   }
 
-  const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
+  const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
   const int src_gpu = state.range(1);
   const int dst_gpu = state.range(2);
 
@@ -32,8 +32,8 @@ static void CUDA_Memcpy_GPUToGPU(benchmark::State &state) {
     return;
   }
 
-  char *src        = nullptr;
-  char *dst        = nullptr;
+  char *src = nullptr;
+  char *dst = nullptr;
 
   if (PRINT_IF_ERROR(cudaSetDevice(src_gpu))) {
     state.SkipWithError(NAME " failed to set src device");

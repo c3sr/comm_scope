@@ -11,9 +11,9 @@
 #include "init/init.hpp"
 #include "utils/utils.hpp"
 
-#include "um-latency/args.hpp"
+#include "latency/args.hpp"
 
-#define NAME "UM/Latency/GPUToGPU"
+#define NAME "Comm/UM/Latency/GPUToGPU"
 
 template <bool NOOP = false>
 __global__ void gpu_traverse(size_t *ptr, const size_t steps) {
@@ -28,7 +28,7 @@ __global__ void gpu_traverse(size_t *ptr, const size_t steps) {
   ptr[next] = 1;
 }
 
-static void UM_Latency_GPUToGPU(benchmark::State &state) {
+static void Comm_UM_Latency_GPUToGPU(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -134,6 +134,6 @@ static void UM_Latency_GPUToGPU(benchmark::State &state) {
   }
 }
 
-BENCHMARK(UM_Latency_GPUToGPU)->Apply(ArgsCountGpuGpuNoSelf)->UseManualTime();
+BENCHMARK(Comm_UM_Latency_GPUToGPU)->Apply(ArgsCountGpuGpuNoSelf)->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8

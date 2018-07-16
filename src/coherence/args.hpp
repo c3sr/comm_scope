@@ -1,8 +1,9 @@
-#include "utils/numa.hpp"
 #include "init/numa.hpp"
+#include "utils/numa.hpp"
 
-inline
-static void ArgsCountNumaGpu(benchmark::internal::Benchmark* b) {
+#include "utils/utils.hpp"
+
+inline static void ArgsCountNumaGpu(benchmark::internal::Benchmark* b) {
 
   int n;
   cudaError_t err = cudaGetDeviceCount(&n);
@@ -19,8 +20,7 @@ static void ArgsCountNumaGpu(benchmark::internal::Benchmark* b) {
   }
 }
 
-inline
-static void ArgsThreadsNumaGpu(benchmark::internal::Benchmark* b) {
+inline static void ArgsThreadsNumaGpu(benchmark::internal::Benchmark* b) {
 
   int n;
   cudaError_t err = cudaGetDeviceCount(&n);
@@ -37,8 +37,7 @@ static void ArgsThreadsNumaGpu(benchmark::internal::Benchmark* b) {
   }
 }
 
-inline
-static void ArgsThreadsCountNumaGpu(benchmark::internal::Benchmark* b) {
+inline static void ArgsThreadsCountNumaGpu(benchmark::internal::Benchmark* b) {
 
   int n;
   cudaError_t err = cudaGetDeviceCount(&n);
@@ -57,8 +56,7 @@ static void ArgsThreadsCountNumaGpu(benchmark::internal::Benchmark* b) {
   }
 }
 
-inline
-static void ArgsCountGpuGpuNoSelf(benchmark::internal::Benchmark* b) {
+inline static void ArgsCountGpuGpuNoSelf(benchmark::internal::Benchmark* b) {
 
   int n;
   cudaError_t err = cudaGetDeviceCount(&n);

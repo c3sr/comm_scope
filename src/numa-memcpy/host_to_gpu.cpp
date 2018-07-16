@@ -13,9 +13,9 @@
 
 #include "numa-memcpy/args.hpp"
 
-#define NAME "NUMA/Memcpy/HostToGPU"
+#define NAME "Comm/NUMAMemcpy/HostToGPU"
 
-static void NUMA_Memcpy_HostToGPU(benchmark::State &state) {
+static void Comm_NUMAMemcpy_HostToGPU(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -87,6 +87,6 @@ static void NUMA_Memcpy_HostToGPU(benchmark::State &state) {
   numa_bind_node(-1);
 }
 
-BENCHMARK(NUMA_Memcpy_HostToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
+BENCHMARK(Comm_NUMAMemcpy_HostToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
 
 #endif // USE_NUMA == 1

@@ -13,9 +13,9 @@
 
 #include "prefetch/args.hpp"
 
-#define NAME "NUMAUM/Prefetch/GPUToHost"
+#define NAME "Comm/UM/Prefetch/GPUToHost"
 
-static void NUMAUM_Prefetch_GPUToHost(benchmark::State &state) {
+static void Comm_UM_Prefetch_GPUToHost(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -100,6 +100,6 @@ static void NUMAUM_Prefetch_GPUToHost(benchmark::State &state) {
   numa_bind_node(-1);
 }
 
-BENCHMARK(NUMAUM_Prefetch_GPUToHost)->Apply(ArgsCountNumaGpu)->UseManualTime();
+BENCHMARK(Comm_UM_Prefetch_GPUToHost)->Apply(ArgsCountNumaGpu)->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1

@@ -13,7 +13,7 @@
 
 #include "latency/args.hpp"
 
-#define NAME "NUMAUM/Latency/HostToGPU"
+#define NAME "Comm/UM/Latency/UM/HostToGPU"
 
 template <bool NOOP = false>
 __global__ void gpu_traverse(size_t *ptr, const size_t steps) {
@@ -28,7 +28,7 @@ __global__ void gpu_traverse(size_t *ptr, const size_t steps) {
   ptr[next] = 1;
 }
 
-static void NUMAUM_Latency_HostToGPU(benchmark::State &state) {
+static void Comm_UM_Latency_HostToGPU(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -118,6 +118,6 @@ static void NUMAUM_Latency_HostToGPU(benchmark::State &state) {
   numa_bind_node(-1);
 }
 
-BENCHMARK(NUMAUM_Latency_HostToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
+BENCHMARK(Comm_UM_Latency_HostToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1

@@ -11,16 +11,39 @@
 #include "init/init.hpp"
 #include "utils/utils.hpp"
 
-#include "um-prefetch/args.hpp"
+#include "coherence/args.hpp"
 
-#define NAME "UM/Prefetch/GPUToGPU"
+#define NAME "Comm/UM/Coherence/GPUToGPU"
 
-static void UM_Prefetch_GPUToGPU(benchmark::State &state) {
+template <bool NOOP = false>
+__global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
+  if (NOOP) {
+    return;
+  }
+
+  // global ID
+  const size_t gx = blockIdx.x * blockDim.x + threadIdx.x;
+  // lane ID 0-31
+  const size_t lx = gx & 31;
+  // warp ID
+  size_t wx             = gx / 32;
+  const size_t numWarps = (gridDim.x * blockDim.x + 32 - 1) / 32;
+
+  if (0 == lx) {
+    for (size_t i = wx * stride; i < count; i += numWarps * stride) {
+      ptr[i] = 0;
+    }
+  }
+}
+
+static void Comm_UM_Coherence_GPUToGPU(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
     return;
   }
+
+  const size_t pageSize = page_size();
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
   const int src_gpu = state.range(1);
@@ -77,10 +100,7 @@ static void UM_Prefetch_GPUToGPU(benchmark::State &state) {
     }
 
     cudaEventRecord(start);
-    if (PRINT_IF_ERROR(cudaMemPrefetchAsync(ptr, bytes, dst_gpu))) {
-      state.SkipWithError("CUDA/MEMCPY/HostToGPU failed prefetch");
-      break;
-    }
+    gpu_write<<<256, 256>>>(ptr, bytes, pageSize);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
 
@@ -96,6 +116,6 @@ static void UM_Prefetch_GPUToGPU(benchmark::State &state) {
   state.counters.insert({{"bytes", bytes}});
 }
 
-BENCHMARK(UM_Prefetch_GPUToGPU)->Apply(ArgsCountGpuGpuNoSelf)->MinTime(0.1)->UseManualTime();
+BENCHMARK(Comm_UM_Coherence_GPUToGPU)->Apply(ArgsCountGpuGpuNoSelf)->MinTime(0.1)->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8

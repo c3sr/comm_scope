@@ -18,8 +18,5 @@ sugar_include(memcpy)
 sugar_include(numa)
 sugar_include(numa-memcpy)
 sugar_include(prefetch)
-sugar_include(um-coherence)
-sugar_include(um-latency)
-sugar_include(um-prefetch)
 sugar_include(utils)
 
