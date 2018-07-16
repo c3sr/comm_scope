@@ -8,12 +8,12 @@
 #include <cuda_runtime.h>
 #include <numa.h>
 
-#include "init/init.hpp"
-#include "utils/utils.hpp"
+#include "scope/init/init.hpp"
+#include "scope/utils/utils.hpp"
 
-#include "latency/args.hpp"
+#include "args.hpp"
 
-#define NAME "Comm/UM/Latency/UM/GPUToHost"
+#define NAME "Comm/UM/Latency/GPUToHost"
 
 template <bool NOOP = false>
 void cpu_traverse(size_t *ptr, const size_t steps) {

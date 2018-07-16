@@ -8,9 +8,10 @@
 #include <cuda_runtime.h>
 #include <numa.h>
 
-#include "coherence/args.hpp"
-#include "init/init.hpp"
-#include "utils/utils.hpp"
+#include "scope/init/init.hpp"
+#include "scope/utils/utils.hpp"
+
+#include "args.hpp"
 
 #define NAME "Comm/UM/Coherence/HostToGPU"
 
