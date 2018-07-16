@@ -3,11 +3,13 @@
 
 #if USE_NUMA == 1
 
-#include "init/logger.hpp"
 #include <cassert>
-#include <numa.h>
 #include <set>
 #include <vector>
+
+#include <numa.h>
+
+#include "scope/init/logger.hpp"
 
 inline std::vector<int> numa_nodes() {
   std::set<int> nodes;

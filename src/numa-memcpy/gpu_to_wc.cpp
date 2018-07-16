@@ -8,10 +8,12 @@
 #include <cuda_runtime.h>
 #include <numa.h>
 
-#include "init/init.hpp"
+#include "scope/init/init.hpp"
+#include "scope/utils/utils.hpp"
+
 #include "init/numa.hpp"
-#include "numa-memcpy/args.hpp"
-#include "utils/utils.hpp"
+
+#include "args.hpp"
 
 #define NAME "Comm/NUMAMemcpy/GPUToWC"
 

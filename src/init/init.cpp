@@ -1,4 +1,4 @@
-#include "init/init.hpp"
+#include "scope/init/init.hpp"
 
 #include "init/numa.hpp"
 

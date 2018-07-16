@@ -3,9 +3,9 @@
 
 #include "optional/optional.hpp"
 
-#include "init/flags.hpp"
-#include "init/init.hpp"
-#include "init/logger.hpp"
+#include "scope/init/flags.hpp"
+#include "scope/init/init.hpp"
+#include "scope/init/logger.hpp"
 
 #include "init/numa.hpp"
 

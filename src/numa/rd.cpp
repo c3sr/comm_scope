@@ -8,11 +8,12 @@
 #include <numa.h>
 #include <omp.h>
 
-#include "init/init.hpp"
+#include "scope/init/init.hpp"
+#include "scope/utils/utils.hpp"
+
+#include "args.hpp"
 #include "init/numa.hpp"
-#include "numa/args.hpp"
 #include "ops.hpp"
-#include "utils/utils.hpp"
 #include "utils/omp.hpp"
 
 #define NAME "NUMA/RD"
