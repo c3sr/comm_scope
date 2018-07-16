@@ -161,6 +161,6 @@ static void Comm_UM_Coherence_GPUThreads(benchmark::State &state) {
   numa_bind_node(-1);
 }
 
-BENCHMARK(Comm_UM_Coherence_GPUThreads)->Apply(ArgsThreadsNumaGpu)->UseManualTime();
+// BENCHMARK(Comm_UM_Coherence_GPUThreads)->Apply(ArgsThreadsNumaGpu)->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1

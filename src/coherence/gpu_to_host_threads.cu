@@ -112,6 +112,6 @@ static void Comm_UM_Coherence_GPUToHostThreads(benchmark::State &state) {
   omp_numa_bind_node(-1);
 }
 
-BENCHMARK(Comm_UM_Coherence_GPUToHostThreads)->Apply(ArgsThreadsCountNumaGpu)->UseRealTime();
+// BENCHMARK(Comm_UM_Coherence_GPUToHostThreads)->Apply(ArgsThreadsCountNumaGpu)->UseRealTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1 && USE_OPENMP == 1
