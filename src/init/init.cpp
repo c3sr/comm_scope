@@ -2,11 +2,11 @@
 
 #include "init/numa.hpp"
 
-void myinit(int argc, char **argv) {
+void comm_scope_init(int argc, char **argv) {
   (void) argc;
   (void) argv;
 
   init_numa();
 }
 
-INIT(myinit);
+INIT(comm_scope_init);

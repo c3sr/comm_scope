@@ -11,7 +11,7 @@
 
 #include "scope/init/logger.hpp"
 
-inline std::vector<int> numa_nodes() {
+static inline std::vector<int> numa_nodes() {
   std::set<int> nodes;
   for (int i = 0; i < numa_num_configured_cpus(); ++i) {
     nodes.insert(numa_node_of_cpu(i));
