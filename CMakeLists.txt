@@ -9,8 +9,7 @@ cmake_minimum_required(VERSION 3.8)
 
 sugar_include("src")
 
-add_library(comm_scope ${COMM_SCOPE_SOURCES} ${COMM_SCOPE_CUDA_SOURCES} )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+add_library(comm_scope ${comm_SOURCES} ${comm_CUDA_SOURCES} )
 target_include_directories(comm_scope PRIVATE 
     ${SRC_DIR}
     ${THIRDPARTY_DIR}
