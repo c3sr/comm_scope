@@ -1,6 +1,6 @@
 # Unified Memory Coherence Bandwidth
 
-Comm | Scope defines 3 microbenchmarks to measure unified memory coherence bandwidth.
+Comm|Scope defines 3 microbenchmarks to measure unified memory coherence bandwidth.
 These benchmarks may be listed with the argument
     
     --benchmark_filter="Comm_UM_Coherence"
