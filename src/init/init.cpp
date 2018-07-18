@@ -9,4 +9,4 @@ void comm_scope_init(int argc, char **argv) {
   init_numa();
 }
 
-INIT(comm_scope_init);
+SCOPE_INIT(comm_scope_init);
