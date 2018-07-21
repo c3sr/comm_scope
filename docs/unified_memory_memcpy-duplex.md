@@ -13,6 +13,8 @@ This benchmark may be listed with the argument
 
 ## GPU/GPU Technique
 
+For a gpu0 --> gpu1, gpu1 -> gpu0 transfer, the benchmark setup phase looks like this:
+
 ```
 //setup: create one  stream per copy
 vector<cudaStream_t> streams
@@ -28,6 +30,7 @@ cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0)
 cudaSetDevice(gpu1)
 cudaMalloc(&ptr, bytes)
 err = cudaDeviceEnablePeerAccess(gpu0,0)
+
 //allocate src and dst for second copy
 cudaSetDevice(gpu1)
 cudaMalloc(&ptr, bytes)

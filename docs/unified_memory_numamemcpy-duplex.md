@@ -1,6 +1,6 @@
 # Unified Memory Numamemcpy-Duplex Bandwidth
 
-Comm|Scope defines 4 microbenchmarks to measure unified memory coherence bandwidth.
+Comm|Scope defines 4 microbenchmarks to measure unified memory duplex bandwidth.
 These benchmarks may be listed with the argument
     
     --benchmark_filter="DUPLEX_Memcpy"
@@ -19,7 +19,8 @@ These benchmarks may be listed with the argument
 For a host -> device, device -> host transfer, the benchmark setup phase looks like this
 
 ```
-// host-to-device device-to-host setup: create one stream per copy
+// host-to-device device-to-host setup
+// create one stream per copy
 vector<cudaStream_t> streams
 
 // start and stop events for each copy
