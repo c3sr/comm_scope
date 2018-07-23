@@ -46,7 +46,8 @@ malloc(bytes)
 For a pinned host -> device, device -> pinned host transfer, the benchmark setup phase looks like this
 
 ```
-// host-to-device, device-to-host setup: create one stream per copy
+// pinned-to-device, device-to-pinned setup
+// create one stream per copy
 vector<cudaStream_t> streams
 
 // start and stop events for each copy
@@ -71,7 +72,8 @@ cudaMallocHost(&ptr, bytes)
 For a device -> host, host -> device transfer, the benchmark setup phase looks like this
 
 ```
-// device-to-host, host-to-device setup: create one stream per copy
+// device-to-host, host-to-device setup
+// create one stream per copy
 vector<cudaStream_t> streams
 
 // start and stop events for each copy
@@ -93,10 +95,11 @@ cudaMalloc(&ptr, bytes)
 ```
 ## GPU/CPU Pinnned Technique
 
-For a device -> host, host -> device transfer, the benchmark setup phase looks like this
+For a device -> host pinned, host pinned -> device transfer, the benchmark setup phase looks like this
 
 ```
-// device-to-host, host-to-device setup: create one stream per copy
+// device-to-pinned, pinned-to-device setup
+// create one stream per copy
 vector<cudaStream_t> streams
 
 // start and stop events for each copy
@@ -117,13 +120,13 @@ cudaMalloc(&ptr, bytes)
 
 ```
 
-For all four benchmarks benchmark loop looks like this
+For all four benchmarks the benchmark loop looks like this
 
 ```
 loop (state)
 
     loop(streams)
-      //
+      //move pages
       cudaEventRecord(start, stream)
       cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDefault, stream)
       cudaEventRecord(stop, stream)
