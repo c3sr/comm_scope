@@ -1,3 +1,5 @@
+#if CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
+
 #include <assert.h>
 #include <iostream>
 #include <stdio.h>
@@ -5,8 +7,9 @@
 
 #include <cuda_runtime.h>
 
-#include "init/init.hpp"
-#include "utils/utils.hpp"
+#include "scope/init/init.hpp"
+#include "utils/numa.hpp"
+#include "init/numa.hpp"
 
 #include "numamemcpy-duplex/args.hpp"
 
@@ -204,3 +207,4 @@ static void DUPLEX_Memcpy_GPUToPinned(benchmark::State &state) {
 
 BENCHMARK(DUPLEX_Memcpy_GPUToPinned)->Apply(ArgsCountNumaGpu)->UseManualTime();
 
+#endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1

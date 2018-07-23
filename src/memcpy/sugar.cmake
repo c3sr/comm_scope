@@ -12,12 +12,12 @@ endif()
 include(sugar_files)
 
 sugar_files(
-    comm_scope_HEADERS
+    comm_HEADERS
     args.hpp
 )
 
 sugar_files(
-    comm_scope_SOURCES
+    comm_SOURCES
     gpu_to_gpu_peer.cpp
     gpu_to_host.cpp
     gpu_to_pinned.cpp
