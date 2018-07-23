@@ -12,13 +12,13 @@ endif()
 include(sugar_files)
 
 sugar_files(
-    comm_HEADERS
+    comm_scope_HEADERS
     args.hpp
     ops.hpp
 )
 
 sugar_files(
-    comm_SOURCES
+    comm_scope_SOURCES
     ops.cpp
     rd.cpp
     wr.cpp
