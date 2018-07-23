@@ -1,6 +1,6 @@
 # Unified Memory Memcpy-Duplex Bandwidth
 
-Comm|Scope defines 1 microbenchmark to measure unified memory.
+Comm|Scope defines 1 microbenchmark to measure unified memory duplex bandwidth.
 This benchmark may be listed with the argument
     
     --benchmark_filter="DUPLEX_Memcpy"
@@ -44,7 +44,7 @@ err = cudaDeviceEnablePeerAccess(gpu1,0)
 loop (state)
 
     loop(streams)
-      //
+      //move pages
       cudaEventRecord(start, stream)
       cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice, stream)
       cudaEventRecord(stop, stream)
