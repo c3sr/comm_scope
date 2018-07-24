@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # if(MSVC)
 #     target_compile_options(/W3 /WX)
