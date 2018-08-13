@@ -62,7 +62,7 @@ static void Comm_UM_Coherence_HostToGPU(benchmark::State &state) {
   }
 
   if (PRINT_IF_ERROR(cudaSetDevice(dst_gpu))) {
-    state.SkipWithError(NAME " failed to set CUDA src device");
+    state.SkipWithError(NAME " failed to set CUDA dst device");
     return;
   }
 
