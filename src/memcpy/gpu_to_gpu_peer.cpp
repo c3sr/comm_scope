@@ -19,6 +19,11 @@ static void CUDA_Memcpy_GPUToGPU(benchmark::State &state) {
     return;
   }
 
+  if (num_gpus() < 2) {
+    state.SkipWithError(NAME " requires >1 CUDA GPUs");
+    return;
+  }
+
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
   const int src_gpu = state.range(1);
   const int dst_gpu = state.range(2);
