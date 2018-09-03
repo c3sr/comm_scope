@@ -13,11 +13,13 @@ include(sugar_files)
 
 sugar_files(
     comm_HEADERS
+    flags.hpp
     numa.hpp
 )
 
 sugar_files(
     comm_SOURCES
+    flags.cpp
     init.cpp
     numa.cpp
 )
