@@ -12,7 +12,7 @@ sugar_include("src")
 
 add_library(comm_scope OBJECT ${comm_SOURCES} ${comm_CUDA_SOURCES} )
 target_include_directories(comm_scope PRIVATE 
-    ${SRC_DIR}
+    ${SCOPE_SRC_DIR}
     ${THIRDPARTY_DIR}
     ${TOP_DIR}/include
     ${CUDA_INCLUDE_DIRS}
