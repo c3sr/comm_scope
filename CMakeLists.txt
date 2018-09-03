@@ -1,11 +1,7 @@
 
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
-
-# if(MSVC)
-#     target_compile_options(/W3 /WX)
-# else()
-#     target_compile_options(-Wall -Werror)
-# endif()
+project(Comm|Scope LANGUAGES CXX VERSION 1.0.0)
+include(ScopeStatus)
 
 
 sugar_include("src")
@@ -13,10 +9,11 @@ sugar_include("src")
 add_library(comm_scope OBJECT ${comm_SOURCES} ${comm_CUDA_SOURCES} )
 target_include_directories(comm_scope PRIVATE 
     ${SCOPE_SRC_DIR}
+    ${PROJECT_BINARY_DIR}/src
+    ${PROJECT_SOURCE_DIR}/src
     ${THIRDPARTY_DIR}
     ${TOP_DIR}/include
     ${CUDA_INCLUDE_DIRS}
-    "src"
 )
 
 target_compile_features(comm_scope PUBLIC cxx_std_11)
@@ -60,9 +57,23 @@ else(OpenMP_FOUND)
   message(WARNING "didn't find OpenMP, some benchmarks will be unavailable.")
 endif(OpenMP_FOUND)
 
+# CUDA
 target_compile_definitions(comm_scope PRIVATE -DCUDA_VERSION_MAJOR=${CUDA_VERSION_MAJOR})
 target_compile_definitions(comm_scope PRIVATE -DCUDA_VERSION_MINOR=${CUDA_VERSION_MINOR})
-
-MESSAGE(STATUS "CMAKE_CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
+scope_status("CMAKE_CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
 string(REPLACE ";" " " CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS}")
-MESSAGE(STATUS "CMAKE_CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
+scope_status("CMAKE_CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
+
+# Get the git version
+git_get_head_revision(GIT_REFSPEC GIT_HASH)
+git_local_changes(GIT_LOCAL_CHANGES)
+scope_status(GIT_REFSPEC=${GIT_REFSPEC})
+scope_status(GIT_HASH=${GIT_HASH})
+scope_status(GIT_LOCAL_CHANGES=${GIT_LOCAL_CHANGES})
+
+# Create the version file
+scope_status("${PROJECT_SOURCE_DIR}/.../version.hpp.in -> ${PROJECT_BINARY_DIR}/.../version.hpp")
+configure_file (
+    "${PROJECT_SOURCE_DIR}/src/init/version.hpp.in"
+    "${PROJECT_BINARY_DIR}/src/init/version.hpp"
+)
