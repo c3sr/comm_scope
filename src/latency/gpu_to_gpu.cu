@@ -1,4 +1,4 @@
-#if CUDA_VERSION_MAJOR >= 8
+#if CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
 
 #include <assert.h>
 #include <iostream>
@@ -136,4 +136,4 @@ static void Comm_UM_Latency_GPUToGPU(benchmark::State &state) {
 
 BENCHMARK(Comm_UM_Latency_GPUToGPU)->Apply(ArgsCountGpuGpuNoSelf)->UseManualTime();
 
-#endif // CUDA_VERSION_MAJOR >= 8
+#endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
