@@ -1,4 +1,4 @@
-#if CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
+#if CUDA_VERSION_MAJOR >= 8
 
 #include <assert.h>
 #include <iostream>
@@ -6,7 +6,9 @@
 #include <string.h>
 
 #include <cuda_runtime.h>
+#if USE_NUMA
 #include <numa.h>
+#endif // USE_NUMA
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
@@ -49,18 +51,19 @@ static void Comm_UM_Coherence_GPUToHost(benchmark::State &state) {
     return;
   }
 
-  if (!has_numa) {
-    state.SkipWithError(NAME " NUMA not available");
-    return;
-  }
-
   const size_t pageSize = page_size();
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
+#if USE_NUMA
   const int numa_id = state.range(1);
   const int cuda_id = state.range(2);
+#else
+  const int cuda_id = state.range(1);
+#endif
 
+#if USE_NUMA
   numa_bind_node(numa_id);
+#endif
 
   if (PRINT_IF_ERROR(utils::cuda_reset_device(cuda_id))) {
     state.SkipWithError(NAME " failed to reset device");
@@ -101,10 +104,16 @@ static void Comm_UM_Coherence_GPUToHost(benchmark::State &state) {
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
   state.counters.insert({{"bytes", bytes}});
 
+#if USE_NUMA
   // reset to run on any node
   numa_bind_node(-1);
+#endif
 }
 
+#if USE_NUMA
 BENCHMARK(Comm_UM_Coherence_GPUToHost)->Apply(ArgsCountNumaGpu)->MinTime(0.1);
+#else
+BENCHMARK(Comm_UM_Coherence_GPUToHost)->Apply(ArgsCountGpu)->MinTime(0.1);
+#endif
 
-#endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
+#endif // CUDA_VERSION_MAJOR >= 8

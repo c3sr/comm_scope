@@ -1,4 +1,4 @@
-#if CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
+#if CUDA_VERSION_MAJOR >= 8
 
 #include <assert.h>
 #include <iostream>
@@ -6,7 +6,6 @@
 #include <string.h>
 
 #include <cuda_runtime.h>
-#include <numa.h>
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
@@ -118,4 +117,4 @@ static void Comm_UM_Coherence_GPUToGPU(benchmark::State &state) {
 
 BENCHMARK(Comm_UM_Coherence_GPUToGPU)->Apply(ArgsCountGpuGpuNoSelf)->MinTime(0.1)->UseManualTime();
 
-#endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
+#endif // CUDA_VERSION_MAJOR >= 8

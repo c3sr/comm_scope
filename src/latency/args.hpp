@@ -3,6 +3,7 @@
 
 #include "scope/utils/utils.hpp"
 
+#if USE_NUMA
 inline static void ArgsCountNumaGpu(benchmark::internal::Benchmark* b) {
 
   int n;
@@ -19,6 +20,22 @@ inline static void ArgsCountNumaGpu(benchmark::internal::Benchmark* b) {
     }
   }
 }
+#endif
+
+// Arguments of <log2(count), gpu_id>
+inline static void ArgsCountGpu(benchmark::internal::Benchmark* b) {
+  int n;
+  cudaError_t err = cudaGetDeviceCount(&n);
+  if (PRINT_IF_ERROR(cudaGetDeviceCount(&n))) {
+    exit(1);
+  }
+  for (int gpu_id = 0; gpu_id < n; ++gpu_id) {
+    for (int j = 4; j <= 34; ++j) {
+      b->Args({j,gpu_id});
+    }
+  }
+}
+
 
 inline static void ArgsCountGpuGpuNoSelf(benchmark::internal::Benchmark* b) {
 

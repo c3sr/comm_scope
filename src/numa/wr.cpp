@@ -1,4 +1,4 @@
-#if USE_NUMA == 1 && USE_OPENMP == 1
+#if USE_NUMA && USE_OPENMP == 1
 
 #include <assert.h>
 #include <iostream>

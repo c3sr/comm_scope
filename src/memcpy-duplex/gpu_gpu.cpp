@@ -6,7 +6,6 @@
 #include <cuda_runtime.h>
 
 #include "scope/init/init.hpp"
-#include "utils/numa.hpp"
 
 #include "memcpy-duplex/args.hpp"
 

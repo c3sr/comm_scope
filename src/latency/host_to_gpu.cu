@@ -1,4 +1,4 @@
-#if CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
+#if CUDA_VERSION_MAJOR >= 8
 
 #include <assert.h>
 #include <iostream>
@@ -6,7 +6,9 @@
 #include <string.h>
 
 #include <cuda_runtime.h>
+#if USE_NUMA
 #include <numa.h>
+#endif
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
@@ -35,19 +37,20 @@ static void Comm_UM_Latency_HostToGPU(benchmark::State &state) {
     return;
   }
 
-  if (!has_numa) {
-    state.SkipWithError(NAME " NUMA not available");
-    return;
-  }
-
   const size_t steps = state.range(0);
+  #if USE_NUMA
   const int numa_id  = state.range(1);
   const int cuda_id  = state.range(2);
+  #else
+  const int cuda_id = state.range(1);
+  #endif
 
   const size_t stride = 65536 * 2;
   const size_t bytes  = sizeof(size_t) * (steps + 1) * stride;
 
+#if USE_NUMA
   numa_bind_node(numa_id);
+#endif
 
   if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
     state.SkipWithError(NAME " failed to set CUDA dst device");
@@ -115,9 +118,15 @@ static void Comm_UM_Latency_HostToGPU(benchmark::State &state) {
   }
   state.counters["strides"] = steps;
 
+#if USE_NUMA
   numa_bind_node(-1);
+#endif
 }
 
+#if USE_NUMA
 BENCHMARK(Comm_UM_Latency_HostToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
+#else
+BENCHMARK(Comm_UM_Latency_HostToGPU)->Apply(ArgsCountGpu)->UseManualTime();
+#endif
 
-#endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
+#endif // CUDA_VERSION_MAJOR >= 8 
