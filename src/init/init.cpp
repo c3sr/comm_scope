@@ -4,7 +4,6 @@
 #include "scope/init/flags.hpp"
 #include "scope/utils/version.hpp"
 
-#include "init/version.hpp"
 #include "numa.hpp"
 #include "config.hpp"
 
