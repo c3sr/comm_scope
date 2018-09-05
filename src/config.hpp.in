@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 #define SCOPE_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 #define SCOPE_VERSION_MINOR @PROJECT_VERSION_MINOR@
 #define SCOPE_VERSION_PATCH @PROJECT_VERSION_PATCH@
@@ -12,6 +10,3 @@
 #define SCOPE_GIT_HASH "@GIT_HASH@"
 #define SCOPE_GIT_LOCAL_CHANGES "@GIT_LOCAL_CHANGES@"
 
-namespace comm_scope {
-std::string version();
-}

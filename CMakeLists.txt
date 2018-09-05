@@ -71,8 +71,8 @@ scope_status(GIT_HASH=${GIT_HASH})
 scope_status(GIT_LOCAL_CHANGES=${GIT_LOCAL_CHANGES})
 
 # Create the version file
-scope_status("${PROJECT_SOURCE_DIR}/.../version.hpp.in -> ${PROJECT_BINARY_DIR}/.../version.hpp")
+scope_status("${PROJECT_SOURCE_DIR}/.../config.hpp.in -> ${PROJECT_BINARY_DIR}/.../config.hpp")
 configure_file (
-    "${PROJECT_SOURCE_DIR}/src/init/version.hpp.in"
-    "${PROJECT_BINARY_DIR}/src/init/version.hpp"
+    "${PROJECT_SOURCE_DIR}/src/config.hpp.in"
+    "${PROJECT_BINARY_DIR}/src/config.hpp"
 )
