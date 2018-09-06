@@ -1,14 +1,11 @@
 #if CUDA_VERSION_MAJOR >= 8
 
-#include <assert.h>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
 
 #include <cuda_runtime.h>
 #if USE_NUMA
 #include <numa.h>
-#endif
+#endif // USE_NUMA
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
@@ -16,6 +13,7 @@
 
 #include "args.hpp"
 #include "init/flags.hpp"
+#include "utils/numa.hpp"
 
 #define NAME "Comm/UM/Coherence/HostToGPU"
 

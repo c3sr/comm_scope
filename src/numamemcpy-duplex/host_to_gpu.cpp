@@ -1,18 +1,18 @@
 #if CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
 
-#include <assert.h>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
 
-#include <cuda_profiler_api.h>
 #include <cuda_runtime.h>
+#include <numa.h>
 
 #include "scope/init/init.hpp"
-#include "utils/numa.hpp"
-#include "init/numa.hpp"
+#include "scope/utils/utils.hpp"
+#include "scope/init/flags.hpp"
 
-#include "numamemcpy-duplex/args.hpp"
+#include "args.hpp"
+#include "init/flags.hpp"
+#include "init/numa.hpp"
+#include "utils/numa.hpp"
 
 #define NAME "DUPLEX/Memcpy/HostToGPU" 
 
@@ -31,9 +31,10 @@ static void DUPLEX_Memcpy_HostToGPU(benchmark::State &state) {
     return;
   }
 
+  const int numa   = FLAG(numa_ids)[0];
+  const int gpu    = FLAG(cuda_device_ids)[0];
+
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
-  const int numa   = state.range(1);
-  const int gpu    = state.range(2);
 
   if (PRINT_IF_ERROR(utils::cuda_reset_device(gpu))) {
     state.SkipWithError(NAME " failed to reset CUDA device");
@@ -217,6 +218,6 @@ cudaProfilerStop();
   state.counters["stop_spread"] = stopSum/state.iterations();
 }
 
-BENCHMARK(DUPLEX_Memcpy_HostToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
+BENCHMARK(DUPLEX_Memcpy_HostToGPU)->SMALL_ARGS()->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1

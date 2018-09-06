@@ -47,13 +47,13 @@ bool init_numa() {
   } else { // check to make sure requested numa ids are valid
     for (const auto &id : FLAG(numa_ids)) {
       if (0 == available_nodes.count(id)) {
-        LOG(critical, "numa id", id, "is not available");
-        exit(-1);
+        LOG(critical, fmt::format("user-requested numa id {} is not available", id));
+        return false;
       }
     }
   }
 
 #endif // USE_NUMA == 1
 
-  return false;
+  return true;
 }

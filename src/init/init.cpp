@@ -27,7 +27,10 @@ int comm_scope_init(int argc, char *const *argv) {
     LOG(debug, "User requested NUMA node " + std::to_string(e));
   }
 
-  init_numa();
+  if (!init_numa()) {
+    LOG(critical, "Error setting up NUMA");
+    return -1;
+  }
 
   return 0;
 }
