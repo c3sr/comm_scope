@@ -1,9 +1,6 @@
 #if USE_NUMA == 1
 
-#include <assert.h>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
 
 #include <cuda_runtime.h>
 #include <numa.h>
@@ -12,6 +9,9 @@
 #include "scope/utils/utils.hpp"
 
 #include "args.hpp"
+#include "init/flags.hpp"
+#include "init/numa.hpp"
+#include "utils/numa.hpp"
 
 #define NAME "Comm/NUMAMemcpy/HostToPinned"
 
@@ -27,9 +27,16 @@ static void Comm_NUMAMemcpy_HostToPinned(benchmark::State &state) {
     return;
   }
 
+  if (num_numa_nodes() < 2) {
+    state.SkipWithError(NAME " requires two NUMA nodes");
+    return;
+  }
+
+  const int src_numa = FLAG(numa_ids)[0];
+  const int dst_numa = FLAG(numa_ids)[1];
+
   const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
-  const int src_numa = state.range(1);
-  const int dst_numa = state.range(2);
+
 
   numa_bind_node(src_numa);
   char *src = new char[bytes];
@@ -81,6 +88,6 @@ static void Comm_NUMAMemcpy_HostToPinned(benchmark::State &state) {
   numa_bind_node(-1);
 }
 
-BENCHMARK(Comm_NUMAMemcpy_HostToPinned)->Apply(ArgsCountNumaNuma)->UseManualTime();
+BENCHMARK(Comm_NUMAMemcpy_HostToPinned)->SMALL_ARGS()->UseManualTime();
 
 #endif // USE_NUMA == 1

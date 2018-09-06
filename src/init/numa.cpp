@@ -53,8 +53,6 @@ bool init_numa() {
     }
   }
 
-  assert(node_ids.size() >= 1);
-
 #endif // USE_NUMA == 1
 
   return false;

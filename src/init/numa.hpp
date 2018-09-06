@@ -1,5 +1,4 @@
-#ifndef INIT_NUMA_HPP
-#define INIT_NUMA_HPP
+#pragma once
 
 #if USE_NUMA == 1
 #include <numa.h>
@@ -7,5 +6,3 @@
 
 extern bool has_numa;
 bool init_numa();
-
-#endif

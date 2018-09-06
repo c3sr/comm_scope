@@ -1,17 +1,18 @@
 #if USE_NUMA == 1
 
-#include <assert.h>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
 
 #include <cuda_runtime.h>
 #include <numa.h>
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
+#include "scope/init/flags.hpp"
 
 #include "args.hpp"
+#include "init/flags.hpp"
+#include "init/numa.hpp"
+#include "utils/numa.hpp"
 
 #define NAME "Comm/NUMAMemcpy/GPUToPinned"
 
@@ -27,9 +28,10 @@ static void Comm_NUMAMemcpy_GPUToPinned(benchmark::State &state) {
     return;
   }
 
+  const int numa_id = FLAG(numa_ids)[0];
+  const int cuda_id = FLAG(cuda_device_ids)[0];
+
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
-  const int numa_id = state.range(1);
-  const int cuda_id = state.range(2);
 
   numa_bind_node(numa_id);
   if (PRINT_IF_ERROR(utils::cuda_reset_device(cuda_id))) {
@@ -89,6 +91,6 @@ static void Comm_NUMAMemcpy_GPUToPinned(benchmark::State &state) {
   numa_bind_node(-1);
 }
 
-BENCHMARK(Comm_NUMAMemcpy_GPUToPinned)->Apply(ArgsCountNumaGpu)->UseManualTime();
+BENCHMARK(Comm_NUMAMemcpy_GPUToPinned)->SMALL_ARGS()->UseManualTime();
 
 #endif // USE_NUMA == 1

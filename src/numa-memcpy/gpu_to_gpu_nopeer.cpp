@@ -1,6 +1,6 @@
 #if USE_NUMA == 1
 
-#include <assert.h>
+#include <cassert>
 
 #include <cuda_runtime.h>
 
@@ -10,6 +10,8 @@
 
 #include "args.hpp"
 #include "init/flags.hpp"
+#include "init/numa.hpp"
+#include "utils/numa.hpp"
 
 #define NAME "Comm/NUMAMemcpy/GPUToGPU"
 
@@ -25,11 +27,11 @@ static void Comm_NUMAMemcpy_GPUToGPU(benchmark::State &state) {
     return;
   }
 
-
   if (num_gpus() < 2) {
     state.SkipWithError(NAME " requires at least two GPUs");
     return;
   }
+  
   const int numa_id = FLAG(numa_ids)[0];
   const int src_gpu = FLAG(cuda_device_ids)[0];
   const int dst_gpu = FLAG(cuda_device_ids)[1];
@@ -140,6 +142,6 @@ static void Comm_NUMAMemcpy_GPUToGPU(benchmark::State &state) {
   numa_bind_node(-1);
 }
 
-BENCHMARK(Comm_NUMAMemcpy_GPUToGPU)->Apply(ArgsCountNumaGpuGpuNoSelf)->UseManualTime();
+BENCHMARK(Comm_NUMAMemcpy_GPUToGPU)->SMALL_ARGS()->UseManualTime();
 
 #endif // USE_NUMA == 1

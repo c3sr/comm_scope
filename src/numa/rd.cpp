@@ -13,6 +13,7 @@
 
 #include "args.hpp"
 #include "init/numa.hpp"
+#include "utils/numa.hpp"
 #include "ops.hpp"
 #include "utils/omp.hpp"
 
