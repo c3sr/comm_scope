@@ -59,4 +59,4 @@ static void CUDA_Memcpy_HostToGPU(benchmark::State &state) {
   state.counters.insert({{"bytes", bytes}});
 }
 
-BENCHMARK(CUDA_Memcpy_HostToGPU)->ALL_ARGS()->UseManualTime();
+BENCHMARK(CUDA_Memcpy_HostToGPU)->SMALL_ARGS()->UseManualTime();

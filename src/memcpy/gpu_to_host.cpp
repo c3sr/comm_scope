@@ -64,4 +64,4 @@ static void CUDA_Memcpy_GPUToHost(benchmark::State &state) {
   state.counters.insert({{"bytes", bytes}});
 }
 
-BENCHMARK(CUDA_Memcpy_GPUToHost)->ALL_ARGS()->UseManualTime();
+BENCHMARK(CUDA_Memcpy_GPUToHost)->SMALL_ARGS()->UseManualTime();

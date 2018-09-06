@@ -1,16 +1,15 @@
 #if USE_NUMA == 1
 
 #include <assert.h>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
 
 #include <cuda_runtime.h>
 
+#include "scope/init/flags.hpp"
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
 
 #include "args.hpp"
+#include "init/flags.hpp"
 
 #define NAME "Comm/NUMAMemcpy/GPUToGPU"
 
@@ -26,10 +25,22 @@ static void Comm_NUMAMemcpy_GPUToGPU(benchmark::State &state) {
     return;
   }
 
+
+  if (num_gpus() < 2) {
+    state.SkipWithError(NAME " requires at least two GPUs");
+    return;
+  }
+  const int numa_id = FLAG(numa_ids)[0];
+  const int src_gpu = FLAG(cuda_device_ids)[0];
+  const int dst_gpu = FLAG(cuda_device_ids)[1];
+
+  if (src_gpu == dst_gpu) {
+    state.SkipWithError(NAME " requires two different GPUs");
+    return;
+  }
+
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
-  const int numa_id = state.range(1);
-  const int src_gpu = state.range(2);
-  const int dst_gpu = state.range(3);
+
 
   numa_bind_node(numa_id);
 

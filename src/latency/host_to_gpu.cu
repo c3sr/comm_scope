@@ -1,9 +1,6 @@
 #if CUDA_VERSION_MAJOR >= 8
 
-#include <assert.h>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
 
 #include <cuda_runtime.h>
 #if USE_NUMA
@@ -11,6 +8,7 @@
 #endif
 
 #include "scope/init/init.hpp"
+#include "scope/init/flags.hpp"
 #include "scope/utils/utils.hpp"
 
 #include "args.hpp"
@@ -38,12 +36,10 @@ static void Comm_UM_Latency_HostToGPU(benchmark::State &state) {
   }
 
   const size_t steps = state.range(0);
-  #if USE_NUMA
-  const int numa_id  = state.range(1);
-  const int cuda_id  = state.range(2);
-  #else
-  const int cuda_id = state.range(1);
-  #endif
+  const int cuda_id  = FLAG(cuda_device_ids)[0];
+#if USE_NUMA
+  const int numa_id  = FLAG(numa_ids)[0];
+#endif
 
   const size_t stride = 65536 * 2;
   const size_t bytes  = sizeof(size_t) * (steps + 1) * stride;
@@ -123,10 +119,6 @@ static void Comm_UM_Latency_HostToGPU(benchmark::State &state) {
 #endif
 }
 
-#if USE_NUMA
-BENCHMARK(Comm_UM_Latency_HostToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
-#else
-BENCHMARK(Comm_UM_Latency_HostToGPU)->Apply(ArgsCountGpu)->UseManualTime();
-#endif
+BENCHMARK(Comm_UM_Latency_HostToGPU)->SMALL_ARGS()->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8 

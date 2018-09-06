@@ -1,14 +1,12 @@
 #if CUDA_VERSION_MAJOR >= 8
 
-#include <assert.h>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
 
 #include <cuda_runtime.h>
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
+#include "scope/init/flags.hpp"
 
 #include "args.hpp"
 
@@ -34,9 +32,20 @@ static void Comm_UM_Latency_GPUToGPU(benchmark::State &state) {
     return;
   }
 
+  if (num_gpus() < 2) {
+    state.SkipWithError(NAME " requires at least 2 gpus");
+    return;
+  }
+  assert(FLAG(cuda_device_ids).size() >= 2);
+  const int src_id   = FLAG(cuda_device_ids)[0];
+  const int dst_id   = FLAG(cuda_device_ids)[1];
+
+  if (src_id == dst_id) {
+    state.SkipWithError(NAME "src and dst GPU should be different");
+    return;
+  }
+
   const size_t steps = state.range(0);
-  const int src_id   = state.range(1);
-  const int dst_id   = state.range(2);
 
   const size_t stride = 65536 * 2;
   const size_t bytes  = sizeof(size_t) * (steps + 1) * stride;
@@ -133,6 +142,6 @@ static void Comm_UM_Latency_GPUToGPU(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Comm_UM_Latency_GPUToGPU)->Apply(ArgsCountGpuGpuNoSelf)->UseManualTime();
+BENCHMARK(Comm_UM_Latency_GPUToGPU)->SMALL_ARGS()->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8

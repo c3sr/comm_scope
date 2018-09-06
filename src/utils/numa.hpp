@@ -1,5 +1,4 @@
-#ifndef UTILS_NUMA_HPP
-#define UTILS_NUMA_HPP
+#pragma once
 
 #if USE_NUMA == 1
 
@@ -10,19 +9,7 @@
 #include <numa.h>
 
 #include "scope/init/logger.hpp"
-
-static inline std::vector<int> numa_nodes() {
-  std::set<int> nodes;
-  for (int i = 0; i < numa_num_configured_cpus(); ++i) {
-    nodes.insert(numa_node_of_cpu(i));
-  }
-  assert(nodes.size() >= 1);
-  std::vector<int> nodes2;
-  for (const auto &i : nodes) {
-    nodes2.push_back(i);
-  }
-  return nodes2;
-}
+#include "init/flags.hpp"
 
 static inline void numa_bind_node(const int node) {
 
@@ -39,6 +26,9 @@ static inline void numa_bind_node(const int node) {
   }
 }
 
+static inline size_t num_numa_nodes() {
+  return FLAG(numa_ids).size();
+}
+
 #endif // USE_NUMA == 1
 
-#endif // UTILS_NUMA_HPP

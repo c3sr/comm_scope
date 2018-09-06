@@ -1,6 +1,6 @@
 #if CUDA_VERSION_MAJOR >= 8
 
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
@@ -9,6 +9,7 @@
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
+#include "scope/init/flags.hpp"
 
 #include "args.hpp"
 
@@ -21,9 +22,16 @@ static void Comm_UM_Prefetch_GPUToGPU(benchmark::State &state) {
     return;
   }
 
+  if (num_gpus() < 2) {
+    state.SkipWithError(NAME " requires 2 gpus");
+    return;
+  }
+
+  assert(FLAG(cuda_device_ids).size() >= 2);
+  const int src_gpu = FLAG(cuda_device_ids)[0];
+  const int dst_gpu = FLAG(cuda_device_ids)[1];
+
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
-  const int src_gpu = state.range(1);
-  const int dst_gpu = state.range(2);
 
   if (PRINT_IF_ERROR(utils::cuda_reset_device(src_gpu))) {
     state.SkipWithError(NAME " failed to reset CUDA src device");
@@ -95,6 +103,6 @@ static void Comm_UM_Prefetch_GPUToGPU(benchmark::State &state) {
   state.counters.insert({{"bytes", bytes}});
 }
 
-BENCHMARK(Comm_UM_Prefetch_GPUToGPU)->Apply(ArgsCountGpuGpuNoSelf)->MinTime(0.1)->UseManualTime();
+BENCHMARK(Comm_UM_Prefetch_GPUToGPU)->SMALL_ARGS()->MinTime(0.1)->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8

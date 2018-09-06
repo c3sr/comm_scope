@@ -65,6 +65,6 @@ static void NUMA_WR(benchmark::State &state) {
   free(ptr);
 }
 
-BENCHMARK(NUMA_WR)->Apply(ArgsThreadCountNumaNuma)->MinTime(0.1)->UseRealTime();
+BENCHMARK(NUMA_WR)->Apply(ArgsThreadCount)->MinTime(0.1)->UseRealTime();
 
 #endif // USE_NUMA == 1 && USE_OPENMP == 1

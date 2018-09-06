@@ -74,4 +74,4 @@ static void CUDA_Memcpy_GPUToPinned(benchmark::State &state) {
   state.counters.insert({{"bytes", bytes}});
 }
 
-BENCHMARK(CUDA_Memcpy_GPUToPinned)->ALL_ARGS()->UseManualTime();
+BENCHMARK(CUDA_Memcpy_GPUToPinned)->SMALL_ARGS()->UseManualTime();

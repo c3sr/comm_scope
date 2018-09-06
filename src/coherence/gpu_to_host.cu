@@ -12,8 +12,10 @@
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
+#include "scope/init/flags.hpp"
 
 #include "args.hpp"
+#include "init/flags.hpp"
 
 #define NAME "Comm/UM/Coherence/GPUToHost"
 
@@ -54,11 +56,9 @@ static void Comm_UM_Coherence_GPUToHost(benchmark::State &state) {
   const size_t pageSize = page_size();
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
+  const int cuda_id = FLAG(cuda_device_ids)[0];
 #if USE_NUMA
-  const int numa_id = state.range(1);
-  const int cuda_id = state.range(2);
-#else
-  const int cuda_id = state.range(1);
+  const int numa_id = FLAG(numa_ids)[0];
 #endif
 
 #if USE_NUMA
@@ -110,10 +110,6 @@ static void Comm_UM_Coherence_GPUToHost(benchmark::State &state) {
 #endif
 }
 
-#if USE_NUMA
-BENCHMARK(Comm_UM_Coherence_GPUToHost)->Apply(ArgsCountNumaGpu)->MinTime(0.1);
-#else
-BENCHMARK(Comm_UM_Coherence_GPUToHost)->Apply(ArgsCountGpu)->MinTime(0.1);
-#endif
+BENCHMARK(Comm_UM_Coherence_GPUToHost)->SMALL_ARGS()->MinTime(0.1);
 
 #endif // CUDA_VERSION_MAJOR >= 8

@@ -12,7 +12,9 @@
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
+#include "scope/init/flags.hpp"
 
+#include "init/flags.hpp"
 #include "args.hpp"
 
 #define NAME "Comm/UM/Prefetch/HostToGPU"
@@ -25,11 +27,10 @@ static void Comm_UM_Prefetch_HostToGPU(benchmark::State &state) {
   }
 
   const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
+
+  const int dst_gpu  = FLAG(cuda_device_ids)[0];
 #if USE_NUMA
-  const int src_numa = state.range(1);
-  const int dst_gpu  = state.range(2);
-#else // USE_NUMA
-  const int dst_gpu  = state.range(1);
+  const int src_numa = FLAG(numa_ids)[0];
 #endif // USE_NUMA
 
 #if USE_NUMA
@@ -105,10 +106,6 @@ static void Comm_UM_Prefetch_HostToGPU(benchmark::State &state) {
 #endif // USE_NUMA
 }
 
-#if USE_NUMA
-BENCHMARK(Comm_UM_Prefetch_HostToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
-#else // USE_NUMA
-BENCHMARK(Comm_UM_Prefetch_HostToGPU)->Apply(ArgsCountGpu)->UseManualTime();
-#endif // USE_NUMA
+BENCHMARK(Comm_UM_Prefetch_HostToGPU)->SMALL_ARGS()->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8

@@ -70,4 +70,4 @@ static void CUDA_Memcpy_PinnedToGPU(benchmark::State &state) {
   state.counters.insert({{"bytes", bytes}});
 }
 
-BENCHMARK(CUDA_Memcpy_PinnedToGPU)->ALL_ARGS()->UseManualTime();
+BENCHMARK(CUDA_Memcpy_PinnedToGPU)->SMALL_ARGS()->UseManualTime();

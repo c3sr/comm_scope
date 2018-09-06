@@ -12,6 +12,7 @@
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
+#include "scope/init/flags.hpp"
 
 #include "args.hpp"
 
@@ -24,13 +25,13 @@ static void Comm_UM_Prefetch_GPUToHost(benchmark::State &state) {
     return;
   }
 
-  const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
+  const int cuda_id = FLAG(cuda_device_ids)[0];
 #if USE_NUMA
-  const int numa_id = state.range(1);
-  const int cuda_id = state.range(2);
-#else
-  const int cuda_id = state.range(1);
+  const int numa_id = FLAG(numa_ids)[0];
 #endif // USE_NUMA
+
+  const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
+
 
 #if USE_NUMA
   numa_bind_node(numa_id);
@@ -105,10 +106,6 @@ static void Comm_UM_Prefetch_GPUToHost(benchmark::State &state) {
 #endif // USE_NUMA
 }
 
-#if USE_NUMA
-BENCHMARK(Comm_UM_Prefetch_GPUToHost)->Apply(ArgsCountNumaGpu)->UseManualTime();
-#else
-BENCHMARK(Comm_UM_Prefetch_GPUToHost)->Apply(ArgsCountGpu)->UseManualTime();
-#endif
+BENCHMARK(Comm_UM_Prefetch_GPUToHost)->SMALL_ARGS()->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8

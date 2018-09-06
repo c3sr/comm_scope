@@ -25,10 +25,16 @@ static void NUMA_RD(benchmark::State &state) {
     return;
   }
 
+  if (num_numa_nodes() < 2) {
+    state.SkipWithError(NAME " needs two NUMA nodes");
+    return;
+  }
+  const int src_numa = FLAG(numa_ids)[0];
+  const int dst_numa = FLAG(numa_ids)[1];
+
   const int threads  = state.range(0);
   const auto bytes   = 1ULL << static_cast<size_t>(state.range(1));
-  const int src_numa = state.range(2);
-  const int dst_numa = state.range(3);
+
 
   omp_set_num_threads(threads);
   if (threads != omp_get_max_threads()) {
@@ -71,10 +77,12 @@ static void NUMA_RD(benchmark::State &state) {
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
   state.counters.insert({{"bytes", bytes}});
+  state.counters["src_numa"] = src_numa;
+  state.counters["dst_numa"] = dst_numa;
 
   free(ptr);
 }
 
-BENCHMARK(NUMA_RD)->Apply(ArgsThreadCountNumaNuma)->MinTime(0.1)->UseRealTime();
+BENCHMARK(NUMA_RD)->Apply(ArgsThreadCount)->MinTime(0.1)->UseRealTime();
 
 #endif // USE_NUMA == 1 && USE_OPENMP == 1

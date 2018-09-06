@@ -6,6 +6,7 @@
 #include <cuda_runtime.h>
 
 #include "scope/init/init.hpp"
+#include "scope/init/flags.hpp"
 
 #include "memcpy-duplex/args.hpp"
 
@@ -18,9 +19,15 @@ static void DUPLEX_Memcpy_GPUGPU(benchmark::State &state) {
     return;
   }
 
+  if (num_gpus() < 2) {
+    state.SkipWithError(NAME " requires at least 2 GPUs");
+  }
+  assert(FLAG(cuda_device_ids).size() >= 2);
+  const int gpu0 = FLAG(cuda_device_ids)[0];
+  const int gpu1 = FLAG(cuda_device_ids)[1];
+
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
-  const int gpu0 = state.range(1);
-  const int gpu1 = state.range(2);
+
 
   if (PRINT_IF_ERROR(utils::cuda_reset_device(gpu0))) {
     state.SkipWithError(NAME " failed to reset CUDA device");
@@ -224,4 +231,4 @@ static void DUPLEX_Memcpy_GPUGPU(benchmark::State &state) {
   }
 }
 
-BENCHMARK(DUPLEX_Memcpy_GPUGPU)->Apply(ArgsCountGpuGpuNoSelf)->UseManualTime();
+BENCHMARK(DUPLEX_Memcpy_GPUGPU)->SMALL_ARGS()->UseManualTime();

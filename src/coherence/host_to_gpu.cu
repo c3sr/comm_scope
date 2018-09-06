@@ -12,8 +12,10 @@
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
+#include "scope/init/flags.hpp"
 
 #include "args.hpp"
+#include "init/flags.hpp"
 
 #define NAME "Comm/UM/Coherence/HostToGPU"
 
@@ -48,11 +50,9 @@ static void Comm_UM_Coherence_HostToGPU(benchmark::State &state) {
   const size_t pageSize = page_size();
 
   const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
+  const int dst_gpu  = FLAG(cuda_device_ids)[0];
 #if USE_NUMA
-  const int src_numa = state.range(1);
-  const int dst_gpu  = state.range(2);
-#else
-  const int dst_gpu  = state.range(1);
+  const int src_numa = FLAG(numa_ids)[0];
 #endif
 
 #if USE_NUMA
@@ -128,10 +128,6 @@ static void Comm_UM_Coherence_HostToGPU(benchmark::State &state) {
 #endif
 }
 
-#if USE_NUMA
-BENCHMARK(Comm_UM_Coherence_HostToGPU)->Apply(ArgsCountNumaGpu)->UseManualTime();
-#else
-BENCHMARK(Comm_UM_Coherence_HostToGPU)->Apply(ArgsCountGpu)->UseManualTime();
-#endif
+BENCHMARK(Comm_UM_Coherence_HostToGPU)->SMALL_ARGS()->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8

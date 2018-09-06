@@ -115,6 +115,6 @@ static void Comm_UM_Coherence_GPUToGPU(benchmark::State &state) {
   state.counters.insert({{"bytes", bytes}});
 }
 
-BENCHMARK(Comm_UM_Coherence_GPUToGPU)->Apply(ArgsCountGpuGpuNoSelf)->MinTime(0.1)->UseManualTime();
+BENCHMARK(Comm_UM_Coherence_GPUToGPU)->SMALL_ARGS()->MinTime(0.1)->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8

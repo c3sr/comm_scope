@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
@@ -6,6 +6,7 @@
 #include <cuda_runtime.h>
 
 #include "scope/init/init.hpp"
+#include "scope/init/flags.hpp"
 #include "scope/utils/utils.hpp"
 
 #include "memcpy/args.hpp"
@@ -24,9 +25,12 @@ static void CUDA_Memcpy_GPUToGPU(benchmark::State &state) {
     return;
   }
 
+  assert(FLAG(cuda_device_ids).size() >= 2);
+  const int src_gpu = FLAG(cuda_device_ids)[0];
+  const int dst_gpu = FLAG(cuda_device_ids)[1];
+
+
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
-  const int src_gpu = state.range(1);
-  const int dst_gpu = state.range(2);
 
   if (PRINT_IF_ERROR(utils::cuda_reset_device(src_gpu))) {
     state.SkipWithError(NAME " failed to reset CUDA device");
@@ -104,4 +108,4 @@ static void CUDA_Memcpy_GPUToGPU(benchmark::State &state) {
   state.counters.insert({{"bytes", bytes}});
 }
 
-BENCHMARK(CUDA_Memcpy_GPUToGPU)->Apply(ArgsCountGpuGpuPeerNoSelf)->UseManualTime();
+BENCHMARK(CUDA_Memcpy_GPUToGPU)->SMALL_ARGS()->UseManualTime();
