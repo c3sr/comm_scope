@@ -47,7 +47,10 @@ bool init_numa() {
   } else { // check to make sure requested numa ids are valid
     for (const auto &id : FLAG(numa_ids)) {
       if (0 == available_nodes.count(id)) {
-        LOG(critical, fmt::format("user-requested numa id {} is not available", id));
+        LOG(critical, fmt::format("user-requested NUMA node id {} is not available.", id));
+        for (const auto &avail : available_nodes) {
+           LOG(critical, fmt::format("NUMA node {} is available.", avail));
+        }
         return false;
       }
     }
