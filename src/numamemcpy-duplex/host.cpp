@@ -1,12 +1,20 @@
+#if CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
+
 #include <cassert>
+
 #include <cuda_runtime.h>
+#include <numa.h>
 
 #include "scope/init/init.hpp"
+#include "scope/utils/utils.hpp"
 #include "scope/init/flags.hpp"
 
 #include "args.hpp"
+#include "init/flags.hpp"
+#include "init/numa.hpp"
+#include "utils/numa.hpp"
 
-#define NAME "DUPLEX/Memcpy/GPUGPU"
+#define NAME "DUPLEX/NUMAMemcpy/Host" 
 
 #define OR_SKIP(stmt, msg) \
   if (PRINT_IF_ERROR(stmt)) { \
@@ -14,40 +22,34 @@
     return; \
   }
 
-static void DUPLEX_Memcpy_GPUGPU(benchmark::State &state) {
-
+static void DUPLEX_NUMAMemcpy_Host(benchmark::State &state) {
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
     return;
   }
 
-  if (num_gpus() < 2) {
-    state.SkipWithError(NAME " requires at least 2 GPUs");
-    return;
-  }
-  assert(FLAG(cuda_device_ids).size() >= 2);
-  const int gpu0 = FLAG(cuda_device_ids)[0];
-  const int gpu1 = FLAG(cuda_device_ids)[1];
-  if (gpu0 == gpu1) {
-    state.SkipWithError(NAME " requires two different GPUs");
+  if (!has_numa) {
+    state.SkipWithError(NAME " NUMA not available");
     return;
   }
 
+  const int numa   = FLAG(numa_ids)[0];
+  const int gpu    = FLAG(cuda_device_ids)[0];
 
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
+  OR_SKIP(utils::cuda_reset_device(gpu), NAME " failed to reset CUDA device");
+  OR_SKIP(cudaSetDevice(gpu), NAME " failed to set device");
+  numa_bind_node(numa); 
 
-  OR_SKIP(utils::cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
-  OR_SKIP(utils::cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
+  // There are two copies, one gpu -> host, one host -> gpu
 
-  // There are two copies, one gpu0 -> gpu1, one gpu1 -> gpu0
 
   // Create One stream per copy
   cudaStream_t stream1, stream2;
   std::vector<cudaStream_t> streams = {stream1, stream2};
   OR_SKIP(cudaStreamCreate(&streams[0]), NAME "failed to create stream");
   OR_SKIP(cudaStreamCreate(&streams[1]), NAME "failed to create stream");
-
 
   // Start and stop events for each copy
   cudaEvent_t start1, start2, stop1, stop2;
@@ -61,43 +63,31 @@ static void DUPLEX_Memcpy_GPUGPU(benchmark::State &state) {
   // Source and destination for each copy
   std::vector<char *> srcs, dsts;
 
-  // create a source and destination allocation for first copy
-  
+  // bookkeeping for cuda frees and hos frees
+  std::vector<void *> cuda_frees, frees;
 
-  // allocate on gpu0 and enable peer access
+  // create a source and destination allocation for first copy: gpu ->host
   char *ptr;
-  OR_SKIP(cudaSetDevice(gpu0), NAME "failed to set device");
-  OR_SKIP(cudaMalloc(&ptr, bytes), NAME " failed to perform cudaMalloc");
-  srcs.push_back(ptr);
-  OR_SKIP(cudaMemset(ptr, 0, bytes), NAME " failed to perform src cudaMemset");
-  cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0);
-  if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
-    state.SkipWithError(NAME " failed to ensure peer access");
-    return;
-  }
-
-  // allocate on gpu1 and enable peer access
-  OR_SKIP(cudaSetDevice(gpu1), NAME "failed to set device");
-  OR_SKIP(cudaMalloc(&ptr, bytes), NAME " failed to perform cudaMalloc");
-  OR_SKIP(cudaMemset(ptr, 0, bytes), NAME " failed to perform src cudaMemset");
-  dsts.push_back(ptr);
-  err = cudaDeviceEnablePeerAccess(gpu0, 0);
-  if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
-    state.SkipWithError(NAME " failed to ensure peer access");
-    return;
-  }
-
-  // create a source and destination for second copy
-  OR_SKIP(cudaSetDevice(gpu1), NAME " failed to set device");
   OR_SKIP(cudaMalloc(&ptr, bytes), NAME " failed to perform cudaMalloc");
   OR_SKIP(cudaMemset(ptr, 0, bytes), NAME " failed to perform src cudaMemset");
   srcs.push_back(ptr);
+  cuda_frees.push_back(ptr);
 
-  OR_SKIP(cudaSetDevice(gpu1), NAME " failed to set device");
+  ptr = static_cast<char*>(aligned_alloc(65536, bytes));
+  std::memset(ptr, 0, bytes);
+  dsts.push_back(ptr);
+  frees.push_back(ptr);
+
+  // create a dst and src allocation for the second copy host -> gpu
   OR_SKIP(cudaMalloc(&ptr, bytes), NAME " failed to perform cudaMalloc");
   OR_SKIP(cudaMemset(ptr, 0, bytes), NAME " failed to perform src cudaMemset");
   dsts.push_back(ptr);
+  cuda_frees.push_back(ptr);
 
+  ptr = static_cast<char*>(aligned_alloc(65536, bytes));
+  std::memset(ptr, 0, bytes);
+  srcs.push_back(ptr);
+  frees.push_back(ptr);
 
   assert(starts.size() == stops.size());
   assert(streams.size() == starts.size());
@@ -114,7 +104,7 @@ static void DUPLEX_Memcpy_GPUGPU(benchmark::State &state) {
       auto src = srcs[i];
       auto dst = dsts[i];
       OR_SKIP(cudaEventRecord(start, stream), NAME " failed to record start event");
-      OR_SKIP(cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice, stream), NAME " failed to start cudaMemcpyAsync");
+      OR_SKIP(cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDefault, stream), NAME " failed to start cudaMemcpyAsync");
       OR_SKIP(cudaEventRecord(stop, stream), NAME " failed to record stop event");
     }
 
@@ -136,8 +126,8 @@ static void DUPLEX_Memcpy_GPUGPU(benchmark::State &state) {
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes) * 2);
   state.counters.insert({{"bytes", bytes}});
-  state.counters["gpu0"] = gpu0;
-  state.counters["gpu1"] = gpu1;
+  state.counters["cuda_id"] = gpu;
+  state.counters["numa_id"] = numa;
 
   float stopSum = 0;
   float startSum = 0;
@@ -155,12 +145,15 @@ static void DUPLEX_Memcpy_GPUGPU(benchmark::State &state) {
   state.counters["avg_start_spread"] = startSum/state.iterations();
   state.counters["avg_stop_spread"] = stopSum/state.iterations();
 
-  for (auto src : srcs) {
-    cudaFree(src);
+  for (auto p : cuda_frees) {
+    cudaFree(p);
   }
-  for (auto dst : dsts) {
-    cudaFree(dst);
+  for (auto p : frees) {
+    free(p);
   }
+
 }
 
-BENCHMARK(DUPLEX_Memcpy_GPUGPU)->SMALL_ARGS()->UseManualTime();
+BENCHMARK(DUPLEX_NUMAMemcpy_Host)->SMALL_ARGS()->UseManualTime();
+
+#endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
