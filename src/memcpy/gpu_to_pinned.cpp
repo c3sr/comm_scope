@@ -1,15 +1,19 @@
-
-#include <assert.h>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
-
+#include <cassert>
 #include <cuda_runtime.h>
 
+#include "scope/init/flags.hpp"
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
 
-#include "memcpy/args.hpp"
+#include "args.hpp"
+
+#define NAME "CUDA/Memcpy/GpuToPinned"
+
+#define OR_SKIP(stmt, msg) \
+  if (PRINT_IF_ERROR(stmt)) { \
+    state.SkipWithError(msg); \
+    return; \
+  }
 
 static void CUDA_Memcpy_GPUToPinned(benchmark::State &state) {
 
@@ -21,6 +25,9 @@ static void CUDA_Memcpy_GPUToPinned(benchmark::State &state) {
     state.SkipWithError("CUDA/MEMCPY/GPUToPinned no CUDA device found");
     return;
   }
+
+  const int cuda_id = FLAG(cuda_device_ids)[0];
+  OR_SKIP(cudaSetDevice(cuda_id), NAME " failed to set CUDA device");
 
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
@@ -72,6 +79,7 @@ static void CUDA_Memcpy_GPUToPinned(benchmark::State &state) {
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
   state.counters.insert({{"bytes", bytes}});
+  state.counters["cuda_id"] = cuda_id;
 }
 
 BENCHMARK(CUDA_Memcpy_GPUToPinned)->SMALL_ARGS()->UseManualTime();

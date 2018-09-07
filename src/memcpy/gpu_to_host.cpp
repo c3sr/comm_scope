@@ -1,14 +1,19 @@
-#include <assert.h>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
-
+#include <cassert>
 #include <cuda_runtime.h>
 
+#include "scope/init/flags.hpp"
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
 
-#include "memcpy/args.hpp"
+#include "args.hpp"
+
+#define NAME "CUDA/Memcpy/GpuToHost"
+
+#define OR_SKIP(stmt, msg) \
+  if (PRINT_IF_ERROR(stmt)) { \
+    state.SkipWithError(msg); \
+    return; \
+  }
 
 static void CUDA_Memcpy_GPUToHost(benchmark::State &state) {
 
@@ -19,9 +24,11 @@ static void CUDA_Memcpy_GPUToHost(benchmark::State &state) {
 
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
   char *src        = nullptr;
-  char *dst        = new char[bytes];
+  char *dst        = static_cast<char*>(aligned_alloc(65536, bytes));
+  defer(free(dst));
 
-  defer(delete[] dst);
+  const int cuda_id = FLAG(cuda_device_ids)[0];
+  OR_SKIP(cudaSetDevice(cuda_id), NAME " failed to set CUDA device");
 
   if (PRINT_IF_ERROR(cudaMalloc(&src, bytes))) {
     state.SkipWithError("CUDA/MEMCPY/GPUToHost failed to perform cudaMalloc");
@@ -62,6 +69,7 @@ static void CUDA_Memcpy_GPUToHost(benchmark::State &state) {
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
   state.counters.insert({{"bytes", bytes}});
+  state.counters["cuda_id"] = cuda_id;
 }
 
 BENCHMARK(CUDA_Memcpy_GPUToHost)->SMALL_ARGS()->UseManualTime();
