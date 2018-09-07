@@ -39,15 +39,15 @@ static void Comm_NUMAMemcpy_HostToGPU(benchmark::State &state) {
     state.SkipWithError(NAME " failed to reset CUDA device");
     return;
   }
-
-  char *src = new char[bytes];
-  defer(delete[] src);
-  char *dst = nullptr;
-
   if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
     state.SkipWithError(NAME " failed to set CUDA device");
     return;
   }
+
+  char *src = static_cast<char*>(aligned_alloc(65536, bytes));
+  defer(free(src));
+  char *dst = nullptr;
+
 
   if (PRINT_IF_ERROR(cudaMalloc(&dst, bytes))) {
     state.SkipWithError(NAME " failed to perform cudaMalloc");
@@ -85,6 +85,8 @@ static void Comm_NUMAMemcpy_HostToGPU(benchmark::State &state) {
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
   state.counters.insert({{"bytes", bytes}});
+  state.counters["cuda_id"] = cuda_id;
+  state.counters["numa_id"] = numa_id;
 
   // reset to run on any node
   numa_bind_node(-1);
