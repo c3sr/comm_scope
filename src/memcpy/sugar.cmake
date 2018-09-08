@@ -20,8 +20,8 @@ sugar_files(
     comm_SOURCES
     gpu_to_gpu_peer.cpp
     gpu_to_host.cpp
-    gpu_to_pinned.cpp
+    gpu_to_wc.cpp
     host_to_gpu.cpp
-    pinned_to_gpu.cpp
+    wc_to_gpu.cpp
 )
 

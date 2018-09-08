@@ -7,7 +7,7 @@
 
 #include "args.hpp"
 
-#define NAME "CUDA/Memcpy/HostToGPU"
+#define NAME "CUDA/Memcpy/WCToGPU"
 
 #define OR_SKIP(stmt, msg) \
   if (PRINT_IF_ERROR(stmt)) { \
@@ -15,7 +15,7 @@
     return; \
   }
 
-static void CUDA_Memcpy_HostToGPU(benchmark::State &state) {
+static void CUDA_Memcpy_WCToGPU(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -23,11 +23,8 @@ static void CUDA_Memcpy_HostToGPU(benchmark::State &state) {
   }
 
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
-  char *src        = static_cast<char*>(aligned_alloc(65536, bytes));
+  char *src        = nullptr;
   char *dst        = nullptr;
-  defer(free(src));
-
-  std::memset(src, 0, bytes);
 
   const int cuda_id = FLAG(cuda_device_ids)[0];
   OR_SKIP(utils::cuda_reset_device(cuda_id), NAME " failed to reset device");
@@ -36,13 +33,17 @@ static void CUDA_Memcpy_HostToGPU(benchmark::State &state) {
   defer(cudaFree(dst));
   OR_SKIP(cudaMemset(dst, 0, bytes), NAME " failed to perform cudaMemset");
 
+  OR_SKIP(cudaHostAlloc(&src, bytes, cudaHostAllocWriteCombined), NAME " failed to allocate src");
+  defer(cudaFreeHost(src));
+  std::memset(src, 0, bytes);
+
   cudaEvent_t start, stop;
-  OR_SKIP(cudaEventCreate(&start), NAME " failed to create start event");
-  OR_SKIP(cudaEventCreate(&stop), NAME " failed to create stop event");
+  OR_SKIP(cudaEventCreate(&start), NAME " failed to create event");
+  OR_SKIP(cudaEventCreate(&stop) , NAME " failed to create event");
 
   for (auto _ : state) {
     OR_SKIP(cudaEventRecord(start, NULL), NAME " failed to record start event");
-    OR_SKIP(cudaMemcpyAsync(dst, src, bytes, cudaMemcpyHostToDevice), NAME " failed to memcpy");
+    OR_SKIP(cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToHost), NAME " failed to memcpy");
     OR_SKIP(cudaEventRecord(stop, NULL), NAME " failed to record stop event");
     OR_SKIP(cudaEventSynchronize(stop), NAME " failed to event synchronize");
 
@@ -55,4 +56,4 @@ static void CUDA_Memcpy_HostToGPU(benchmark::State &state) {
   state.counters["cuda_id"] = cuda_id;
 }
 
-BENCHMARK(CUDA_Memcpy_HostToGPU)->SMALL_ARGS()->UseManualTime();
+BENCHMARK(CUDA_Memcpy_WCToGPU)->SMALL_ARGS()->UseManualTime();

@@ -18,7 +18,7 @@
 static void CUDA_Memcpy_GPUToHost(benchmark::State &state) {
 
   if (!has_cuda) {
-    state.SkipWithError("CUDA/MEMCPY/GPUToHost no CUDA device found");
+    state.SkipWithError(NAME " no CUDA device found");
     return;
   }
 
@@ -28,44 +28,26 @@ static void CUDA_Memcpy_GPUToHost(benchmark::State &state) {
   defer(free(dst));
 
   const int cuda_id = FLAG(cuda_device_ids)[0];
+  OR_SKIP(utils::cuda_reset_device(cuda_id), NAME " failed to reset device");
   OR_SKIP(cudaSetDevice(cuda_id), NAME " failed to set CUDA device");
-
-  if (PRINT_IF_ERROR(cudaMalloc(&src, bytes))) {
-    state.SkipWithError("CUDA/MEMCPY/GPUToHost failed to perform cudaMalloc");
-    return;
-  }
+  OR_SKIP(cudaMalloc(&src, bytes), NAME " failed to perform cudaMalloc");
   defer(cudaFree(src));
 
-  if (PRINT_IF_ERROR(cudaMemset(src, 0, bytes))) {
-    state.SkipWithError("CUDA/MEMCPY/GPUToHost failed to perform cudaMemset");
-    return;
-  }
+  OR_SKIP(cudaMemset(src, 0, bytes), NAME " failed to perform cudaMemset");
 
   cudaEvent_t start, stop;
-  PRINT_IF_ERROR(cudaEventCreate(&start));
-  PRINT_IF_ERROR(cudaEventCreate(&stop));
+  OR_SKIP(cudaEventCreate(&start), NAME " failed to create start event");
+  OR_SKIP(cudaEventCreate(&stop), NAME " failed to create stop event");
 
   for (auto _ : state) {
-    cudaEventRecord(start, NULL);
+    OR_SKIP(cudaEventRecord(start, NULL), NAME " failed to record start event");
+    OR_SKIP(cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToHost), NAME " failed to memcpy");
+    OR_SKIP(cudaEventRecord(stop, NULL), NAME " failed to record stop event");
+    OR_SKIP(cudaEventSynchronize(stop), NAME " failed to event synchronize");
 
-    const auto cuda_err = cudaMemcpy(dst, src, bytes, cudaMemcpyDeviceToHost);
-
-    cudaEventRecord(stop, NULL);
-    cudaEventSynchronize(stop);
-
-    state.PauseTiming();
-
-    if (PRINT_IF_ERROR(cuda_err) != cudaSuccess) {
-      state.SkipWithError("CUDA/MEMCPY/GPUToHost failed to perform memcpy");
-      break;
-    }
     float msecTotal = 0.0f;
-    if (PRINT_IF_ERROR(cudaEventElapsedTime(&msecTotal, start, stop))) {
-      state.SkipWithError("CUDA/MEMCPY/GPUToHost failed to get elapsed time");
-      break;
-    }
+    OR_SKIP(cudaEventElapsedTime(&msecTotal, start, stop), NAME "  failed to get elapsed time");
     state.SetIterationTime(msecTotal / 1000);
-    state.ResumeTiming();
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
   state.counters.insert({{"bytes", bytes}});
