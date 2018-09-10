@@ -11,9 +11,9 @@ The NUMA and/or CUDA devices may be selected with the `--numa_ids` and `--cuda_i
 
 |Benchmarks|Description|Argument Format|
 |-|-|-|
-| `Comm_UM_Coherence_GPUToGPU` | GPUToGPU | `log2 size / src GPU / dst GPU` |
-| `Comm_UM_Coherence_GPUToHost` | GPUToHost | `log2 size / Host NUMA node / GPU` |
-| `Comm_UM_Coherence_HostToGPU` | Host To GPU | `log2 size / Host NUMA node / GPU` |
+| `Comm_UM_Coherence_GPUToGPU` | GPUToGPU | `log2 size` |
+| `Comm_UM_Coherence_GPUToHost` | GPUToHost | `log2 size` |
+| `Comm_UM_Coherence_HostToGPU` | Host To GPU | `log2 size` |
 
 ## Technique
 
