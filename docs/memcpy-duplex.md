@@ -1,19 +1,25 @@
-# Unified Memory Memcpy-Duplex Bandwidth
+# GPU/GPU Memcpy-Duplex Bandwidth
 
 Comm|Scope defines 1 microbenchmark to measure unified memory duplex bandwidth.
 This benchmark may be listed with the argument
     
-    --benchmark_filter="DUPLEX_Memcpy"
+    --benchmark_filter="DUPLEX_Memcpy_GPUGPU"
+
+The GPUs are selected with the `--cuda_device_ids` command-line flag.
+To use GPUs 0 and 1, for example:
+
+    --cuda_device_ids=0,1
 
 ## Implementations
 
 |Benchmarks|Description|Argument Format|
 |-|-|-|
-| `DUPLEX_Memcpy_GPUGPU` | GPUToGPU | `log2 size / src GPU / dst GPU` |
+| `DUPLEX_Memcpy_GPUGPU` | GPU To GPU duplex transfer | `log2 size` |
 
-## GPU/GPU Technique
+## Technique
 
-For a gpu0 --> gpu1, gpu1 -> gpu0 transfer, the benchmark setup phase looks like this:
+One stream for each direction is established, and asynchronous memory transfers with `cudaMemcpyAsync` are started on both streams.
+The total time is measured as the difference between when the earlier transfer starts and the later transfer ends.
 
 ```
 //setup: create one  stream per copy
@@ -44,7 +50,6 @@ err = cudaDeviceEnablePeerAccess(gpu1,0)
 loop (state)
 
     loop(streams)
-      //move pages
       cudaEventRecord(start, stream)
       cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice, stream)
       cudaEventRecord(stop, stream)
@@ -55,7 +60,7 @@ loop (state)
     }
     end loop
 
-    //record time
+    // find longest time between any pair of start and stop events
     loop(starts)
       loop(stops)
         cudaEventElapsedTime(&millis, start, stop)
