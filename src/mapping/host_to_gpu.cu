@@ -21,30 +21,32 @@
     return; \
 }
 
-template <bool NOOP = false>
-__global__ void gpu_write(void *ptr, const size_t count, const size_t stride) {
-  if (NOOP) {
-    return;
-  }
-
-  char *p = (char *) ptr;
-
-  // global ID
+template <typename write_t>
+__global__ void gpu_write(write_t *ptr, const size_t bytes) {
   const size_t gx = blockIdx.x * blockDim.x + threadIdx.x;
-  // lane ID 0-31
-  const size_t lx = gx & 31;
-  // warp ID
-  size_t wx             = gx / 32;
-  const size_t numWarps = (gridDim.x * blockDim.x + 32 - 1) / 32;
+  const size_t num_elems = bytes / sizeof(write_t);
 
-  if (0 == lx) {
-    for (size_t i = wx * stride; i < count; i += numWarps * stride) {
-      p[i] = 0;
-    }
+  for (size_t i = gx; i < num_elems; i += gridDim.x * blockDim.x) {
+    ptr[gx] = 0;
   }
 }
 
-static void Comm_Mapping_HostToGPU(benchmark::State &state) {
+
+template <typename read_t>
+__global__ void gpu_read(const read_t *ptr, const size_t bytes) {
+  const size_t gx = blockIdx.x * blockDim.x + threadIdx.x;
+  const size_t num_elems = bytes / sizeof(read_t);
+
+  __shared__ int32_t s[256];
+
+  for (size_t i = gx; i < num_elems; i += gridDim.x * blockDim.x) {
+    s[threadIdx.x] = ptr[gx];
+    (void) s[threadIdx.x];
+  }
+}
+
+
+static void Comm_Mapping_HostToGPU(benchmark::State &state, const bool read) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -92,7 +94,11 @@ static void Comm_Mapping_HostToGPU(benchmark::State &state) {
 
   for (auto _ : state) {
     cudaEventRecord(start);
-    gpu_write<<<256, 256>>>(dptr, bytes, 32);
+    if (read) {
+      gpu_read<int32_t><<<256, 256>>>((int32_t*) dptr, bytes);
+    } else {
+      gpu_write<int32_t><<<256, 256>>>((int32_t *)dptr, bytes);
+    }
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
 
@@ -111,4 +117,5 @@ static void Comm_Mapping_HostToGPU(benchmark::State &state) {
 #endif
 }
 
-BENCHMARK(Comm_Mapping_HostToGPU)->SMALL_ARGS()->UseManualTime();
+BENCHMARK_CAPTURE(Comm_Mapping_HostToGPU, read, 1)->ARGS()->UseManualTime();
+BENCHMARK_CAPTURE(Comm_Mapping_HostToGPU, write, 0)->ARGS()->UseManualTime();
