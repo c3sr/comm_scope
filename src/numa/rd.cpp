@@ -17,9 +17,9 @@
 #include "ops.hpp"
 #include "utils/omp.hpp"
 
-#define NAME "NUMA/RD"
+#define NAME "Comm/NUMA/RD"
 
-static void NUMA_RD(benchmark::State &state) {
+static void Comm_NUMA_RD(benchmark::State &state) {
 
   if (!has_numa) {
     state.SkipWithError(NAME " NUMA not available");
@@ -84,6 +84,6 @@ static void NUMA_RD(benchmark::State &state) {
   free(ptr);
 }
 
-BENCHMARK(NUMA_RD)->Apply(ArgsThreadCount)->MinTime(0.1)->UseRealTime();
+BENCHMARK(Comm_NUMA_RD)->Apply(ArgsThreadCount)->UseRealTime();
 
 #endif // USE_NUMA == 1 && USE_OPENMP == 1
