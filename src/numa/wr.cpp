@@ -16,9 +16,9 @@
 #include "ops.hpp"
 #include "utils/omp.hpp"
 
-#define NAME "NUMA/WR"
+#define NAME "Comm/NUMA/WR"
 
-static void NUMA_WR(benchmark::State &state) {
+static void Comm_NUMA_WR(benchmark::State &state) {
 
   if (!has_numa) {
     state.SkipWithError(NAME " NUMA not available");
@@ -61,10 +61,12 @@ static void NUMA_WR(benchmark::State &state) {
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
   state.counters.insert({{"bytes", bytes}});
+  state.counters["src_numa"] = src_numa;
+  state.counters["dst_numa"] = dst_numa;
 
   free(ptr);
 }
 
-BENCHMARK(NUMA_WR)->Apply(ArgsThreadCount)->MinTime(0.1)->UseRealTime();
+BENCHMARK(Comm_NUMA_WR)->Apply(ArgsThreadCount)->UseRealTime();
 
 #endif // USE_NUMA == 1 && USE_OPENMP == 1
