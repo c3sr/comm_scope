@@ -3,7 +3,7 @@
 Comm | Scope defines 3 microbenchmarks to measure unified memory coherence latency.
 These benchmarks may be listed with the argument
     
-    --benchmark_filter="Comm_UM_Coherence"
+    --benchmark_filter="Comm_UM_Latency"
 
 ## Implementations
 
