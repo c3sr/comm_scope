@@ -9,7 +9,7 @@
 #include "config.hpp"
 #include "flags.hpp"
 
-int comm_scope_init(int argc, char *const *argv) {
+int comm_scope_init() {
 
   if (FLAG(version)) {
     std::cout << version(SCOPE_PROJECT_NAME,
@@ -20,9 +20,7 @@ int comm_scope_init(int argc, char *const *argv) {
 
   }
 
-  for (int i = 1; i < argc; ++i) {
-    utils::ParseVecInt32Flag(argv[i], "numa_ids", &FLAG(numa_ids));
-  }
+
   for (const auto &e : FLAG(numa_ids)) {
     LOG(debug, "User requested NUMA node " + std::to_string(e));
   }
@@ -35,5 +33,7 @@ int comm_scope_init(int argc, char *const *argv) {
   return 0;
 }
 
-SCOPE_INIT(comm_scope_init);
+SCOPE_REGISTER_OPTS(  clara::Opt(FLAG(numa_ids), "id")["-n"]["--numa"]("add numa device id")  );
+
+SCOPE_REGISTER_INIT(comm_scope_init);
 
