@@ -9,17 +9,19 @@
 #include "config.hpp"
 #include "flags.hpp"
 
-int comm_scope_init() {
-
-  if (FLAG(version)) {
-    std::cout << version(SCOPE_PROJECT_NAME,
+void comm_before_init() {
+  RegisterVersionString(
+    version(SCOPE_PROJECT_NAME,
                          SCOPE_VERSION,
                          SCOPE_GIT_REFSPEC,
                          SCOPE_GIT_HASH,
-                         SCOPE_GIT_LOCAL_CHANGES) << std::endl;
+                         SCOPE_GIT_LOCAL_CHANGES)
+  );
 
-  }
+  RegisterOpt(  clara::Opt(FLAG(numa_ids), "id")["-n"]["--numa"]("add numa device id (Comm|Scope)")  );
+}
 
+int comm_scope_init() {
 
   for (const auto &e : FLAG(numa_ids)) {
     LOG(debug, "User requested NUMA node " + std::to_string(e));
@@ -33,7 +35,6 @@ int comm_scope_init() {
   return 0;
 }
 
-SCOPE_REGISTER_OPTS(  clara::Opt(FLAG(numa_ids), "id")["-n"]["--numa"]("add numa device id")  );
-
+SCOPE_REGISTER_BEFORE_INIT(comm_before_init);
 SCOPE_REGISTER_INIT(comm_scope_init);
 
