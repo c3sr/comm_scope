@@ -1,7 +1,6 @@
-# GPU/GPU Memcpy-Duplex Bandwidth
+# Explicit Memcpy Bandwidth
 
-Comm|Scope defines 1 microbenchmark to measure unified memory duplex bandwidth.
-This benchmark may be listed with the argument
+These benchmarks examine memcpy bandwidth achieved through explicit `cudaMemcpyAsync` calls.
     
     --benchmark_filter="DUPLEX_Memcpy_GPUGPU"
 
@@ -12,11 +11,21 @@ To use GPUs 0 and 1, for example:
 
 ## Implementations
 
-|Benchmarks|Description|Argument Format|
+| `--benchmark_filter=`|Description|Argument Format|
 |-|-|-|
-| `DUPLEX_Memcpy_GPUGPU` | GPU To GPU duplex transfer | `log2 size` |
+| `Comm_Memcpy_GPUToGPUPeer` | GPU to GPU with peer access enabled | `log2 size` |
+| `Comm_Memcpy_GPUToHost`    | GPU to pageable host                | `log2 size` |
+| `Comm_Memcpy_GPUToWC`      | GPU to write-combining host         | `log2 size` |
+| `Comm_Memcpy_HostToGPU`    | Pageable host to GPU                | `log2 size` |
+| `Comm_Memcpy_WCToGPU`      | Write-combining host to GPU         | `log2 size` |
+| `Comm_MemcpyDuplex_GPUGPU` | GPU to GPU bidirectional            | `log2 size` |
 
 ## Technique
+
+### Unidirectional Transfers
+
+
+### Duplex Transfers
 
 One stream for each direction is established, and asynchronous memory transfers with `cudaMemcpyAsync` are started on both streams.
 The total time is measured as the difference between when the earlier transfer starts and the later transfer ends.

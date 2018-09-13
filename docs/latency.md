@@ -1,4 +1,4 @@
-# Latency
+# Unified Memory Latency
 
 Comm | Scope defines 3 microbenchmarks to measure unified memory coherence latency.
 These benchmarks may be listed with the argument
