@@ -6,20 +6,19 @@ endif()
 
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.2.0)
-include(ScopeStatus)
 
 sugar_include("src")
 
 scope_add_library(comm_scope OBJECT ${comm_SOURCES} ${comm_CUDA_SOURCES} )
 target_include_scope_directories(comm_scope)
-target_include_directories(comm_scope PRIVATE
-  ${PROJECT_BINARY_DIR}/src
-  src
+target_include_directories(comm_scope PRIVATE 
+    ${PROJECT_BINARY_DIR}/src
+    ${PROJECT_SOURCE_DIR}/src
 )
 target_link_scope_libraries(comm_scope)
-
 target_compile_features(comm_scope PUBLIC cxx_std_11)
 set_property(TARGET comm_scope PROPERTY CUDA_STANDARD 11)
+
 
 ## NUMA
 find_package(numa)
@@ -29,7 +28,7 @@ if(numa_FOUND)
     target_include_directories(comm_scope SYSTEM PRIVATE ${numa_INCLUDE_DIR})
 else()
 target_compile_definitions(comm_scope PRIVATE -DUSE_NUMA=0)
-  message(WARNING "didn't find NUMA, some benchmarks will be unavailable.")
+  scope_warning("didn't find NUMA, some benchmarks will be unavailable.")
 endif(numa_FOUND)
 
 ## OpenMP

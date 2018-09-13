@@ -1,5 +1,4 @@
 #include <cassert>
-
 #include <cuda_runtime.h>
 
 #include "scope/init/init.hpp"
@@ -16,7 +15,7 @@
     return; \
   }
 
-static void CUDA_Memcpy_GPUToGPUPeer(benchmark::State &state) {
+static void Comm_Memcpy_GPUToGPUPeer(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -80,9 +79,9 @@ static void CUDA_Memcpy_GPUToGPUPeer(benchmark::State &state) {
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] =  bytes;
   state.counters["src_gpu"] = src_gpu;
   state.counters["dst_gpu"] = dst_gpu;
 }
 
-BENCHMARK(CUDA_Memcpy_GPUToGPUPeer)->SMALL_ARGS()->UseManualTime();
+BENCHMARK(Comm_Memcpy_GPUToGPUPeer)->SMALL_ARGS()->UseManualTime();

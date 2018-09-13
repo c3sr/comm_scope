@@ -103,6 +103,6 @@ static void Comm_UM_Prefetch_GPUToGPU(benchmark::State &state) {
   state.counters.insert({{"bytes", bytes}});
 }
 
-BENCHMARK(Comm_UM_Prefetch_GPUToGPU)->SMALL_ARGS()->MinTime(0.1)->UseManualTime();
+BENCHMARK(Comm_UM_Prefetch_GPUToGPU)->SMALL_ARGS()->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8

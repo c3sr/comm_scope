@@ -7,7 +7,7 @@
 
 #include "args.hpp"
 
-#define NAME "CUDA/Memcpy/HostToGPU"
+#define NAME "Comm/Memcpy/HostToGPU"
 
 #define OR_SKIP(stmt, msg) \
   if (PRINT_IF_ERROR(stmt)) { \
@@ -15,7 +15,7 @@
     return; \
   }
 
-static void CUDA_Memcpy_HostToGPU(benchmark::State &state) {
+static void Comm_Memcpy_HostToGPU(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -51,8 +51,8 @@ static void CUDA_Memcpy_HostToGPU(benchmark::State &state) {
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] =  bytes;
   state.counters["cuda_id"] = cuda_id;
 }
 
-BENCHMARK(CUDA_Memcpy_HostToGPU)->SMALL_ARGS()->UseManualTime();
+BENCHMARK(Comm_Memcpy_HostToGPU)->SMALL_ARGS()->UseManualTime();

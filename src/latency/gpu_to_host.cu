@@ -101,6 +101,6 @@ static void Comm_UM_Latency_GPUToHost(benchmark::State &state) {
 #endif
 }
 
-BENCHMARK(Comm_UM_Latency_GPUToHost)->SMALL_ARGS()->MinTime(0.1);
+BENCHMARK(Comm_UM_Latency_GPUToHost)->SMALL_ARGS();
 
 #endif // CUDA_VERSION_MAJOR >= 8
