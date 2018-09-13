@@ -1,13 +1,12 @@
 # Explicit Memcpy Bandwidth
 
 These benchmarks examine memcpy bandwidth achieved through explicit `cudaMemcpyAsync` calls.
-    
-    --benchmark_filter="DUPLEX_Memcpy_GPUGPU"
-
-The GPUs are selected with the `--cuda_device_ids` command-line flag.
+The GPUs are selected with the `-c` command-line flag.
+Dual-GPu benchmarks use the first two devices.
+Single-GPU benchmarks use the first device.
 To use GPUs 0 and 1, for example:
 
-    --cuda_device_ids=0,1
+    -c 0 -c 1
 
 ## Implementations
 
@@ -22,13 +21,15 @@ To use GPUs 0 and 1, for example:
 
 ## Technique
 
-### Unidirectional Transfers
-
+Whether the benchmark has one transfer or two, a source and destination allocation are established for each transfer.
+Pageable host allocations are `memset` to ensure that backing pages are allocated.
+`cudaSetDevice` is used to select the desired CUDA device.
+During each iteration, a call to `cudaMemcpyAsync` is surrounded by two `cudaEventRecord`s, and then the time between those events is computed to determine the transfer time.
 
 ### Duplex Transfers
 
 One stream for each direction is established, and asynchronous memory transfers with `cudaMemcpyAsync` are started on both streams.
-The total time is measured as the difference between when the earlier transfer starts and the later transfer ends.
+The total time is measured as the difference between the earliest start of the first transfer and the final end of the last transfer.
 
 ```
 //setup: create one  stream per copy
