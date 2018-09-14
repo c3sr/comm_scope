@@ -1,126 +1,63 @@
-# Unified Memory Numamemcpy-Duplex Bandwidth
+# NUMA-Pinned Explicit cudaMemcpy Bandwidth
 
-Comm|Scope defines 4 microbenchmarks to measure unified memory duplex bandwidth.
-These benchmarks may be listed with the argument
-    
-    --benchmark_filter="DUPLEX_Memcpy"
+Comm|Scope defines 10 microbenchmarks to measure explicit cudaMemcpyAsync bandwidth, including simultaneous bidirectional transfers.
+
+The NUMA nodes and GPUs may be selected with the `-n` and `-c` flags.
+
+For `HostToPinned`, the first two `-n` flags control the source and destination NUMA nodes.
 
 ## Implementations
 
-|Benchmarks|Description|Argument Format|
+|`--benchmark_filter=`|Description|Argument Format|
 |-|-|-|
-| `DUPLEX_Memcpy_HostToGPU` | HostToGPU | `log2 size / Host NUMA / GPU` |
-| `DUPLEX_Memcpy_GPUToHost` | GPUToHost | `log2 size / GPU / Host NUMA` |
-| `DUPLEX_Memcpy_PinnedToGPU` | PinnedToGPU | `log2 size / Host NUMA / GPU` |
-| `DUPLEX_Memcpy_GPUToPinned` | GPUToPinned | `log2 size / GPU / Host NUMA` |
+| `Comm_NUMAMemcpy_GPUToGPU` | GPU to GPU | `log2 size` |
+| `Comm_NUMAMemcpy_GPUToHost` | GPU to pageable host | `log2 size` |
+| `Comm_NUMAMemcpy_GPUToPinned` | GPU to pinned host | `log2 size` |
+| `Comm_NUMAMemcpy_GPUToWC` | GPU to write-combining host | `log2 size` |
+| `Comm_NUMAMemcpy_HostToGPU` | Pageable host to GPU | `log2 size` |
+| `Comm_NUMAMemcpy_HostToPinned` | Pageable host to Pinned Host| `log2 size` |
+| `Comm_NUMAMemcpy_PinnedToGPU` | Pinned host to GPU| `log2 size` |
+| `Comm_NUMAMemcpy_WCToGPU` | Write-combining host to GPU | `log2 size` |
+| `Comm_Duplex_Memcpy_Host` | GPU / pageable host bidirectional | `log2 size` |
+| `Comm_Duplex_Memcpy_Pinned` | GPU / pinned host bidirectional | `log2 size` |
 
-## CPU/GPU Technique 
+## Techniques
 
-For a host -> device, device -> host transfer, the benchmark setup phase looks like this
+### Host allocation setup
 
-```
-// host-to-device device-to-host setup
-// create one stream per copy
-vector<cudaStream_t> streams
+When host allocations are required, they are created in the following way
 
-// start and stop events for each copy
-vector<cudaEvent_t> starts
-vctor<cudaEvent_t> stops
+```cpp
+numa_bind(numa_id);
 
+// For pinned
+ptr = aligned_alloc(bytes, page_size);
+cudaHostRegister(ptr, bytes, cudaHostRegisterPortable);
 
-//src and dst allocation for copies
-cudaSetDevice(numa)
-malloc(bytes)
-cudaSetDevice(gpu)
-cudaMalloc(&ptr, bytes)
+// For pageable
+ptr = aligned_alloc(bytes, page_size)
 
-//src and dst allocation for second copy
-cudaSetDevice(gpu)
-cudaMalloc(&ptr, bytes)
-cudaSetDevice(numa)
-malloc(bytes)
-
-```
-## CPU/GPU Pinned Technique
-
-For a pinned host -> device, device -> pinned host transfer, the benchmark setup phase looks like this
-
-```
-// pinned-to-device, device-to-pinned setup
-// create one stream per copy
-vector<cudaStream_t> streams
-
-// start and stop events for each copy
-vector<cudaEvent_t> starts
-vctor<cudaEvent_t> stops
-
-//src and dst allocation for copies
-cudaSetDevice(numa)
-cudaMallocHost(&ptr, bytes)
-cudaSetDevice(gpu)
-cudaMalloc(&ptr, bytes)
-
-//src and dst allocation for second copy
-cudaSetDevice(gpu)
-cudaMalloc(&ptr, bytes)
-cudaSetDevice(numa)
-cudaMallocHost(&ptr, bytes)
-
-```
-## GPU/CPU Technique
-
-For a device -> host, host -> device transfer, the benchmark setup phase looks like this
-
-```
-// device-to-host, host-to-device setup
-// create one stream per copy
-vector<cudaStream_t> streams
-
-// start and stop events for each copy
-vector<cudaEvent_t> starts
-vctor<cudaEvent_t> stops
-
-//src and dst allocation for copies
-cudaSetDevice(gpu)
-cudaMalloc(&ptr, bytes)
-cudaSetDevice(numa)
-malloc(bytes)
-
-//src and dst allocation for second copy
-cudaSetDevice(numa)
-malloc(bytes)
-cudaSetDevice(gpu)
-cudaMalloc(&ptr, bytes)
-
-```
-## GPU/CPU Pinnned Technique
-
-For a device -> host pinned, host pinned -> device transfer, the benchmark setup phase looks like this
-
-```
-// device-to-pinned, pinned-to-device setup
-// create one stream per copy
-vector<cudaStream_t> streams
-
-// start and stop events for each copy
-vector<cudaEvent_t> starts
-vctor<cudaEvent_t> stops
-
-//src and dst allocation for copies
-cudaSetDevice(gpu)
-cudaMalloc(&ptr, bytes)
-cudaSetDevice(numa)
-cudaMallocHost(&ptr, bytes)
-
-//src and dst allocation for second copy
-cudaSetDevice(numa)
-cudaMallocHost(&ptr, bytes)
-cudaSetDevice(gpu)
-cudaMalloc(&ptr, bytes)
-
+// For Write-Combined
+cudaHostAlloc(&ptr, bytes, cudaHostAllocWriteCombined);
 ```
 
-For all four benchmarks the benchmark loop looks like this
+### Device allocation setup
+
+When a device allocations are required, they are created in the following way
+
+```cpp
+cudaSetDevice(cuda_id)
+cudaMallocManaged(&ptr, bytes, size);
+```
+
+### Bidirectional Transfers
+
+For bidirectional transfers, one stream is created for each direction.
+The elapsed time is measured from the start of whichever copy begins first, to the end of whichever copy finished last.
+
+### Benchmark Loop
+
+For all benchmarks the benchmark loop looks like this
 
 ```
 loop (state)

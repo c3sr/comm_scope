@@ -6,7 +6,7 @@
 
 #include "args.hpp"
 
-#define NAME "Comm/MemcpyDuplex/GPUGPU"
+#define NAME "Comm/Duplex/Memcpy/GPUGPU"
 
 #define OR_SKIP(stmt, msg) \
   if (PRINT_IF_ERROR(stmt)) { \
@@ -14,7 +14,7 @@
     return; \
   }
 
-static void Comm_MemcpyDuplex_GPUGPU(benchmark::State &state) {
+static void Comm_Duplex_Memcpy_GPUGPU(benchmark::State &state) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -163,4 +163,4 @@ static void Comm_MemcpyDuplex_GPUGPU(benchmark::State &state) {
   }
 }
 
-BENCHMARK(Comm_MemcpyDuplex_GPUGPU)->SMALL_ARGS()->UseManualTime();
+BENCHMARK(Comm_Duplex_Memcpy_GPUGPU)->SMALL_ARGS()->UseManualTime();

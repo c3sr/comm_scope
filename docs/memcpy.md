@@ -17,7 +17,7 @@ To use GPUs 0 and 1, for example:
 | `Comm_Memcpy_GPUToWC`      | GPU to write-combining host         | `log2 size` |
 | `Comm_Memcpy_HostToGPU`    | Pageable host to GPU                | `log2 size` |
 | `Comm_Memcpy_WCToGPU`      | Write-combining host to GPU         | `log2 size` |
-| `Comm_MemcpyDuplex_GPUGPU` | GPU to GPU bidirectional            | `log2 size` |
+| `Comm_Duplex_Memcpy_GPUGPU` | GPU / GPU bidirectional            | `log2 size` |
 
 ## Technique
 
@@ -31,7 +31,7 @@ During each iteration, a call to `cudaMemcpyAsync` is surrounded by two `cudaEve
 One stream for each direction is established, and asynchronous memory transfers with `cudaMemcpyAsync` are started on both streams.
 The total time is measured as the difference between the earliest start of the first transfer and the final end of the last transfer.
 
-```
+```cpp
 //setup: create one  stream per copy
 vector<cudaStream_t> streams
 

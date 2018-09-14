@@ -14,7 +14,7 @@
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
 
-#define NAME "DUPLEX/NUMAMemcpy/Host" 
+#define NAME "Comm/Duplex/NUMAMemcpy/Host" 
 
 #define OR_SKIP(stmt, msg) \
   if (PRINT_IF_ERROR(stmt)) { \
@@ -22,7 +22,7 @@
     return; \
   }
 
-static void DUPLEX_NUMAMemcpy_Host(benchmark::State &state) {
+static void Comm_Duplex_NUMAMemcpy_Host(benchmark::State &state) {
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
     return;
@@ -154,6 +154,6 @@ static void DUPLEX_NUMAMemcpy_Host(benchmark::State &state) {
 
 }
 
-BENCHMARK(DUPLEX_NUMAMemcpy_Host)->SMALL_ARGS()->UseManualTime();
+BENCHMARK(Comm_Duplex_NUMAMemcpy_Host)->SMALL_ARGS()->UseManualTime();
 
 #endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1

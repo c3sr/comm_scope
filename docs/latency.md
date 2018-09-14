@@ -1,17 +1,17 @@
-# Unified Memory Latency
+# NUMA-Pinned Unified Memory Latency
 
-Comm | Scope defines 3 microbenchmarks to measure unified memory coherence latency.
+Comm|Scope defines 3 microbenchmarks to measure unified memory coherence bandwidth.
 These benchmarks may be listed with the argument
     
-    --benchmark_filter="Comm_UM_Latency"
+The NUMA and/or CUDA devices may be selected with the `-n` and `-c` command line flags.
 
 ## Implementations
 
-|Benchmarks|Description|Argument Format|
+|`--benchmark_filter`|Description|Argument Format|
 |-|-|-|
-| `Comm_UM_Latency_GPUToGPU` | GPU To GPU | `log2 size / src GPU / dst GPU` |
-| `Comm_UM_Latency_GPUToHost` | GPU To Host | `log2 size / Host NUMA node / GPU` |
-| `Comm_UM_Latency_HostToGPU` | Host To GPU | `log2 size / Host NUMA node / GPU` |
+| `Comm_UM_Latency_GPUToGPU` | GPU To GPU | `log2 size` |
+| `Comm_UM_Latency_GPUToHost` | GPU To Host | `log2 size` |
+| `Comm_UM_Latency_HostToGPU` | Host To GPU | `log2 size` |
 
 ## Technique
 
@@ -46,7 +46,6 @@ gpu_traverse<<<1,1>>>(...)
 
 ```c++
 void cpu_traverse(size_t *ptr, const size_t steps) {
-
   size_t next = 0;
   for (size_t i = 0; i < steps; ++i) {
     next = ptr[next];
