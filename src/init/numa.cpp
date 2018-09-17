@@ -42,6 +42,7 @@ bool init_numa() {
   // set numa ids to available nodes
   if (FLAG(numa_ids).empty()) {
     for (const auto &id : available_nodes) {
+      LOG(debug, "setting NUMA node {} as available", id);
       FLAG(numa_ids).push_back(id);
     }
   } else { // check to make sure requested numa ids are valid
