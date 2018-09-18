@@ -1,13 +1,11 @@
 #if CUDA_VERSION_MAJOR >= 8
 
-#include <assert.h>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
 
 #include <cuda_runtime.h>
 
 #include "scope/init/init.hpp"
+#include "scope/init/flags.hpp"
 #include "scope/utils/utils.hpp"
 
 #include "args.hpp"
@@ -45,8 +43,13 @@ static void Comm_UM_Coherence_GPUToGPU(benchmark::State &state) {
   const size_t pageSize = page_size();
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
-  const int src_gpu = state.range(1);
-  const int dst_gpu = state.range(2);
+
+  if (num_gpus() < 2) {
+    state.SkipWithError(NAME "requires at least 2 GPUs");
+    return;
+  }
+  const int src_gpu = FLAG(cuda_device_ids)[0];
+  const int dst_gpu = FLAG(cuda_device_ids)[1];
 
   if (PRINT_IF_ERROR(utils::cuda_reset_device(src_gpu))) {
     state.SkipWithError(NAME " failed to reset CUDA src device");
@@ -105,14 +108,16 @@ static void Comm_UM_Coherence_GPUToGPU(benchmark::State &state) {
 
     float millis = 0;
     if (PRINT_IF_ERROR(cudaEventElapsedTime(&millis, start, stop))) {
-      state.SkipWithError("CUDA/MEMCPY/HostToGPU failed to get elapsed time");
+      state.SkipWithError(NAME " failed to get elapsed time");
       break;
     }
     state.SetIterationTime(millis / 1000);
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
+  state.counters["src_gpu"] = src_gpu;
+  state.counters["dst_gpu"] = dst_gpu;
 }
 
 BENCHMARK(Comm_UM_Coherence_GPUToGPU)->SMALL_ARGS()->UseManualTime();
