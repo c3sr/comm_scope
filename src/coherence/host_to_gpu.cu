@@ -48,21 +48,21 @@ static void Comm_UM_Coherence_HostToGPU(benchmark::State &state) {
   const size_t pageSize = page_size();
 
   const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
-  const int dst_gpu  = FLAG(cuda_device_ids)[0];
+  const int cuda_id  = FLAG(cuda_device_ids)[0];
 #if USE_NUMA
-  const int src_numa = FLAG(numa_ids)[0];
+  const int numa_id = FLAG(numa_ids)[0];
 #endif
 
 #if USE_NUMA
-  numa_bind_node(src_numa);
+  numa_bind_node(numa_id);
 #endif
 
-  if (PRINT_IF_ERROR(utils::cuda_reset_device(dst_gpu))) {
+  if (PRINT_IF_ERROR(utils::cuda_reset_device(cuda_id))) {
     state.SkipWithError(NAME " failed to reset device");
     return;
   }
 
-  if (PRINT_IF_ERROR(cudaSetDevice(dst_gpu))) {
+  if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
     state.SkipWithError(NAME " failed to set CUDA dst device");
     return;
   }
@@ -119,7 +119,9 @@ static void Comm_UM_Coherence_HostToGPU(benchmark::State &state) {
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
+  state.counters["cuda_id"] = cuda_id;
+  state.counters["numa_id"] = numa_id;
 
 #if USE_NUMA
   numa_bind_node(-1);
