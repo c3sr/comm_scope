@@ -13,6 +13,13 @@ See the `docs` folder for a description of the benchmarks.
 
 # Changelog
 
+## v0.3.0
+
+* Rework documentation
+* Use `target_include_scope_directories` and `target_link_scope_libraries`.
+* Use Clara for flags.
+* Remove numa/rd and numa/wr.
+
 ## v0.2.0
 
 * Add `--numa_ids` command line flag.
