@@ -14,9 +14,10 @@
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
 
-#define NAME "Comm/NUMAMemcpy/HostToGPU"
+#define NAME "Comm_NUMAMemcpy_HostToGPU"
 
-static void Comm_NUMAMemcpy_HostToGPU(benchmark::State &state) {
+auto Comm_NUMAMemcpy_HostToGPU = [](benchmark::State &state, const int numa_id, const int cuda_id) {
+//static void Comm_NUMAMemcpy_HostToGPU(benchmark::State &state, const int numa_id, const int cuda_id) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -28,8 +29,8 @@ static void Comm_NUMAMemcpy_HostToGPU(benchmark::State &state) {
     return;
   }
 
-  const int numa_id = FLAG(numa_ids)[0];
-  const int cuda_id = FLAG(cuda_device_ids)[0];
+  //const int numa_id = FLAG(numa_ids)[0];
+  //const int cuda_id = FLAG(cuda_device_ids)[0];
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
@@ -84,14 +85,25 @@ static void Comm_NUMAMemcpy_HostToGPU(benchmark::State &state) {
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
   state.counters["cuda_id"] = cuda_id;
   state.counters["numa_id"] = numa_id;
 
   // reset to run on any node
   numa_bind_node(-1);
+};
+
+
+static void registerer() {
+  for (auto cuda_id : unique_cuda_device_ids()) {
+    for (auto numa_id : unique_numa_ids()) {
+      std::string name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_HostToGPU, numa_id, cuda_id)->SMALL_ARGS()->UseManualTime();
+    }
+  }
 }
 
-BENCHMARK(Comm_NUMAMemcpy_HostToGPU)->SMALL_ARGS()->UseManualTime();
+SCOPE_REGISTER_AFTER_INIT(registerer);
+
 
 #endif // USE_NUMA == 1
