@@ -102,7 +102,9 @@ static void Comm_UM_Coherence_GPUToHost(benchmark::State &state) {
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
   state.counters["bytes"] = bytes;
   state.counters["cuda_id"] = cuda_id;
+#if USE_NUMA
   state.counters["numa_id"] = numa_id;
+#endif // USE_NUMA
 
 #if USE_NUMA
   // reset to run on any node
