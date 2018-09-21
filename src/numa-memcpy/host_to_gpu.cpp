@@ -8,6 +8,7 @@
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
 #include "scope/init/flags.hpp"
+#include "scope/utils/page_size.hpp"
 
 #include "args.hpp"
 #include "init/flags.hpp"
@@ -29,9 +30,6 @@ auto Comm_NUMAMemcpy_HostToGPU = [](benchmark::State &state, const int numa_id, 
     return;
   }
 
-  //const int numa_id = FLAG(numa_ids)[0];
-  //const int cuda_id = FLAG(cuda_device_ids)[0];
-
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
 
@@ -45,11 +43,9 @@ auto Comm_NUMAMemcpy_HostToGPU = [](benchmark::State &state, const int numa_id, 
     return;
   }
 
-  char *src = static_cast<char*>(aligned_alloc(65536, bytes));
+  void *src = aligned_alloc(page_size(), bytes);
   defer(free(src));
-  char *dst = nullptr;
-
-
+  void *dst = nullptr;
   if (PRINT_IF_ERROR(cudaMalloc(&dst, bytes))) {
     state.SkipWithError(NAME " failed to perform cudaMalloc");
     return;
@@ -104,6 +100,5 @@ static void registerer() {
 }
 
 SCOPE_REGISTER_AFTER_INIT(registerer);
-
 
 #endif // USE_NUMA == 1

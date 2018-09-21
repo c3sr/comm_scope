@@ -7,15 +7,16 @@
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
+#include "scope/utils/page_size.hpp"
 
 #include "args.hpp"
 #include "init/flags.hpp"
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
 
-#define NAME "Comm/NUMAMemcpy/HostToPinned"
+#define NAME "Comm_NUMAMemcpy_HostToPinned"
 
-static void Comm_NUMAMemcpy_HostToPinned(benchmark::State &state) {
+auto Comm_NUMAMemcpy_HostToPinned = [](benchmark::State &state, const int src_numa, const int dst_numa) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -32,26 +33,22 @@ static void Comm_NUMAMemcpy_HostToPinned(benchmark::State &state) {
     return;
   }
 
-  const int src_numa = FLAG(numa_ids)[0];
-  const int dst_numa = FLAG(numa_ids)[1];
-
   const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
 
-
   numa_bind_node(src_numa);
-  char *src = new char[bytes];
-  defer(delete[] src);
+  void *src = aligned_alloc(page_size(), bytes);
+  defer(free(src));
   std::memset(src, 0, bytes);
 
   numa_bind_node(dst_numa);
-  char *dst = new char[bytes];
+  void *dst = aligned_alloc(page_size(), bytes);
   std::memset(dst, 0, bytes);
   if (PRINT_IF_ERROR(cudaHostRegister(dst, bytes, cudaHostRegisterPortable))) {
     state.SkipWithError(NAME " failed to register allocations");
     return;
   }
   defer(cudaHostUnregister(dst));
-  defer(delete[] dst);
+  defer(free(dst));
 
   cudaEvent_t start, stop;
   PRINT_IF_ERROR(cudaEventCreate(&start));
@@ -86,8 +83,17 @@ static void Comm_NUMAMemcpy_HostToPinned(benchmark::State &state) {
 
   // reset to run on any node
   numa_bind_node(-1);
+};
+
+static void registerer() {
+  for (auto src_numa : unique_numa_ids()) {
+    for (auto dst_numa : unique_numa_ids()) {
+      std::string name = std::string(NAME) + "/" + std::to_string(src_numa) + "/" + std::to_string(dst_numa);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_HostToPinned, src_numa, dst_numa)->SMALL_ARGS()->UseManualTime();
+    }
+  }
 }
 
-BENCHMARK(Comm_NUMAMemcpy_HostToPinned)->SMALL_ARGS()->UseManualTime();
+SCOPE_REGISTER_AFTER_INIT(registerer);
 
 #endif // USE_NUMA == 1
