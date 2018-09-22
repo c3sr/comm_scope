@@ -79,7 +79,9 @@ auto Comm_NUMAMemcpy_HostToPinned = [](benchmark::State &state, const int src_nu
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
+  state.counters["src_numa"] = src_numa;
+  state.counters["dst_numa"] = dst_numa;
 
   // reset to run on any node
   numa_bind_node(-1);

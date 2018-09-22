@@ -117,7 +117,10 @@ auto Comm_NUMAMemcpy_GPUToGPU = [](benchmark::State &state,
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
+  state.counters["src_gpu"] = src_gpu;
+  state.counters["dst_gpu"] = dst_gpu;
+  state.counters["numa_id"] = numa_id;
 
   // re-enable NUMA scheduling
   numa_bind_node(-1);

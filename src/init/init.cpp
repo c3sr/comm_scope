@@ -37,4 +37,3 @@ int comm_scope_init() {
 
 SCOPE_REGISTER_BEFORE_INIT(comm_before_init);
 SCOPE_REGISTER_INIT(comm_scope_init);
-
