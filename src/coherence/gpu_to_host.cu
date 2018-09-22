@@ -14,6 +14,7 @@
 #include "args.hpp"
 #include "init/flags.hpp"
 #include "utils/numa.hpp"
+#include "init/numa.hpp"
 
 #define NAME "Comm_UM_Coherence_GPUToHost"
 

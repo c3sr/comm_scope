@@ -14,8 +14,9 @@
 #include "args.hpp"
 #include "init/flags.hpp"
 #include "utils/numa.hpp"
+#include "init/numa.hpp"
 
-#define NAME "Comm/UM/Coherence/HostToGPU"
+#define NAME "Comm_UM_Coherence_HostToGPU"
 
 template <bool NOOP = false>
 __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
