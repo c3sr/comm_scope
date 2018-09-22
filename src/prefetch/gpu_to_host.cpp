@@ -1,13 +1,11 @@
 #if CUDA_VERSION_MAJOR >= 8
 
-#include <assert.h>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
 
 #include <cuda_runtime.h>
 #if USE_NUMA
 #include <numa.h>
+#include "init/numa.hpp"
 #endif // USE_NUMA
 
 #include "scope/init/init.hpp"
@@ -16,22 +14,20 @@
 
 #include "args.hpp"
 
-#define NAME "Comm/UM/Prefetch/GPUToHost"
+#define NAME "Comm_UM_Prefetch_GPUToHost"
 
-static void Comm_UM_Prefetch_GPUToHost(benchmark::State &state) {
+auto Comm_UM_Prefetch_GPUToHost = [](benchmark::State &state,
+#if USE_NUMA
+const int numa_id,
+#endif // USE_NUMA
+const int cuda_id) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
     return;
   }
 
-  const int cuda_id = FLAG(cuda_device_ids)[0];
-#if USE_NUMA
-  const int numa_id = FLAG(numa_ids)[0];
-#endif // USE_NUMA
-
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
-
 
 #if USE_NUMA
   numa_bind_node(numa_id);
@@ -98,14 +94,39 @@ static void Comm_UM_Prefetch_GPUToHost(benchmark::State &state) {
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
+  state.counters["cuda_id"] = cuda_id;
+#if USE_NUMA
+  state.counters["numa_id"] = numa_id;
+#endif // USE_NUMA
 
 #if USE_NUMA
   // reset to run on any node
   numa_bind_node(-1);
 #endif // USE_NUMA
+};
+
+static void registerer() {
+  for (auto cuda_id : unique_cuda_device_ids()) {
+#if USE_NUMA
+    for (auto numa_id : unique_numa_ids()) {
+#endif // USE_NUMA
+      std::string name = std::string(NAME)
+#if USE_NUMA 
+                       + "/" + std::to_string(numa_id) 
+#endif // USE_NUMA
+                       + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Prefetch_GPUToHost,
+#if USE_NUMA
+        numa_id,
+#endif // USE_NUMA
+        cuda_id)->SMALL_ARGS()->UseManualTime();
+#if USE_NUMA
+    }
+#endif // USE_NUMA
+  }
 }
 
-BENCHMARK(Comm_UM_Prefetch_GPUToHost)->SMALL_ARGS()->UseManualTime();
+SCOPE_REGISTER_AFTER_INIT(registerer);
 
 #endif // CUDA_VERSION_MAJOR >= 8
