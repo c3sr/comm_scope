@@ -1,4 +1,4 @@
-#if CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
+#if USE_NUMA == 1
 
 #include <cassert>
 
@@ -156,4 +156,4 @@ static void Comm_Duplex_NUMAMemcpy_Host(benchmark::State &state) {
 
 BENCHMARK(Comm_Duplex_NUMAMemcpy_Host)->SMALL_ARGS()->UseManualTime();
 
-#endif // CUDA_VERSION_MAJOR >= 8 && USE_NUMA == 1
+#endif // USE_NUMA == 1
