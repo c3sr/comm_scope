@@ -14,13 +14,15 @@
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
 
-#define NAME "Comm/Duplex/NUMAMemcpy/Host" 
+#define NAME "Comm_Duplex_NUMAMemcpy_Host" 
 
 #define OR_SKIP(stmt, msg) \
   if (PRINT_IF_ERROR(stmt)) { \
     state.SkipWithError(msg); \
     return; \
   }
+
+
 
 static void Comm_Duplex_NUMAMemcpy_Host(benchmark::State &state) {
   if (!has_cuda) {
