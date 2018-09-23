@@ -14,6 +14,7 @@
 #include "args.hpp"
 #include "init/flags.hpp"
 #include "utils/numa.hpp"
+#include "init/numa.hpp"
 
 #define NAME "Comm_UM_Latency_HostToGPU"
 
@@ -30,7 +31,7 @@ __global__ void gpu_traverse(size_t *ptr, const size_t steps) {
   ptr[next] = 1;
 }
 
-auto Comm_UM_Coherence_HostToGPU = [] (benchmark::State &state,
+auto Comm_UM_Latency_HostToGPU = [](benchmark::State &state,
   #if USE_NUMA
   const int numa_id,
   #endif // USE_NUMA
@@ -123,7 +124,7 @@ auto Comm_UM_Coherence_HostToGPU = [] (benchmark::State &state,
 #if USE_NUMA
   numa_bind_node(-1);
 #endif
-}
+};
 
 static void registerer() {
   for (auto cuda_id : unique_cuda_device_ids()) {

@@ -12,7 +12,7 @@
 
 #define NAME "Comm_UM_Prefetch_GPUToGPU"
 
-auto Comm_UM_Prefetch_GPUToGPU = (benchmark::State &state, const int src_gpu, const int dst_gpu) {
+auto Comm_UM_Prefetch_GPUToGPU = [](benchmark::State &state, const int src_gpu, const int dst_gpu) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");

@@ -105,7 +105,7 @@ const int cuda_id) {
 #if USE_NUMA
   numa_bind_node(-1);
 #endif // USE_NUMA
-}
+};
 
 static void registerer() {
   for (auto cuda_id : unique_cuda_device_ids()) {
