@@ -139,10 +139,10 @@ class PinnedCopyConfig : public CudaMemcpyConfig {
 
     cudaError_t cpu_free() {
         if (cudaMemcpyHostToDevice == kind_) {
-            OR_RETURN(cudaHostUnregister(dst_));
+            OR_RETURN(cudaHostUnregister(src_));
             free(src_);
         } else if (cudaMemcpyDeviceToHost == kind_) {
-            OR_RETURN(cudaHostUnregister(src_));
+            OR_RETURN(cudaHostUnregister(dst_));
             free(dst_);
         } else {
             assert(0 && "Unexpected kind_");
