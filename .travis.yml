@@ -1,0 +1,28 @@
+language: minimal
+dist: trusty
+sudo: true
+services:
+- docker
+cache:
+  apt: true
+  directories:
+  - "$HOME/.cache/cuda"
+  - "$HOME/.hunter"
+  - "$HOME/.cmake"
+addons:
+  
+env:
+  global:
+  - RAI_ROOT=${HOME}/.rai
+matrix:
+  include:
+    - env: DO_BUILD=0 DOCKER_CUDA=75 DOCKER_ARCH=amd64
+    - env: DO_BUILD=0 DOCKER_CUDA=80 DOCKER_ARCH=amd64 
+    - env: DO_BUILD=0 DOCKER_CUDA=92 DOCKER_ARCH=amd64
+before_install:
+- cd ${TRAVIS_BUILD_DIR}
+- ./ci/install_cmake.sh
+- export PATH=${RAI_ROOT}:$PATH
+script:
+- cd ${TRAVIS_BUILD_DIR}
+- ./ci/build_and_push_docker.sh
