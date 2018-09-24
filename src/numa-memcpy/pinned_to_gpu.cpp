@@ -37,7 +37,7 @@ auto Comm_NUMAMemcpy_PinnedToGPU = [](benchmark::State &state, const int numa_id
     return;
   }
 
-  char *src = new char[bytes];
+  void *src = aligned_alloc(page_size(), bytes);
   char *dst = nullptr;
 
   std::memset(src, 0, bytes);
@@ -46,7 +46,7 @@ auto Comm_NUMAMemcpy_PinnedToGPU = [](benchmark::State &state, const int numa_id
     return;
   }
   defer(cudaHostUnregister(src));
-  defer(delete[] src);
+  defer(free(src));
 
   if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
     state.SkipWithError(NAME " failed to set CUDA device");
