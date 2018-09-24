@@ -2,6 +2,8 @@
 
 CUDA- and NUMA-Aware Multi-CPU / Multi-GPU communication benchmarks for [C3SR Scope](https://github.com/c3sr/scope).
 
+Docker images are [available](https://hub.docker.com/r/c3sr/comm_scope/) on Docker Hub.
+
 ## Contributors
 
 * [Carl Pearson](mailto:pearson@illinois.edu)
