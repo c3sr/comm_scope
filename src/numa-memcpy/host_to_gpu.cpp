@@ -18,7 +18,6 @@
 #define NAME "Comm_NUMAMemcpy_HostToGPU"
 
 auto Comm_NUMAMemcpy_HostToGPU = [](benchmark::State &state, const int numa_id, const int cuda_id) {
-//static void Comm_NUMAMemcpy_HostToGPU(benchmark::State &state, const int numa_id, const int cuda_id) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -32,7 +31,6 @@ auto Comm_NUMAMemcpy_HostToGPU = [](benchmark::State &state, const int numa_id, 
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
-
   numa_bind_node(numa_id);
   if (PRINT_IF_ERROR(utils::cuda_reset_device(cuda_id))) {
     state.SkipWithError(NAME " failed to reset CUDA device");
@@ -44,6 +42,10 @@ auto Comm_NUMAMemcpy_HostToGPU = [](benchmark::State &state, const int numa_id, 
   }
 
   void *src = aligned_alloc(page_size(), bytes);
+  if (!src) {
+    state.SkipWithError(NAME " failed to performance aligned_alloc");
+    return;
+  }
   defer(free(src));
   void *dst = nullptr;
   if (PRINT_IF_ERROR(cudaMalloc(&dst, bytes))) {
@@ -63,9 +65,7 @@ auto Comm_NUMAMemcpy_HostToGPU = [](benchmark::State &state, const int numa_id, 
 
   for (auto _ : state) {
     cudaEventRecord(start, NULL);
-
-    const auto cuda_err = cudaMemcpy(dst, src, bytes, cudaMemcpyHostToDevice);
-
+    const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyHostToDevice);
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
 

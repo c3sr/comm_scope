@@ -101,7 +101,7 @@ auto Comm_NUMAMemcpy_GPUToGPU = [](benchmark::State &state,
   for (auto _ : state) {
 
     cudaEventRecord(start, NULL);
-    const auto cuda_err = cudaMemcpy(dst, src, bytes, cudaMemcpyDeviceToDevice);
+    const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice);
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
 

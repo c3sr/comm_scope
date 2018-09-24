@@ -70,9 +70,7 @@ auto Comm_NUMAMemcpy_PinnedToGPU = [](benchmark::State &state, const int numa_id
 
   for (auto _ : state) {
     cudaEventRecord(start, NULL);
-
-    const auto cuda_err = cudaMemcpy(dst, src, bytes, cudaMemcpyHostToDevice);
-
+    const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyHostToDevice);
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
 

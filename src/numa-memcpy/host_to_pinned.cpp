@@ -63,7 +63,7 @@ auto Comm_NUMAMemcpy_HostToPinned = [](benchmark::State &state, const int src_nu
 
     numa_bind_node(dst_numa);
     cudaEventRecord(start, NULL);
-    const auto cuda_err = cudaMemcpy(dst, src, bytes, cudaMemcpyHostToHost);
+    const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyHostToHost);
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
 
