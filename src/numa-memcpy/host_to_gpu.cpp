@@ -8,12 +8,12 @@
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
 #include "scope/init/flags.hpp"
-#include "scope/utils/page_size.hpp"
 
 #include "args.hpp"
 #include "init/flags.hpp"
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
+#include "utils/cache_control.hpp"
 
 #define NAME "Comm_NUMAMemcpy_HostToGPU"
 
@@ -64,6 +64,7 @@ auto Comm_NUMAMemcpy_HostToGPU = [](benchmark::State &state, const int numa_id, 
   PRINT_IF_ERROR(cudaEventCreate(&stop));
 
   for (auto _ : state) {
+    flush_all(src, bytes);
     cudaEventRecord(start, NULL);
     const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyHostToDevice);
     cudaEventRecord(stop, NULL);

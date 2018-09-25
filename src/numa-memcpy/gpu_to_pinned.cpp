@@ -13,6 +13,7 @@
 #include "init/flags.hpp"
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
+#include "utils/cache_control.hpp"
 
 #define NAME "Comm_NUMAMemcpy_GPUToPinned"
 
@@ -37,14 +38,14 @@ auto Comm_NUMAMemcpy_GPUToPinned = [](benchmark::State &state, const int numa_id
   }
 
   char *src = nullptr;
-  char *dst = new char[bytes];
+  void *dst = aligned_alloc(page_size(), bytes);
   std::memset(dst, 0, bytes);
   if (PRINT_IF_ERROR(cudaHostRegister(dst, bytes, cudaHostRegisterPortable))) {
     state.SkipWithError(NAME " failed to register allocations");
     return;
   }
   defer(cudaHostUnregister(dst));
-  defer(delete[] dst);
+  defer(free(dst));
 
   if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
     state.SkipWithError(NAME " failed to set CUDA device");
@@ -62,10 +63,9 @@ auto Comm_NUMAMemcpy_GPUToPinned = [](benchmark::State &state, const int numa_id
   PRINT_IF_ERROR(cudaEventCreate(&stop));
 
   for (auto _ : state) {
+    flush_all(dst, bytes);
     cudaEventRecord(start, NULL);
-
     const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToHost);
-
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
 

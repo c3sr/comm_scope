@@ -13,6 +13,7 @@
 #include "init/flags.hpp"
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
+#include "utils/cache_control.hpp"
 
 #define NAME "Comm_NUMAMemcpy_PinnedToGPU"
 
@@ -69,6 +70,7 @@ auto Comm_NUMAMemcpy_PinnedToGPU = [](benchmark::State &state, const int numa_id
   PRINT_IF_ERROR(cudaEventCreate(&stop));
 
   for (auto _ : state) {
+    flush_all(src, bytes);
     cudaEventRecord(start, NULL);
     const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyHostToDevice);
     cudaEventRecord(stop, NULL);

@@ -9,22 +9,31 @@ inline void flush(void * p) {
   PowerISA_V2.07B p. 773
   dcbf RA,RB,L
   
-  effective address is RAI0 + RB
+  effective address is RA|0 + RB
   this mnemonic has L=0, which is through all cache levels
   write block to storage and mark as invalid in all processors
   */
 
-  asm volatile ( "dcbf %1,%0"
+  asm volatile ( "dcbf %0,%1"
     : // no outputs
     : "r"(0), "r"(p)
     : // no clobbers
   );
 
 #else
-#warning "not implemented"
-(void) p;
+  #warning "flush not implemented"
+  (void) p;
 #endif
 }
+
+
+inline void flush_all(void *p, const size_t n) {
+  for (size_t i = 0; i < n; i += 32) {
+    char *c = static_cast<char*>(p);
+    flush(&c[i]);
+  }
+}
+
 
 inline void store(void * p) {
 #ifdef __powerpc__
@@ -32,19 +41,19 @@ inline void store(void * p) {
   /*
   PowerISA_V2.07B p. 773
   dcbst RA,RB
-  write block to storage and mark as modified
+  if block is modified, write block to storage and mark as clean
   
-  effective address is RAI0 + RB
+  effective address is RA|0 + RB
   */
 
-  asm volatile ( "dcbst %1,%0"
+  asm volatile ( "dcbst %0,%1"
     : // no outputs
     : "r"(0), "r"(p)
     : // no clobbers
   );
 
 #else
-#warning "not implemented"
+#warning "store not implemented"
 (void) p;
 #endif
 }
