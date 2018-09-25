@@ -11,6 +11,10 @@ ADD . scopes/comm_scope
 
 # Rebuild binary
 RUN cd build \
-  && cmake -DENABLE_COMM=1 .. \
-  && cmake -DENABLE_EXAMPLE=0 .. \
+  && cmake \
+    .. \
+    -DENABLE_COMM=1 \
+    -DENABLE_EXAMPLE=0 \
+    -DGIT_SUBMODULE_UPDATE=0 \
   && make
+
