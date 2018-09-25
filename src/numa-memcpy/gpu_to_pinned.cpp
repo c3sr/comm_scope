@@ -17,7 +17,7 @@
 
 #define NAME "Comm_NUMAMemcpy_GPUToPinned"
 
-auto Comm_NUMAMemcpy_GPUToPinned = [](benchmark::State &state, const int numa_id, const int cuda_id) {
+auto Comm_NUMAMemcpy_GPUToPinned = [](benchmark::State &state, const int numa_id, const int cuda_id, const bool flush) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -39,13 +39,13 @@ auto Comm_NUMAMemcpy_GPUToPinned = [](benchmark::State &state, const int numa_id
 
   char *src = nullptr;
   void *dst = aligned_alloc(page_size(), bytes);
-  std::memset(dst, 0, bytes);
   if (PRINT_IF_ERROR(cudaHostRegister(dst, bytes, cudaHostRegisterPortable))) {
     state.SkipWithError(NAME " failed to register allocations");
     return;
   }
   defer(cudaHostUnregister(dst));
   defer(free(dst));
+  std::memset(dst, 0, bytes);
 
   if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
     state.SkipWithError(NAME " failed to set CUDA device");
@@ -57,13 +57,20 @@ auto Comm_NUMAMemcpy_GPUToPinned = [](benchmark::State &state, const int numa_id
     return;
   }
   defer(cudaFree(src));
+  if (PRINT_IF_ERROR(cudaMemset(src, 0, bytes))) {
+    state.SkipWithError(NAME " failed to perform cudaMemset");
+    return;
+  }
 
   cudaEvent_t start, stop;
   PRINT_IF_ERROR(cudaEventCreate(&start));
   PRINT_IF_ERROR(cudaEventCreate(&stop));
 
   for (auto _ : state) {
-    flush_all(dst, bytes);
+    std::memset(dst, 0, bytes);
+    if (flush) {
+      flush_all(dst, bytes);
+    }
     cudaEventRecord(start, NULL);
     const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToHost);
     cudaEventRecord(stop, NULL);
@@ -91,10 +98,13 @@ auto Comm_NUMAMemcpy_GPUToPinned = [](benchmark::State &state, const int numa_id
 };
 
 static void registerer() {
+  std::string name;
   for (auto cuda_id : unique_cuda_device_ids()) {
     for (auto numa_id : unique_numa_ids()) {
-      std::string name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_GPUToPinned, numa_id, cuda_id)->SMALL_ARGS()->UseManualTime();
+      name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_GPUToPinned, numa_id, cuda_id, false)->SMALL_ARGS()->UseManualTime();
+      name = std::string(NAME) + "_flush/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_GPUToPinned, numa_id, cuda_id, true)->SMALL_ARGS()->UseManualTime();
     }
   }
 }

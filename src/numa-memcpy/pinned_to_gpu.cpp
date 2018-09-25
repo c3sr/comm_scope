@@ -17,7 +17,7 @@
 
 #define NAME "Comm_NUMAMemcpy_PinnedToGPU"
 
-auto Comm_NUMAMemcpy_PinnedToGPU = [](benchmark::State &state, const int numa_id, const int cuda_id) {
+auto Comm_NUMAMemcpy_PinnedToGPU = [](benchmark::State &state, const int numa_id, const int cuda_id, const bool flush) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -70,7 +70,10 @@ auto Comm_NUMAMemcpy_PinnedToGPU = [](benchmark::State &state, const int numa_id
   PRINT_IF_ERROR(cudaEventCreate(&stop));
 
   for (auto _ : state) {
-    flush_all(src, bytes);
+    std::memset(src, 0, bytes);
+    if (flush) {
+      flush_all(src, bytes);
+    }
     cudaEventRecord(start, NULL);
     const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyHostToDevice);
     cudaEventRecord(stop, NULL);
@@ -99,10 +102,13 @@ auto Comm_NUMAMemcpy_PinnedToGPU = [](benchmark::State &state, const int numa_id
 };
 
 static void registerer() {
+  std::string name;
   for (auto cuda_id : unique_cuda_device_ids()) {
     for (auto numa_id : unique_numa_ids()) {
-      std::string name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_PinnedToGPU, numa_id, cuda_id)->SMALL_ARGS()->UseManualTime();
+      name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_PinnedToGPU, numa_id, cuda_id, false)->SMALL_ARGS()->UseManualTime();
+      name = std::string(NAME) + "_flush/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_PinnedToGPU, numa_id, cuda_id, true)->SMALL_ARGS()->UseManualTime();
     }
   }
 }
