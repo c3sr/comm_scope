@@ -144,15 +144,16 @@ auto Comm_NUMAMemcpy_GPUToGPU = [](benchmark::State &state,
 };
 
 static void registerer() {
+  std::string name;
   for (size_t i = 0; i <  unique_cuda_device_ids().size(); ++i) {
     for (size_t j = i + 1; j < unique_cuda_device_ids().size(); ++j) {
       auto src_gpu = unique_cuda_device_ids()[i];
       auto dst_gpu = unique_cuda_device_ids()[j];
       for (auto numa_id : unique_numa_ids()) {
-        std::string name = std::string(NAME) 
-                         + "/" + std::to_string(numa_id) 
-                         + "/" + std::to_string(src_gpu) 
-                         + "/" + std::to_string(dst_gpu);
+        name = std::string(NAME) 
+             + "/" + std::to_string(numa_id) 
+             + "/" + std::to_string(src_gpu) 
+             + "/" + std::to_string(dst_gpu);
       benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_GPUToGPU, numa_id, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
       }
     }
