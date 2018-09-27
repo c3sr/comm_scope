@@ -6,7 +6,7 @@
 
 #include "args.hpp"
 
-#define NAME "Comm/Duplex/Memcpy/GPUGPU"
+#define NAME "Comm_Duplex_Memcpy_GPUGPUPeer"
 
 #define OR_SKIP(stmt, msg) \
   if (PRINT_IF_ERROR(stmt)) { \
@@ -14,7 +14,7 @@
     return; \
   }
 
-static void Comm_Duplex_Memcpy_GPUGPU(benchmark::State &state) {
+auto Comm_Duplex_Memcpy_GPUGPUPeer = [](benchmark::State &state, const int gpu0, const int gpu1) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -25,9 +25,7 @@ static void Comm_Duplex_Memcpy_GPUGPU(benchmark::State &state) {
     state.SkipWithError(NAME " requires at least 2 GPUs");
     return;
   }
-  assert(FLAG(cuda_device_ids).size() >= 2);
-  const int gpu0 = FLAG(cuda_device_ids)[0];
-  const int gpu1 = FLAG(cuda_device_ids)[1];
+
   if (gpu0 == gpu1) {
     state.SkipWithError(NAME " requires two different GPUs");
     return;
@@ -35,7 +33,6 @@ static void Comm_Duplex_Memcpy_GPUGPU(benchmark::State &state) {
 
 
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
-
 
   OR_SKIP(utils::cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
   OR_SKIP(utils::cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
@@ -139,28 +136,26 @@ static void Comm_Duplex_Memcpy_GPUGPU(benchmark::State &state) {
   state.counters["gpu0"] = gpu0;
   state.counters["gpu1"] = gpu1;
 
-  float stopSum = 0;
-  float startSum = 0;
-  for ( const auto stream : streams ){
-
-        float startTime1, startTime2, stopTime1, stopTime2;
-        OR_SKIP(cudaEventElapsedTime(&startTime1, starts[0], starts[1]), NAME " failed to compare start times");
-        OR_SKIP(cudaEventElapsedTime(&startTime2, starts[1], starts[0]), NAME " failed to compare start times");
-        OR_SKIP(cudaEventElapsedTime(&stopTime1, stops[0],  stops[1]),  NAME " failed to compare stop times");
-        OR_SKIP(cudaEventElapsedTime(&stopTime2, stops[1],  stops[0]),  NAME " failed to compare stop times");
-        startSum += std::max(startTime1, startTime2);
-        stopSum += std::max(stopTime1, stopTime2);
-  }
-
-  state.counters["avg_start_spread"] = startSum/state.iterations();
-  state.counters["avg_stop_spread"] = stopSum/state.iterations();
-
   for (auto src : srcs) {
     cudaFree(src);
   }
   for (auto dst : dsts) {
     cudaFree(dst);
   }
+};
+
+static void registerer() {
+  std::string name;
+  for (size_t i = 0; i <  unique_cuda_device_ids().size(); ++i) {
+    for (size_t j = i + 1; j < unique_cuda_device_ids().size(); ++j) {
+      auto gpu0 = unique_cuda_device_ids()[i];
+      auto gpu1 = unique_cuda_device_ids()[j];
+      name = std::string(NAME)
+           + "/" + std::to_string(gpu0)
+           + "/" + std::to_string(gpu1);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_Duplex_Memcpy_GPUGPUPeer, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
+    }
+  }
 }
 
-BENCHMARK(Comm_Duplex_Memcpy_GPUGPU)->SMALL_ARGS()->UseManualTime();
+SCOPE_REGISTER_AFTER_INIT(registerer);
