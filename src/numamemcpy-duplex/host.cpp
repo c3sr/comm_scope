@@ -14,6 +14,7 @@
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
 #include "transfer.hpp"
+#include "utils/cache_control.hpp"
 
 #define NAME "Comm_Duplex_NUMAMemcpy_Host" 
 
@@ -23,7 +24,7 @@
     return; \
   }
 
-auto Comm_Duplex_NUMAMemcpy_Host = [](benchmark::State &state, std::vector<CudaMemcpyConfig*> transfers) {
+auto Comm_Duplex_NUMAMemcpy_Host = [](benchmark::State &state, std::vector<CudaMemcpyConfig*> transfers, const bool flush) {
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
     return;
@@ -47,6 +48,19 @@ auto Comm_Duplex_NUMAMemcpy_Host = [](benchmark::State &state, std::vector<CudaM
   }
 
   for (auto _ : state) {
+
+    // flush caches
+    if (flush) {
+      for (const auto config : transfers) {
+        auto kind = config->kind_;
+        if (cudaMemcpyDeviceToHost == kind) {
+          flush_all(config->dst_, bytes);
+        } else if (cudaMemcpyHostToDevice == kind) {
+          flush_all(config->src_, bytes);
+        }
+      }
+    }
+
     // Start all copies
     for (const auto config : transfers) {
       auto start = config->start_;
@@ -87,16 +101,20 @@ auto Comm_Duplex_NUMAMemcpy_Host = [](benchmark::State &state, std::vector<CudaM
 };
 
 static void registerer() {
-
+  std::string name;
   for (auto cuda_id : unique_cuda_device_ids()) {
     for (auto numa_id : unique_numa_ids()) {
       std::vector<CudaMemcpyConfig*> transfers;
       transfers.push_back(new PageableCopyConfig(cudaMemcpyHostToDevice, numa_id, cuda_id));
       transfers.push_back(new PageableCopyConfig(cudaMemcpyDeviceToHost, cuda_id, numa_id));
-      std::string name = std::string(NAME) 
+      name = std::string(NAME) 
                        + "/" + std::to_string(numa_id) 
                        + "/" + std::to_string(cuda_id);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_Duplex_NUMAMemcpy_Host, transfers)->SMALL_ARGS()->UseManualTime();
+      benchmark::RegisterBenchmark(name.c_str(), Comm_Duplex_NUMAMemcpy_Host, transfers, false)->SMALL_ARGS()->UseManualTime();
+      name = std::string(NAME) + "_flush"
+           + "/" + std::to_string(numa_id) 
+           + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_Duplex_NUMAMemcpy_Host, transfers, true)->SMALL_ARGS()->UseManualTime();
     }
   }
   
