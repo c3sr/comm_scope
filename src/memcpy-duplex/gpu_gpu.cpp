@@ -153,7 +153,7 @@ static void registerer() {
       name = std::string(NAME)
            + "/" + std::to_string(gpu0)
            + "/" + std::to_string(gpu1);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_Duplex_Memcpy_GPUGPUPeer, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
+      benchmark::RegisterBenchmark(name.c_str(), Comm_Duplex_Memcpy_GPUGPUPeer, gpu0, gpu1)->SMALL_ARGS()->UseManualTime();
     }
   }
 }
