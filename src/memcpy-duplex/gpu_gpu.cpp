@@ -6,7 +6,7 @@
 
 #include "args.hpp"
 
-#define NAME "Comm_Duplex_Memcpy_GPUGPUPeer"
+#define NAME "Comm_Duplex_Memcpy_GPUGPU"
 
 #define OR_SKIP(stmt, msg) \
   if (PRINT_IF_ERROR(stmt)) { \
@@ -25,7 +25,7 @@ auto Comm_Duplex_Memcpy_GPUGPUPeer = [](benchmark::State &state, const int gpu0,
     state.SkipWithError(NAME " requires at least 2 GPUs");
     return;
   }
-
+  assert(FLAG(cuda_device_ids).size() >= 2);
   if (gpu0 == gpu1) {
     state.SkipWithError(NAME " requires two different GPUs");
     return;
@@ -33,6 +33,7 @@ auto Comm_Duplex_Memcpy_GPUGPUPeer = [](benchmark::State &state, const int gpu0,
 
 
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
+
 
   OR_SKIP(utils::cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
   OR_SKIP(utils::cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
@@ -159,3 +160,4 @@ static void registerer() {
 }
 
 SCOPE_REGISTER_AFTER_INIT(registerer);
+
