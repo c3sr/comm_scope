@@ -6,7 +6,7 @@
 
 #include "args.hpp"
 
-#define NAME "Comm_Duplex_Memcpy_GPUGPU"
+#define NAME "Comm_Duplex_Memcpy_GPUGPUPeer"
 
 #define OR_SKIP(stmt, msg) \
   if (PRINT_IF_ERROR(stmt)) { \
