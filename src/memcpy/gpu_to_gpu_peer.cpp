@@ -81,12 +81,15 @@ static void registerer() {
     for (size_t j = i + 1; j < unique_cuda_device_ids().size(); ++j) {
       auto src_gpu = unique_cuda_device_ids()[i];
       auto dst_gpu = unique_cuda_device_ids()[j];
-      if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(src_gpu, dst_gpu))
-          && !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(dst_gpu, src_gpu))) {
-        name = std::string(NAME)
-             + "/" + std::to_string(src_gpu)
-             + "/" + std::to_string(dst_gpu);
-        benchmark::RegisterBenchmark(name.c_str(), Comm_Memcpy_GPUToGPUPeer, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
+      int s2d, d2s;
+      if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&s2d, src_gpu, dst_gpu))
+          && !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&d2s, dst_gpu, src_gpu))) {
+        if (s2d && d2s) {
+          name = std::string(NAME)
+               + "/" + std::to_string(src_gpu)
+               + "/" + std::to_string(dst_gpu);
+          benchmark::RegisterBenchmark(name.c_str(), Comm_Memcpy_GPUToGPUPeer, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
+        }
       }
     }
   }
