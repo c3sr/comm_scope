@@ -29,8 +29,8 @@ inline void flush(void * p) {
   */
 
   asm volatile ( "clflush %0"
-    : // no outputs
-    : "m"(p)
+    : "+m"(p)
+    : // no inputs
     : // no clobbers
   );
 #else
