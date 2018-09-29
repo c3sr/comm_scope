@@ -96,7 +96,9 @@ auto Comm_UM_Latency_GPUToHost = [] (benchmark::State &state,
   }
   state.counters["strides"] = steps;
   state.counters["cuda_id"] = cuda_id;
+#if USE_NUMA
   state.counters["numa_id"] = numa_id;
+#endif
 
 #if USE_NUMA
   // reset to run on any node
