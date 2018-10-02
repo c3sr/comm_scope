@@ -3,6 +3,7 @@
 #include <thread>
 #include <condition_variable>
 #include <memory>
+#include <chrono>
 
 #include <cuda_runtime.h>
 #if USE_NUMA
@@ -17,8 +18,11 @@
 #include "init/flags.hpp"
 #include "utils/numa.hpp"
 #include "init/numa.hpp"
+#include "utils/cache_control.hpp"
 
 #define NAME "Comm_UM_Coherence_GPUToHostMt"
+
+typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point_t;
 
 std::condition_variable cv;
 std::mutex m;
@@ -34,6 +38,21 @@ static void cpu_write(char *ptr, const size_t n, const size_t stride) {
     benchmark::DoNotOptimize(ptr[i] = 0);
   }
 }
+
+
+static void cpu_write2(char *ptr, const size_t n) {
+  {
+    std::unique_lock<std::mutex> lk(m);
+    cv.wait(lk, []{return ready;});
+  }
+
+  double *p = (double*) ptr;
+
+  for (size_t i = 0; i < n / sizeof(double); i++ ){
+    benchmark::DoNotOptimize(p[i] = 0);
+  }
+}
+
 
 template <bool NOOP = false>
 __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
@@ -68,8 +87,6 @@ const int num_threads) {
     return;
   }
 
-  const size_t pageSize = page_size();
-
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
 #if USE_NUMA
@@ -97,27 +114,24 @@ const int num_threads) {
     return;
   }
 
-  typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point_t;
-  std::vector<time_point_t> starts(num_threads);
-  std::vector<time_point_t> stops(num_threads);
   std::vector<std::thread> workers(num_threads);
 
 
   for (auto _ : state) {
     state.PauseTiming();
-
     cudaError_t err = cudaMemPrefetchAsync(ptr, bytes, cuda_id);
     if (cudaErrorInvalidDevice == err) {
-      gpu_write<<<256, 256>>>(ptr, bytes, pageSize);
+      gpu_write<<<256, 256>>>(ptr, bytes, page_size());
     }
     if (PRINT_IF_ERROR(cudaDeviceSynchronize())) {
       state.SkipWithError(NAME " failed to synchronize");
       return;
     }
 
+    flush_all(ptr, bytes);
     // Create all threads
     for (int i = 0; i < num_threads; ++i) {
-      workers[i] = std::thread(cpu_write, &ptr[i * bytes / num_threads], bytes / num_threads, pageSize);
+      workers[i] = std::thread(cpu_write2, &ptr[i * bytes / num_threads], bytes / num_threads);
     }
 
     // unleash threads
@@ -133,12 +147,12 @@ const int num_threads) {
     for (auto &w: workers) {
       w.join();
     }
-    auto end   = std::chrono::high_resolution_clock::now();
+    auto stop = std::chrono::high_resolution_clock::now();
     auto elapsed_seconds =
-      std::chrono::duration_cast<std::chrono::duration<double>>(
-        end - start);
+          std::chrono::duration_cast<std::chrono::duration<double>>(
+            stop - start).count();
 
-    state.SetIterationTime(elapsed_seconds.count());
+    state.SetIterationTime(elapsed_seconds);
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
@@ -155,7 +169,7 @@ const int num_threads) {
 };
 
 static void registerer() {
-  for (auto num_threads : {1, 2, 4, 8, 12, 16}) {
+  for (auto num_threads : {1, 2, 4, 10, 20, 40, 80}) {
     for (auto cuda_id : unique_cuda_device_ids()) {
 #if USE_NUMA
       for (auto numa_id : unique_numa_ids()) {
@@ -170,7 +184,7 @@ static void registerer() {
 #if USE_NUMA
           numa_id,
 #endif // USE_NUMA
-          cuda_id, num_threads)->SMALL_ARGS()->UseManualTime();
+          cuda_id, num_threads)->SMALL_ARGS()->UseManualTime()->MinTime(0.1);
 #if USE_NUMA
       }
 #endif // USE_NUMA
