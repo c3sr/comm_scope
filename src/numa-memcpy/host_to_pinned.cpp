@@ -13,10 +13,11 @@
 #include "init/flags.hpp"
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
+#include "utils/cache_control.hpp"
 
 #define NAME "Comm_NUMAMemcpy_HostToPinned"
 
-auto Comm_NUMAMemcpy_HostToPinned = [](benchmark::State &state, const int src_numa, const int dst_numa) {
+auto Comm_NUMAMemcpy_HostToPinned = [](benchmark::State &state, const int src_numa, const int dst_numa, const bool flush) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -56,10 +57,12 @@ auto Comm_NUMAMemcpy_HostToPinned = [](benchmark::State &state, const int src_nu
 
   for (auto _ : state) {
     // Invalidate dst cache (if different from src)
-    numa_bind_node(src_numa);
-    std::memset(dst, 0, bytes);
-    benchmark::DoNotOptimize(dst);
-    benchmark::ClobberMemory();
+    if (flush) {
+      numa_bind_node(src_numa);
+      flush_all(src, bytes);
+      numa_bind_node(dst_numa);
+      flush_all(dst, bytes);
+    }
 
     numa_bind_node(dst_numa);
     cudaEventRecord(start, NULL);
@@ -88,10 +91,13 @@ auto Comm_NUMAMemcpy_HostToPinned = [](benchmark::State &state, const int src_nu
 };
 
 static void registerer() {
+  std::string name;
   for (auto src_numa : unique_numa_ids()) {
     for (auto dst_numa : unique_numa_ids()) {
-      std::string name = std::string(NAME) + "/" + std::to_string(src_numa) + "/" + std::to_string(dst_numa);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_HostToPinned, src_numa, dst_numa)->SMALL_ARGS()->UseManualTime();
+      name = std::string(NAME) + "/" + std::to_string(src_numa) + "/" + std::to_string(dst_numa);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_HostToPinned, src_numa, dst_numa, false)->SMALL_ARGS()->UseManualTime();
+      name = std::string(NAME) + "_flush/" + std::to_string(src_numa) + "/" + std::to_string(dst_numa);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_HostToPinned, src_numa, dst_numa, true)->SMALL_ARGS()->UseManualTime();
     }
   }
 }
