@@ -22,7 +22,7 @@
 
 #define NAME "Comm_UM_Coherence_GPUToHostMt"
 
-typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point_t;
+typedef std::chrono::time_point<std::chrono::system_clock> time_point_t;
 
 std::condition_variable cv;
 std::mutex m;
@@ -46,11 +46,7 @@ static void cpu_write2(char *ptr, const size_t n) {
     cv.wait(lk, []{return ready;});
   }
 
-  double *p = (double*) ptr;
-
-  for (size_t i = 0; i < n / sizeof(double); i++ ){
-    benchmark::DoNotOptimize(p[i] = 0);
-  }
+  std::memset(ptr, 0, n);
 }
 
 
@@ -118,7 +114,6 @@ const int num_threads) {
 
 
   for (auto _ : state) {
-    state.PauseTiming();
     cudaError_t err = cudaMemPrefetchAsync(ptr, bytes, cuda_id);
     if (cudaErrorInvalidDevice == err) {
       gpu_write<<<256, 256>>>(ptr, bytes, page_size());
@@ -141,13 +136,13 @@ const int num_threads) {
     }
 
     //notify threads they can go
-    auto start = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::system_clock::now();
     cv.notify_all();
 
     for (auto &w: workers) {
       w.join();
     }
-    auto stop = std::chrono::high_resolution_clock::now();
+    auto stop = std::chrono::system_clock::now();
     auto elapsed_seconds =
           std::chrono::duration_cast<std::chrono::duration<double>>(
             stop - start).count();
@@ -169,7 +164,7 @@ const int num_threads) {
 };
 
 static void registerer() {
-  for (auto num_threads : {1, 2, 4, 10, 20, 40, 80}) {
+  for (auto num_threads : {1, 2, 4, 6, 8, 10, 20, 40, 80}) {
     for (auto cuda_id : unique_cuda_device_ids()) {
 #if USE_NUMA
       for (auto numa_id : unique_numa_ids()) {
