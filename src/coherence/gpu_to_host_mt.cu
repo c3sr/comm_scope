@@ -40,13 +40,18 @@ static void cpu_write(char *ptr, const size_t n, const size_t stride) {
 }
 
 
-static void cpu_write2(char *ptr, const size_t n) {
+static void cpu_write2(char *ptr, const size_t n, time_point_t *start, time_point_t *stop) {
   {
     std::unique_lock<std::mutex> lk(m);
-    cv.wait(lk, []{return ready;});
+    while(!ready) cv.wait(lk);
   }
-
-  std::memset(ptr, 0, n);
+  
+  *start = std::chrono::system_clock::now();
+  // std::memset(ptr, 0, n);
+  for (size_t i = 0; i < n; i += 65536) {
+    benchmark::DoNotOptimize(ptr[i] = 0);
+  }
+  *stop = std::chrono::system_clock::now();
 }
 
 
@@ -66,7 +71,7 @@ __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
 
   if (0 == lx) {
     for (size_t i = wx * stride; i < count; i += numWarps * stride) {
-      ptr[i] = 0;
+      ptr[i] = i;
     }
   }
 }
@@ -111,43 +116,82 @@ const int num_threads) {
   }
 
   std::vector<std::thread> workers(num_threads);
+  std::vector<time_point_t> starts(num_threads);
+  std::vector<time_point_t> stops(num_threads);
 
 
   for (auto _ : state) {
-    cudaError_t err = cudaMemPrefetchAsync(ptr, bytes, cuda_id);
-    if (cudaErrorInvalidDevice == err) {
-      gpu_write<<<256, 256>>>(ptr, bytes, page_size());
+    flush_all(ptr, bytes);
+    if (PRINT_IF_ERROR(cudaMemAdvise(ptr, bytes, cudaMemAdviseSetPreferredLocation, cuda_id))) {
+      state.SkipWithError(NAME " failed to advise");
+      return;
+    }
+    if(PRINT_IF_ERROR(cudaMemPrefetchAsync(ptr, bytes, cuda_id))) {
+      state.SkipWithError(NAME " failed to prefetch");
+      return;
+    }
+
+    if (PRINT_IF_ERROR(cudaDeviceSynchronize())) {
+      state.SkipWithError(NAME " failed to synchronize");
+      return;
+    }
+
+    // touch each page
+    // gpu_write<<<256, 256>>>(ptr, bytes, 1);
+    // if (PRINT_IF_ERROR(cudaDeviceSynchronize())) {
+    //   state.SkipWithError(NAME " failed to synchronize");
+    //   return;
+    // }
+
+    if (PRINT_IF_ERROR(cudaMemAdvise(ptr, bytes, cudaMemAdviseSetPreferredLocation, cudaCpuDeviceId))) {
+      state.SkipWithError(NAME " failed to advise");
+      return;
     }
     if (PRINT_IF_ERROR(cudaDeviceSynchronize())) {
       state.SkipWithError(NAME " failed to synchronize");
       return;
     }
 
-    flush_all(ptr, bytes);
+
+    nvtxRangePush("make");
     // Create all threads
     for (int i = 0; i < num_threads; ++i) {
-      workers[i] = std::thread(cpu_write2, &ptr[i * bytes / num_threads], bytes / num_threads);
+      workers[i] = std::thread(cpu_write2, &ptr[i * bytes / num_threads], bytes / num_threads, &starts[i], &stops[i]);
     }
+    nvtxRangePop();
 
-    // unleash threads
-    {
-      std::lock_guard<std::mutex> lk(m);
-      ready = true;
-    }
-
-    //notify threads they can go
+    nvtxRangePush("go");
     auto start = std::chrono::system_clock::now();
-    cv.notify_all();
+        // unleash threads
+        {
+          std::unique_lock<std::mutex> lk(m);
+          ready = true;
+          cv.notify_all();
+        }
 
     for (auto &w: workers) {
       w.join();
     }
+    
     auto stop = std::chrono::system_clock::now();
+    nvtxRangePop();
+    ready = false;
+    
     auto elapsed_seconds =
           std::chrono::duration_cast<std::chrono::duration<double>>(
             stop - start).count();
 
-    state.SetIterationTime(elapsed_seconds);
+    double maxElapsed = 0;
+    for (const auto start : starts) {
+      for (const auto stop : stops) {
+        auto elapsed_seconds =
+          std::chrono::duration_cast<std::chrono::duration<double>>(
+            stop - start).count();
+        maxElapsed = std::max(maxElapsed, elapsed_seconds);
+      }
+    }
+
+    state.SetIterationTime(maxElapsed);
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
@@ -164,7 +208,7 @@ const int num_threads) {
 };
 
 static void registerer() {
-  for (auto num_threads : {1, 2, 4, 6, 8, 10, 20, 40, 80}) {
+  for (auto num_threads : {1, 2, 4, 6, 8, 10}) {
     for (auto cuda_id : unique_cuda_device_ids()) {
 #if USE_NUMA
       for (auto numa_id : unique_numa_ids()) {
