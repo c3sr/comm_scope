@@ -15,6 +15,15 @@ See the `docs` folder for a description of the benchmarks.
 
 # Changelog
 
+## v0.4.0
+
+* Add multithreaded Coherence GPU to Host benchmark
+* Programatically register most benchmarks based on system configuration
+* use cudaMemcpyAsync in numa-memcpy
+* Add travis and Dockerfiles
+* Use `aligned_alloc` in numa-memcpy/pinned-to-gpu
+* Add x86 and POWER cache control functions
+
 ## v0.3.0
 
 * Rework documentation
