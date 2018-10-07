@@ -28,27 +28,14 @@ std::condition_variable cv;
 std::mutex m;
 volatile bool ready = false;
 
-static void cpu_write(char *ptr, const size_t n, const size_t stride) {
-  {
-    std::unique_lock<std::mutex> lk(m);
-    cv.wait(lk, []{return ready;});
-  }
-
-  for (size_t i = 0; i < n; i += stride) {
-    benchmark::DoNotOptimize(ptr[i] = 0);
-  }
-}
-
-
-static void cpu_write2(char *ptr, const size_t n, time_point_t *start, time_point_t *stop) {
+static void cpu_write(char *ptr, const size_t n, const size_t stride, time_point_t *start, time_point_t *stop) {
   {
     std::unique_lock<std::mutex> lk(m);
     while(!ready) cv.wait(lk);
   }
   
   *start = std::chrono::system_clock::now();
-  // std::memset(ptr, 0, n);
-  for (size_t i = 0; i < n; i += 65536) {
+  for (size_t i = 0; i < n; i += stride) {
     benchmark::DoNotOptimize(ptr[i] = 0);
   }
   *stop = std::chrono::system_clock::now();
@@ -156,7 +143,7 @@ const int num_threads) {
     nvtxRangePush("make");
     // Create all threads
     for (int i = 0; i < num_threads; ++i) {
-      workers[i] = std::thread(cpu_write2, &ptr[i * bytes / num_threads], bytes / num_threads, &starts[i], &stops[i]);
+      workers[i] = std::thread(cpu_write, &ptr[i * bytes / num_threads], bytes / num_threads, page_size(), &starts[i], &stops[i]);
     }
     nvtxRangePop();
 
