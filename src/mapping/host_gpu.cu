@@ -14,7 +14,7 @@
 #include "utils/cache_control.hpp"
 
 
-#define NAME "Comm_ZeroCopy_HostToGPU"
+#define NAME "Comm_ZeroCopy_HostGPU"
 
 #define OR_SKIP(stmt) \
   if (PRINT_IF_ERROR(stmt)) { \
@@ -35,18 +35,18 @@ std::string to_string(const AccessType &a) {
   }
 }
 
-typedef enum {
-  FLUSH,
-  NO_FLUSH,
-} FlushType;
+// typedef enum {
+//   FLUSH,
+//   NO_FLUSH,
+// } FlushType;
 
-std::string to_string(const FlushType &a) {
-  if (a == FLUSH) {
-    return "_Flush";
-  } else {
-    return "";
-  }
-}
+// static std::string to_string(const FlushType &a) {
+//   if (a == FLUSH) {
+//     return "_Flush";
+//   } else {
+//     return "";
+//   }
+// }
 
 template <typename write_t>
 __global__ void gpu_write(write_t *ptr, const size_t bytes) {
@@ -75,7 +75,7 @@ __global__ void gpu_read(const read_t *ptr, const size_t bytes) {
 }
 
 
-auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa, const int dst_cuda, const AccessType access_type) {
+auto Comm_ZeroCopy_HostGPU = [](benchmark::State &state, const int src_numa, const int dst_cuda, const AccessType access_type) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -164,7 +164,7 @@ static void registerer() {
                        + "/" + std::to_string(numa_id) 
 #endif // USE_NUMA
                        + "/" + std::to_string(cuda_id);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_ZeroCopy_HostToGPU,
+      benchmark::RegisterBenchmark(name.c_str(), Comm_ZeroCopy_HostGPU,
 #if USE_NUMA
         numa_id,
 #endif // USE_NUMA
