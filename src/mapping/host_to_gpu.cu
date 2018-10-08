@@ -95,6 +95,10 @@ auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa, c
 
   void *ptr = aligned_alloc(pageSize, bytes);
   defer(free(ptr));
+  if (!ptr && bytes) {
+    state.SkipWithError(NAME " failed to allocate host memory");
+    return;
+  }
   std::memset(ptr, 0, bytes);
 
   OR_SKIP(cudaHostRegister(ptr, bytes, cudaHostRegisterMapped));
