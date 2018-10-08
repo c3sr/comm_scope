@@ -1,9 +1,6 @@
 #if CUDA_VERSION_MAJOR >= 8
 
 #include <cassert>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
 
 #include <cuda_runtime.h>
 
@@ -13,23 +10,14 @@
 
 #include "args.hpp"
 
-#define NAME "Comm/UM/Prefetch/GPUToGPU"
+#define NAME "Comm_UM_Prefetch_GPUToGPU"
 
-static void Comm_UM_Prefetch_GPUToGPU(benchmark::State &state) {
+auto Comm_UM_Prefetch_GPUToGPU = [](benchmark::State &state, const int src_gpu, const int dst_gpu) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
     return;
   }
-
-  if (num_gpus() < 2) {
-    state.SkipWithError(NAME " requires 2 gpus");
-    return;
-  }
-
-  assert(FLAG(cuda_device_ids).size() >= 2);
-  const int src_gpu = FLAG(cuda_device_ids)[0];
-  const int dst_gpu = FLAG(cuda_device_ids)[1];
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
@@ -100,9 +88,22 @@ static void Comm_UM_Prefetch_GPUToGPU(benchmark::State &state) {
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
+  state.counters["src_gpu"] = src_gpu;
+  state.counters["dst_gpu"] = dst_gpu;
+};
+
+static void registerer() {
+  for (size_t i = 0; i <  unique_cuda_device_ids().size(); ++i) {
+    for (size_t j = i + 1; j < unique_cuda_device_ids().size(); ++j) {
+      auto src_gpu = unique_cuda_device_ids()[i];
+      auto dst_gpu = unique_cuda_device_ids()[j];
+      std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) + "/" + std::to_string(dst_gpu);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Prefetch_GPUToGPU, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
+    }
+  }
 }
 
-BENCHMARK(Comm_UM_Prefetch_GPUToGPU)->SMALL_ARGS()->MinTime(0.1)->UseManualTime();
+SCOPE_REGISTER_AFTER_INIT(registerer);
 
 #endif // CUDA_VERSION_MAJOR >= 8

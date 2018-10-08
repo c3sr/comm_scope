@@ -2,4 +2,4 @@
 
 #include "scope/utils/commandlineflags.hpp"
 
-DECLARE_vec_int32(numa_ids);
+DECLARE_FLAG_vec_int32(numa_ids);

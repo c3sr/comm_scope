@@ -13,10 +13,11 @@
 #include "init/flags.hpp"
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
+#include "utils/cache_control.hpp"
 
-#define NAME "Comm/NUMAMemcpy/GPUToHost"
+#define NAME "Comm_NUMAMemcpy_GPUToHost"
 
-static void Comm_NUMAMemcpy_GPUToHost(benchmark::State &state) {
+auto Comm_NUMAMemcpy_GPUToHost = [](benchmark::State &state, const int numa_id, const int cuda_id, const bool flush) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -28,16 +29,14 @@ static void Comm_NUMAMemcpy_GPUToHost(benchmark::State &state) {
     return;
   }
 
-  const int numa_id = FLAG(numa_ids)[0];
-  const int cuda_id = FLAG(cuda_device_ids)[0];
-
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
   numa_bind_node(numa_id);
 
-  char *src = nullptr;
-  char *dst = new char[bytes];
-  defer(delete[] dst);
+  void *src = nullptr;
+  void *dst = aligned_alloc(page_size(), bytes);
+  defer(free(dst));
+  std::memset(dst, 0, bytes);
 
   if (PRINT_IF_ERROR(utils::cuda_reset_device(cuda_id))) {
     state.SkipWithError(NAME " failed to reset CUDA device");
@@ -65,10 +64,12 @@ static void Comm_NUMAMemcpy_GPUToHost(benchmark::State &state) {
   PRINT_IF_ERROR(cudaEventCreate(&stop));
 
   for (auto _ : state) {
+    std::memset(dst, 0, bytes);
+    if (flush) {
+      flush_all(dst, bytes);
+    }
     cudaEventRecord(start, NULL);
-
-    const auto cuda_err = cudaMemcpy(dst, src, bytes, cudaMemcpyDeviceToHost);
-
+    const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToHost);
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
 
@@ -84,12 +85,27 @@ static void Comm_NUMAMemcpy_GPUToHost(benchmark::State &state) {
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
+  state.counters["cuda_id"] = cuda_id;
+  state.counters["numa_id"] = numa_id;
 
   // reset to run on any node
   numa_bind_node(-1);
+};
+
+static void registerer() {
+  std::string name;
+  for (auto cuda_id : unique_cuda_device_ids()) {
+    for (auto numa_id : unique_numa_ids()) {
+      name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_GPUToHost, numa_id, cuda_id, false)->SMALL_ARGS()->UseManualTime();
+      name = std::string(NAME) + "_flush/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_GPUToHost, numa_id, cuda_id, true)->SMALL_ARGS()->UseManualTime();
+    }
+  }
 }
 
-BENCHMARK(Comm_NUMAMemcpy_GPUToHost)->SMALL_ARGS()->UseManualTime();
+SCOPE_REGISTER_AFTER_INIT(registerer);
+
 
 #endif // USE_NUMA == 1

@@ -13,9 +13,12 @@
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
 
-#define NAME "Comm/NUMAMemcpy/GPUToGPU"
+#define NAME "Comm_NUMAMemcpy_GPUToGPU"
 
-static void Comm_NUMAMemcpy_GPUToGPU(benchmark::State &state) {
+auto Comm_NUMAMemcpy_GPUToGPU = [](benchmark::State &state,
+    const int numa_id,
+    const int src_gpu,
+    const int dst_gpu) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -32,17 +35,12 @@ static void Comm_NUMAMemcpy_GPUToGPU(benchmark::State &state) {
     return;
   }
   
-  const int numa_id = FLAG(numa_ids)[0];
-  const int src_gpu = FLAG(cuda_device_ids)[0];
-  const int dst_gpu = FLAG(cuda_device_ids)[1];
-
   if (src_gpu == dst_gpu) {
     state.SkipWithError(NAME " requires two different GPUs");
     return;
   }
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
-
 
   numa_bind_node(numa_id);
 
@@ -103,7 +101,7 @@ static void Comm_NUMAMemcpy_GPUToGPU(benchmark::State &state) {
   for (auto _ : state) {
 
     cudaEventRecord(start, NULL);
-    const auto cuda_err = cudaMemcpy(dst, src, bytes, cudaMemcpyDeviceToDevice);
+    const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice);
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
 
@@ -119,7 +117,10 @@ static void Comm_NUMAMemcpy_GPUToGPU(benchmark::State &state) {
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
+  state.counters["src_gpu"] = src_gpu;
+  state.counters["dst_gpu"] = dst_gpu;
+  state.counters["numa_id"] = numa_id;
 
   // re-enable NUMA scheduling
   numa_bind_node(-1);
@@ -140,8 +141,24 @@ static void Comm_NUMAMemcpy_GPUToGPU(benchmark::State &state) {
   }
 
   numa_bind_node(-1);
+};
+
+static void registerer() {
+  std::string name;
+  for (size_t i = 0; i <  unique_cuda_device_ids().size(); ++i) {
+    for (size_t j = i + 1; j < unique_cuda_device_ids().size(); ++j) {
+      auto src_gpu = unique_cuda_device_ids()[i];
+      auto dst_gpu = unique_cuda_device_ids()[j];
+      for (auto numa_id : unique_numa_ids()) {
+        name = std::string(NAME) 
+             + "/" + std::to_string(numa_id) 
+             + "/" + std::to_string(src_gpu) 
+             + "/" + std::to_string(dst_gpu);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_GPUToGPU, numa_id, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
+      }
+    }
+  }
 }
 
-BENCHMARK(Comm_NUMAMemcpy_GPUToGPU)->SMALL_ARGS()->UseManualTime();
-
+SCOPE_REGISTER_AFTER_INIT(registerer);
 #endif // USE_NUMA == 1

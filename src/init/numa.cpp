@@ -1,6 +1,3 @@
-
-#include <tuple>
-
 #include "optional/optional.hpp"
 
 #include "scope/utils/commandlineflags.hpp"
@@ -11,6 +8,12 @@
 #include "init/flags.hpp"
 
 bool has_numa = false;
+
+static std::vector<int> unique_nodes_;
+
+const std::vector<int> &unique_numa_ids() {
+  return unique_nodes_;
+}
 
 bool init_numa() {
 
@@ -42,6 +45,7 @@ bool init_numa() {
   // set numa ids to available nodes
   if (FLAG(numa_ids).empty()) {
     for (const auto &id : available_nodes) {
+      LOG(debug, "setting NUMA node {} as available", id);
       FLAG(numa_ids).push_back(id);
     }
   } else { // check to make sure requested numa ids are valid
@@ -55,6 +59,14 @@ bool init_numa() {
       }
     }
   }
+
+  // Create a version with unique nodes
+  for (auto id : FLAG(numa_ids)) {
+    if (std::find(unique_nodes_.begin(), unique_nodes_.end(), id) == unique_nodes_.end()) {
+      unique_nodes_.push_back(id);
+    }
+  }
+
 
 #endif // USE_NUMA == 1
 

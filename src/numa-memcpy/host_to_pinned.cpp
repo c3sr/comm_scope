@@ -7,15 +7,17 @@
 
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
+#include "scope/utils/page_size.hpp"
 
 #include "args.hpp"
 #include "init/flags.hpp"
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
+#include "utils/cache_control.hpp"
 
-#define NAME "Comm/NUMAMemcpy/HostToPinned"
+#define NAME "Comm_NUMAMemcpy_HostToPinned"
 
-static void Comm_NUMAMemcpy_HostToPinned(benchmark::State &state) {
+auto Comm_NUMAMemcpy_HostToPinned = [](benchmark::State &state, const int src_numa, const int dst_numa, const bool flush) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -32,26 +34,22 @@ static void Comm_NUMAMemcpy_HostToPinned(benchmark::State &state) {
     return;
   }
 
-  const int src_numa = FLAG(numa_ids)[0];
-  const int dst_numa = FLAG(numa_ids)[1];
-
   const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
 
-
   numa_bind_node(src_numa);
-  char *src = new char[bytes];
-  defer(delete[] src);
+  void *src = aligned_alloc(page_size(), bytes);
+  defer(free(src));
   std::memset(src, 0, bytes);
 
   numa_bind_node(dst_numa);
-  char *dst = new char[bytes];
+  void *dst = aligned_alloc(page_size(), bytes);
   std::memset(dst, 0, bytes);
   if (PRINT_IF_ERROR(cudaHostRegister(dst, bytes, cudaHostRegisterPortable))) {
     state.SkipWithError(NAME " failed to register allocations");
     return;
   }
   defer(cudaHostUnregister(dst));
-  defer(delete[] dst);
+  defer(free(dst));
 
   cudaEvent_t start, stop;
   PRINT_IF_ERROR(cudaEventCreate(&start));
@@ -59,14 +57,16 @@ static void Comm_NUMAMemcpy_HostToPinned(benchmark::State &state) {
 
   for (auto _ : state) {
     // Invalidate dst cache (if different from src)
-    numa_bind_node(src_numa);
-    std::memset(dst, 0, bytes);
-    benchmark::DoNotOptimize(dst);
-    benchmark::ClobberMemory();
+    if (flush) {
+      numa_bind_node(src_numa);
+      flush_all(src, bytes);
+      numa_bind_node(dst_numa);
+      flush_all(dst, bytes);
+    }
 
     numa_bind_node(dst_numa);
     cudaEventRecord(start, NULL);
-    const auto cuda_err = cudaMemcpy(dst, src, bytes, cudaMemcpyHostToHost);
+    const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyHostToHost);
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
 
@@ -82,12 +82,26 @@ static void Comm_NUMAMemcpy_HostToPinned(benchmark::State &state) {
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
+  state.counters["src_numa"] = src_numa;
+  state.counters["dst_numa"] = dst_numa;
 
   // reset to run on any node
   numa_bind_node(-1);
+};
+
+static void registerer() {
+  std::string name;
+  for (auto src_numa : unique_numa_ids()) {
+    for (auto dst_numa : unique_numa_ids()) {
+      name = std::string(NAME) + "/" + std::to_string(src_numa) + "/" + std::to_string(dst_numa);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_HostToPinned, src_numa, dst_numa, false)->SMALL_ARGS()->UseManualTime();
+      name = std::string(NAME) + "_flush/" + std::to_string(src_numa) + "/" + std::to_string(dst_numa);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_HostToPinned, src_numa, dst_numa, true)->SMALL_ARGS()->UseManualTime();
+    }
+  }
 }
 
-BENCHMARK(Comm_NUMAMemcpy_HostToPinned)->SMALL_ARGS()->UseManualTime();
+SCOPE_REGISTER_AFTER_INIT(registerer);
 
 #endif // USE_NUMA == 1

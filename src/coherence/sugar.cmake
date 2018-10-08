@@ -20,6 +20,7 @@ sugar_files(
     comm_CUDA_SOURCES
     gpu_to_gpu.cu
     gpu_to_host.cu
+    gpu_to_host_mt.cu
     host_to_gpu.cu
 )
 

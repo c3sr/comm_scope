@@ -14,6 +14,7 @@ include(sugar_files)
 sugar_files(
     comm_HEADERS
     args.hpp
+    transfer.hpp
 )
 
 sugar_files(

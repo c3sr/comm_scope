@@ -1,5 +1,4 @@
 #include <cassert>
-
 #include <cuda_runtime.h>
 
 #include "scope/init/init.hpp"
@@ -8,7 +7,7 @@
 
 #include "args.hpp"
 
-#define NAME "Comm/Memcpy/GPUToGPUPeer"
+#define NAME "Comm_Memcpy_GPUToGPUPeer"
 
 #define OR_SKIP(stmt, msg) \
   if (PRINT_IF_ERROR(stmt)) { \
@@ -16,21 +15,12 @@
     return; \
   }
 
-static void CUDA_Memcpy_GPUToGPUPeer(benchmark::State &state) {
+auto Comm_Memcpy_GPUToGPUPeer = [](benchmark::State &state, const int src_gpu, const int dst_gpu) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
     return;
   }
-
-  if (num_gpus() < 2) {
-    state.SkipWithError(NAME " requires >1 CUDA GPUs");
-    return;
-  }
-
-  assert(FLAG(cuda_device_ids).size() >= 2);
-  const int src_gpu = FLAG(cuda_device_ids)[0];
-  const int dst_gpu = FLAG(cuda_device_ids)[1];
 
   if (src_gpu == dst_gpu) {
     state.SkipWithError(NAME " requires two different GPUs");
@@ -80,9 +70,30 @@ static void CUDA_Memcpy_GPUToGPUPeer(benchmark::State &state) {
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] =  bytes;
   state.counters["src_gpu"] = src_gpu;
   state.counters["dst_gpu"] = dst_gpu;
+};
+
+static void registerer() {
+  std::string name;
+  for (size_t i = 0; i <  unique_cuda_device_ids().size(); ++i) {
+    for (size_t j = i + 1; j < unique_cuda_device_ids().size(); ++j) {
+      auto src_gpu = unique_cuda_device_ids()[i];
+      auto dst_gpu = unique_cuda_device_ids()[j];
+      int s2d, d2s;
+      if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&s2d, src_gpu, dst_gpu))
+          && !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&d2s, dst_gpu, src_gpu))) {
+        if (s2d && d2s) {
+          name = std::string(NAME)
+               + "/" + std::to_string(src_gpu)
+               + "/" + std::to_string(dst_gpu);
+          benchmark::RegisterBenchmark(name.c_str(), Comm_Memcpy_GPUToGPUPeer, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
+        }
+      }
+    }
+  }
 }
 
-BENCHMARK(CUDA_Memcpy_GPUToGPUPeer)->SMALL_ARGS()->UseManualTime();
+SCOPE_REGISTER_AFTER_INIT(registerer);
+

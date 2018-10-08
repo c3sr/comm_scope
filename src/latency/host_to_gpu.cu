@@ -14,8 +14,9 @@
 #include "args.hpp"
 #include "init/flags.hpp"
 #include "utils/numa.hpp"
+#include "init/numa.hpp"
 
-#define NAME "Comm/UM/Latency/HostToGPU"
+#define NAME "Comm_UM_Latency_HostToGPU"
 
 template <bool NOOP = false>
 __global__ void gpu_traverse(size_t *ptr, const size_t steps) {
@@ -30,7 +31,11 @@ __global__ void gpu_traverse(size_t *ptr, const size_t steps) {
   ptr[next] = 1;
 }
 
-static void Comm_UM_Latency_HostToGPU(benchmark::State &state) {
+auto Comm_UM_Latency_HostToGPU = [](benchmark::State &state,
+  #if USE_NUMA
+  const int numa_id,
+  #endif // USE_NUMA
+  const int cuda_id) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -38,10 +43,6 @@ static void Comm_UM_Latency_HostToGPU(benchmark::State &state) {
   }
 
   const size_t steps = state.range(0);
-  const int cuda_id  = FLAG(cuda_device_ids)[0];
-#if USE_NUMA
-  const int numa_id  = FLAG(numa_ids)[0];
-#endif
 
   const size_t stride = 65536 * 2;
   const size_t bytes  = sizeof(size_t) * (steps + 1) * stride;
@@ -115,12 +116,37 @@ static void Comm_UM_Latency_HostToGPU(benchmark::State &state) {
     state.SetIterationTime(millis / 1000);
   }
   state.counters["strides"] = steps;
+  state.counters["cuda_id"] = cuda_id;
+#if USE_NUMA
+  state.counters["numa_id"] = numa_id;
+#endif // USE_NUMA
 
 #if USE_NUMA
   numa_bind_node(-1);
 #endif
+};
+
+static void registerer() {
+  for (auto cuda_id : unique_cuda_device_ids()) {
+#if USE_NUMA
+    for (auto numa_id : unique_numa_ids()) {
+#endif // USE_NUMA
+      std::string name = std::string(NAME)
+#if USE_NUMA 
+                       + "/" + std::to_string(numa_id) 
+#endif // USE_NUMA
+                       + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Latency_HostToGPU,
+#if USE_NUMA
+        numa_id,
+#endif // USE_NUMA
+        cuda_id)->SMALL_ARGS()->UseManualTime();
+#if USE_NUMA
+    }
+#endif // USE_NUMA
+  }
 }
 
-BENCHMARK(Comm_UM_Latency_HostToGPU)->SMALL_ARGS()->UseManualTime();
+SCOPE_REGISTER_AFTER_INIT(registerer);
 
 #endif // CUDA_VERSION_MAJOR >= 8 

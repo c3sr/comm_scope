@@ -1,0 +1,5 @@
+- [coherence](/comm_scope/coherence)
+- [latency](/comm_scope/latency)
+- [prefetch](/comm_scope/prefetch)
+- [memcpy](/comm_scope/memcpy)
+- [numamemcpy](/comm_scope/numamemcpy)

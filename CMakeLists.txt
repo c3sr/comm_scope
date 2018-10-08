@@ -1,23 +1,24 @@
+option(ENABLE_COMM "Include Comm|Scope (github.com/c3sr/comm_scope)" ON)
+if (NOT ENABLE_COMM)
+  return()
+endif()
+
 
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
-project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.2.0)
-include(ScopeStatus)
+project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.4.0)
 
 sugar_include("src")
 
-add_library(comm_scope OBJECT ${comm_SOURCES} ${comm_CUDA_SOURCES} )
+scope_add_library(comm_scope OBJECT ${comm_SOURCES} ${comm_CUDA_SOURCES} )
+target_include_scope_directories(comm_scope)
 target_include_directories(comm_scope PRIVATE 
-    ${SCOPE_SRC_DIR}
     ${PROJECT_BINARY_DIR}/src
     ${PROJECT_SOURCE_DIR}/src
-    ${THIRDPARTY_DIR}
-    ${TOP_DIR}/include
-    ${CUDA_INCLUDE_DIRS}
 )
-
+target_link_scope_libraries(comm_scope)
 target_compile_features(comm_scope PUBLIC cxx_std_11)
 set_property(TARGET comm_scope PROPERTY CUDA_STANDARD 11)
-target_link_libraries(comm_scope PRIVATE benchmark::benchmark)
+
 
 ## NUMA
 find_package(numa)
@@ -27,7 +28,7 @@ if(numa_FOUND)
     target_include_directories(comm_scope SYSTEM PRIVATE ${numa_INCLUDE_DIR})
 else()
 target_compile_definitions(comm_scope PRIVATE -DUSE_NUMA=0)
-  message(WARNING "didn't find NUMA, some benchmarks will be unavailable.")
+  scope_warning("didn't find NUMA, some benchmarks will be unavailable.")
 endif(numa_FOUND)
 
 ## OpenMP
@@ -76,3 +77,4 @@ configure_file (
     "${PROJECT_SOURCE_DIR}/src/config.hpp.in"
     "${PROJECT_BINARY_DIR}/src/config.hpp"
 )
+

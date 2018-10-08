@@ -14,8 +14,9 @@
 #include "args.hpp"
 #include "init/flags.hpp"
 #include "utils/numa.hpp"
+#include "init/numa.hpp"
 
-#define NAME "Comm/UM/Coherence/HostToGPU"
+#define NAME "Comm_UM_Coherence_HostToGPU"
 
 template <bool NOOP = false>
 __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
@@ -38,7 +39,11 @@ __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
   }
 }
 
-static void Comm_UM_Coherence_HostToGPU(benchmark::State &state) {
+auto Comm_UM_Coherence_HostToGPU = [] (benchmark::State &state,
+  #if USE_NUMA
+  const int numa_id,
+  #endif // USE_NUMA
+  const int cuda_id) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -48,21 +53,17 @@ static void Comm_UM_Coherence_HostToGPU(benchmark::State &state) {
   const size_t pageSize = page_size();
 
   const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
-  const int dst_gpu  = FLAG(cuda_device_ids)[0];
-#if USE_NUMA
-  const int src_numa = FLAG(numa_ids)[0];
-#endif
 
 #if USE_NUMA
-  numa_bind_node(src_numa);
+  numa_bind_node(numa_id);
 #endif
 
-  if (PRINT_IF_ERROR(utils::cuda_reset_device(dst_gpu))) {
+  if (PRINT_IF_ERROR(utils::cuda_reset_device(cuda_id))) {
     state.SkipWithError(NAME " failed to reset device");
     return;
   }
 
-  if (PRINT_IF_ERROR(cudaSetDevice(dst_gpu))) {
+  if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
     state.SkipWithError(NAME " failed to set CUDA dst device");
     return;
   }
@@ -119,13 +120,38 @@ static void Comm_UM_Coherence_HostToGPU(benchmark::State &state) {
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
+  state.counters["cuda_id"] = cuda_id;
+#if USE_NUMA
+  state.counters["numa_id"] = numa_id;
+#endif // USE_NUMA
 
 #if USE_NUMA
   numa_bind_node(-1);
 #endif
+};
+
+static void registerer() {
+  for (auto cuda_id : unique_cuda_device_ids()) {
+#if USE_NUMA
+    for (auto numa_id : unique_numa_ids()) {
+#endif // USE_NUMA
+      std::string name = std::string(NAME)
+#if USE_NUMA 
+                       + "/" + std::to_string(numa_id) 
+#endif // USE_NUMA
+                       + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Coherence_HostToGPU,
+#if USE_NUMA
+        numa_id,
+#endif // USE_NUMA
+        cuda_id)->SMALL_ARGS()->UseManualTime();
+#if USE_NUMA
+    }
+#endif // USE_NUMA
+  }
 }
 
-BENCHMARK(Comm_UM_Coherence_HostToGPU)->SMALL_ARGS()->UseManualTime();
+SCOPE_REGISTER_AFTER_INIT(registerer);
 
 #endif // CUDA_VERSION_MAJOR >= 8

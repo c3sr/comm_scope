@@ -14,9 +14,9 @@
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
 
-#define NAME "NUMA/Memcpy/WCToGPU"
+#define NAME "Comm_NUMAMemcpy_WCToGPU"
 
-static void NUMA_Memcpy_WCToGPU(benchmark::State &state) {
+auto Comm_NUMAMemcpy_WCToGPU = [](benchmark::State &state, const int numa_id, const int cuda_id) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -27,9 +27,6 @@ static void NUMA_Memcpy_WCToGPU(benchmark::State &state) {
     state.SkipWithError(NAME " NUMA not available");
     return;
   }
-
-  const int numa_id = FLAG(numa_ids)[0];
-  const int cuda_id = FLAG(cuda_device_ids)[0];
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
@@ -69,9 +66,7 @@ static void NUMA_Memcpy_WCToGPU(benchmark::State &state) {
 
   for (auto _ : state) {
     cudaEventRecord(start, NULL);
-
-    const auto cuda_err = cudaMemcpy(dst, src, bytes, cudaMemcpyHostToDevice);
-
+    const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyHostToDevice);
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
 
@@ -87,12 +82,22 @@ static void NUMA_Memcpy_WCToGPU(benchmark::State &state) {
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
+  state.counters["cuda_id"] = cuda_id;
+  state.counters["numa_id"] = numa_id;
 
   // reset to run on any node
   numa_bind_node(-1);
+};
+
+static void registerer() {
+  for (auto cuda_id : unique_cuda_device_ids()) {
+    for (auto numa_id : unique_numa_ids()) {
+      std::string name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_WCToGPU, numa_id, cuda_id)->SMALL_ARGS()->UseManualTime();
+    }
+  }
 }
 
-BENCHMARK(NUMA_Memcpy_WCToGPU)->SMALL_ARGS()->UseManualTime();
-
+SCOPE_REGISTER_AFTER_INIT(registerer);
 #endif // USE_NUMA == 1

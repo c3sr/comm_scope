@@ -13,10 +13,11 @@
 #include "init/flags.hpp"
 #include "init/numa.hpp"
 #include "utils/numa.hpp"
+#include "utils/cache_control.hpp"
 
-#define NAME "Comm/NUMAMemcpy/PinnedToGPU"
+#define NAME "Comm_NUMAMemcpy_PinnedToGPU"
 
-static void Comm_NUMAMemcpy_PinnedToGPU(benchmark::State &state) {
+auto Comm_NUMAMemcpy_PinnedToGPU = [](benchmark::State &state, const int numa_id, const int cuda_id, const bool flush) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -28,9 +29,6 @@ static void Comm_NUMAMemcpy_PinnedToGPU(benchmark::State &state) {
     return;
   }
 
-  const int numa_id = FLAG(numa_ids)[0];
-  const int cuda_id = FLAG(cuda_device_ids)[0];
-
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
 
@@ -40,7 +38,7 @@ static void Comm_NUMAMemcpy_PinnedToGPU(benchmark::State &state) {
     return;
   }
 
-  char *src = new char[bytes];
+  void *src = aligned_alloc(page_size(), bytes);
   char *dst = nullptr;
 
   std::memset(src, 0, bytes);
@@ -49,7 +47,7 @@ static void Comm_NUMAMemcpy_PinnedToGPU(benchmark::State &state) {
     return;
   }
   defer(cudaHostUnregister(src));
-  defer(delete[] src);
+  defer(free(src));
 
   if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
     state.SkipWithError(NAME " failed to set CUDA device");
@@ -72,10 +70,12 @@ static void Comm_NUMAMemcpy_PinnedToGPU(benchmark::State &state) {
   PRINT_IF_ERROR(cudaEventCreate(&stop));
 
   for (auto _ : state) {
+    std::memset(src, 0, bytes);
+    if (flush) {
+      flush_all(src, bytes);
+    }
     cudaEventRecord(start, NULL);
-
-    const auto cuda_err = cudaMemcpy(dst, src, bytes, cudaMemcpyHostToDevice);
-
+    const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyHostToDevice);
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
 
@@ -93,12 +93,26 @@ static void Comm_NUMAMemcpy_PinnedToGPU(benchmark::State &state) {
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters.insert({{"bytes", bytes}});
+  state.counters["bytes"] = bytes;
+  state.counters["cuda_id"] = cuda_id;
+  state.counters["numa_id"] = numa_id;
 
   // reset to run on any node
   numa_bind_node(-1);
+};
+
+static void registerer() {
+  std::string name;
+  for (auto cuda_id : unique_cuda_device_ids()) {
+    for (auto numa_id : unique_numa_ids()) {
+      name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_PinnedToGPU, numa_id, cuda_id, false)->SMALL_ARGS()->UseManualTime();
+      name = std::string(NAME) + "_flush/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_NUMAMemcpy_PinnedToGPU, numa_id, cuda_id, true)->SMALL_ARGS()->UseManualTime();
+    }
+  }
 }
 
-BENCHMARK(Comm_NUMAMemcpy_PinnedToGPU)->SMALL_ARGS()->UseManualTime();
+SCOPE_REGISTER_AFTER_INIT(registerer);
 
 #endif // USE_NUMA == 1
