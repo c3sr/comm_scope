@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include <cuda_runtime.h>
 #if USE_NUMA
 #include <numa.h>
@@ -12,14 +10,27 @@
 #include "mapping/args.hpp"
 #include "init/flags.hpp"
 #include "utils/numa.hpp"
+#include "init/numa.hpp"
+#include "utils/cache_control.hpp"
 
-#define NAME "Comm/Mapping/HostToGPU"
+
+#define NAME "Comm_ZeroCopy_HostToGPU"
 
 #define OR_SKIP(stmt) \
   if (PRINT_IF_ERROR(stmt)) { \
     state.SkipWithError(NAME); \
     return; \
 }
+
+typedef enum {
+  READ,
+  WRITE,
+} AccessType;
+
+typedef enum {
+  FLUSH,
+  NO_FLUSH,
+} FlushType;
 
 template <typename write_t>
 __global__ void gpu_write(write_t *ptr, const size_t bytes) {
@@ -46,7 +57,7 @@ __global__ void gpu_read(const read_t *ptr, const size_t bytes) {
 }
 
 
-static void Comm_Mapping_HostToGPU(benchmark::State &state, const bool read) {
+auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa, const int dst_cuda, const AccessType access_type) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -56,10 +67,6 @@ static void Comm_Mapping_HostToGPU(benchmark::State &state, const bool read) {
   const size_t pageSize = page_size();
 
   const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
-  const int dst_cuda  = FLAG(cuda_device_ids)[0];
-#if USE_NUMA
-  const int src_numa = FLAG(numa_ids)[0];
-#endif
 
 #if USE_NUMA
   numa_bind_node(src_numa);
@@ -85,7 +92,6 @@ static void Comm_Mapping_HostToGPU(benchmark::State &state, const bool read) {
     OR_SKIP(cudaHostGetDevicePointer(&dptr, ptr, 0));
   }
 
-
   cudaEvent_t start, stop;
   OR_SKIP(cudaEventCreate(&start));
   defer(cudaEventDestroy(start));
@@ -93,14 +99,20 @@ static void Comm_Mapping_HostToGPU(benchmark::State &state, const bool read) {
   defer(cudaEventDestroy(stop));
 
   for (auto _ : state) {
-    cudaEventRecord(start);
-    if (read) {
+
+    std::memset(ptr, state.iterations(), bytes);
+    // flush_all(ptr, bytes);
+    OR_SKIP(cudaDeviceSynchronize());
+
+    OR_SKIP(cudaEventRecord(start));
+    if (READ == access_type) {
       gpu_read<int32_t><<<256, 256>>>((int32_t*) dptr, bytes);
     } else {
       gpu_write<int32_t><<<256, 256>>>((int32_t *)dptr, bytes);
     }
-    cudaEventRecord(stop);
-    cudaEventSynchronize(stop);
+    OR_SKIP(cudaDeviceSynchronize());
+    OR_SKIP(cudaEventRecord(stop));
+    OR_SKIP(cudaEventSynchronize(stop));
 
     float millis = 0;
     OR_SKIP(cudaEventElapsedTime(&millis, start, stop));
@@ -109,13 +121,35 @@ static void Comm_Mapping_HostToGPU(benchmark::State &state, const bool read) {
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
   state.counters["bytes"] = bytes;
+#if USE_NUMA
   state.counters["src_numa"] = src_numa;
+#endif // USE_NUMA
   state.counters["dst_cuda"] = dst_cuda;
 
 #if USE_NUMA
   numa_bind_node(-1);
 #endif
+};
+
+static void registerer() {
+  for (auto cuda_id : unique_cuda_device_ids()) {
+#if USE_NUMA
+    for (auto numa_id : unique_numa_ids()) {
+#endif // USE_NUMA
+      std::string name = std::string(NAME)
+#if USE_NUMA 
+                       + "/" + std::to_string(numa_id) 
+#endif // USE_NUMA
+                       + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_ZeroCopy_HostToGPU,
+#if USE_NUMA
+        numa_id,
+#endif // USE_NUMA
+        cuda_id, WRITE)->ARGS()->UseManualTime();
+#if USE_NUMA
+    }
+#endif // USE_NUMA
+  }
 }
 
-BENCHMARK_CAPTURE(Comm_Mapping_HostToGPU, read, 1)->ARGS()->UseManualTime();
-BENCHMARK_CAPTURE(Comm_Mapping_HostToGPU, write, 0)->ARGS()->UseManualTime();
+SCOPE_REGISTER_AFTER_INIT(registerer);

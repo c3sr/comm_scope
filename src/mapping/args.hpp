@@ -1,3 +1,3 @@
 #pragma once
 
-#define ARGS() DenseRange(8, 31, 2)->ArgName("log2(N)")
+#define ARGS() DenseRange(10, 33, 1)->ArgName("log2(N)")

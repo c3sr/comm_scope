@@ -140,14 +140,11 @@ const int num_threads) {
     }
 
 
-    nvtxRangePush("make");
     // Create all threads
     for (int i = 0; i < num_threads; ++i) {
       workers[i] = std::thread(cpu_write, &ptr[i * bytes / num_threads], bytes / num_threads, page_size(), &starts[i], &stops[i]);
     }
-    nvtxRangePop();
 
-    nvtxRangePush("go");
     auto start = std::chrono::system_clock::now();
         // unleash threads
         {
@@ -161,7 +158,6 @@ const int num_threads) {
     }
     
     auto stop = std::chrono::system_clock::now();
-    nvtxRangePop();
     ready = false;
     
     auto elapsed_seconds =
