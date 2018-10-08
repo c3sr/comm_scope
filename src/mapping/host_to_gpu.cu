@@ -27,10 +27,26 @@ typedef enum {
   WRITE,
 } AccessType;
 
+std::string to_string(const AccessType &a) {
+  if (a == READ) {
+    return "_Read";
+  } else {
+    return "_Write";
+  }
+}
+
 typedef enum {
   FLUSH,
   NO_FLUSH,
 } FlushType;
+
+std::string to_string(const FlushType &a) {
+  if (a == FLUSH) {
+    return "_Flush";
+  } else {
+    return "";
+  }
+}
 
 template <typename write_t>
 __global__ void gpu_write(write_t *ptr, const size_t bytes) {
@@ -38,7 +54,7 @@ __global__ void gpu_write(write_t *ptr, const size_t bytes) {
   const size_t num_elems = bytes / sizeof(write_t);
 
   for (size_t i = gx; i < num_elems; i += gridDim.x * blockDim.x) {
-    ptr[gx] = 0;
+    ptr[i] = 0;
   }
 }
 
@@ -49,11 +65,13 @@ __global__ void gpu_read(const read_t *ptr, const size_t bytes) {
   const size_t num_elems = bytes / sizeof(read_t);
 
   __shared__ int32_t s[256];
+  int32_t t;
 
   for (size_t i = gx; i < num_elems; i += gridDim.x * blockDim.x) {
-    s[threadIdx.x] = ptr[gx];
-    (void) s[threadIdx.x];
+    t += ptr[i];
   }
+  s[threadIdx.x] = t;
+  (void) s[threadIdx.x];
 }
 
 
@@ -100,17 +118,13 @@ auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa, c
 
   for (auto _ : state) {
 
-    std::memset(ptr, state.iterations(), bytes);
-    // flush_all(ptr, bytes);
-    OR_SKIP(cudaDeviceSynchronize());
-
     OR_SKIP(cudaEventRecord(start));
     if (READ == access_type) {
       gpu_read<int32_t><<<256, 256>>>((int32_t*) dptr, bytes);
     } else {
       gpu_write<int32_t><<<256, 256>>>((int32_t *)dptr, bytes);
     }
-    OR_SKIP(cudaDeviceSynchronize());
+
     OR_SKIP(cudaEventRecord(stop));
     OR_SKIP(cudaEventSynchronize(stop));
 
@@ -132,11 +146,16 @@ auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa, c
 };
 
 static void registerer() {
+
+  for (auto workload : {READ, WRITE}) {
+
+
+
   for (auto cuda_id : unique_cuda_device_ids()) {
 #if USE_NUMA
     for (auto numa_id : unique_numa_ids()) {
 #endif // USE_NUMA
-      std::string name = std::string(NAME)
+      std::string name = std::string(NAME) + to_string(workload)
 #if USE_NUMA 
                        + "/" + std::to_string(numa_id) 
 #endif // USE_NUMA
@@ -145,11 +164,12 @@ static void registerer() {
 #if USE_NUMA
         numa_id,
 #endif // USE_NUMA
-        cuda_id, WRITE)->ARGS()->UseManualTime();
+        cuda_id, workload)->ARGS()->UseManualTime();
 #if USE_NUMA
     }
 #endif // USE_NUMA
   }
+}
 }
 
 SCOPE_REGISTER_AFTER_INIT(registerer);
