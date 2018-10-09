@@ -15,6 +15,11 @@ See the `docs` folder for a description of the benchmarks.
 
 # Changelog
 
+## v0.5.0
+
+* Add zero-copy benchmarks
+* Don't use nvToolsExt
+
 ## v0.4.0
 
 * Add multithreaded Coherence GPU to Host benchmark
