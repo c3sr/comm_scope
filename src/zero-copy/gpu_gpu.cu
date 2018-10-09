@@ -174,7 +174,8 @@ static void registerer() {
         for (auto dst_gpu : unique_cuda_device_ids()) {
           if (src_gpu < dst_gpu) {
 
-            int s2d, d2s;
+            int s2d = false;
+            int d2s = false;
             if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&s2d, src_gpu, dst_gpu))
              && !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&d2s, dst_gpu, src_gpu))) {
               if (s2d && d2s) {
@@ -187,6 +188,8 @@ static void registerer() {
                     + "/" + std::to_string(dst_gpu);
                 benchmark::RegisterBenchmark(name.c_str(), Comm_ZeroCopy_GPUGPU,
                 src_gpu, dst_gpu, workload, duplex)->ARGS()->UseRealTime();
+              } else {
+                LOG(debug, "{} can't run on devices {} {}: peer access not available", NAME, src_gpu, dst_gpu);
               }
             }
           }

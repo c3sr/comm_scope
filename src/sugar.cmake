@@ -12,6 +12,7 @@ endif()
 include(sugar_include)
 
 sugar_include(coherence)
+sugar_include(coherence-duplex)
 sugar_include(init)
 sugar_include(latency)
 sugar_include(memcpy)
