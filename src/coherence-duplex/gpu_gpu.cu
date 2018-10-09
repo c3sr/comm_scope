@@ -58,7 +58,7 @@ auto Comm_Coherence_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0, 
 
 
 
-  #define INIT(dev) \
+#define INIT(dev) \
   OR_SKIP(utils::cuda_reset_device(gpu##dev)); \
   OR_SKIP(cudaSetDevice(gpu##dev)); \
   OR_SKIP(cudaStreamCreate(&streams[dev])); \
@@ -78,9 +78,13 @@ auto Comm_Coherence_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0, 
     OR_SKIP(cudaSetDevice(gpu1));
     OR_SKIP(cudaDeviceSynchronize());
 
+    OR_SKIP(cudaSetDevice(gpu0));
     state.ResumeTiming();
     gpu_write<<<256, 256, 0, streams[0]>>>(ptrs[0], bytes, pageSize);
+    OR_SKIP(cudaSetDevice(gpu1));
     gpu_write<<<256, 256, 0, streams[1]>>>(ptrs[1], bytes, pageSize);
+    OR_SKIP(cudaGetLastError());
+    
 
     OR_SKIP(cudaStreamSynchronize(streams[0]));
     OR_SKIP(cudaStreamSynchronize(streams[1]));

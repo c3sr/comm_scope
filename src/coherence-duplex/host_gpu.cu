@@ -95,7 +95,6 @@ auto Comm_Coherence_Duplex_HostGPU = [] (benchmark::State &state,
       gpu_write<<<256, 256>>>(ptrs[1], bytes, pageSize);
     }
     OR_SKIP(cudaDeviceSynchronize());
-    std::cerr << "here\n";
 
     state.ResumeTiming();
     // access ptrs[0] on gpu
