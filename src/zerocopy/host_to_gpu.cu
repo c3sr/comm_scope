@@ -7,14 +7,14 @@
 #include "scope/utils/utils.hpp"
 #include "scope/init/flags.hpp"
 
-#include "zero-copy/args.hpp"
 #include "init/flags.hpp"
 #include "utils/numa.hpp"
 #include "init/numa.hpp"
 #include "utils/cache_control.hpp"
 
+#include "args.hpp"
 
-#define NAME "Comm_ZeroCopy_HostGPU"
+#define NAME "Comm_ZeroCopy_HostToGPU"
 
 #define OR_SKIP(stmt) \
   if (PRINT_IF_ERROR(stmt)) { \
@@ -75,7 +75,7 @@ __global__ void gpu_read(const read_t *ptr, const size_t bytes) {
 }
 
 
-auto Comm_ZeroCopy_HostGPU = [](benchmark::State &state, const int src_numa, const int dst_cuda, const AccessType access_type) {
+auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa, const int dst_cuda, const AccessType access_type) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -164,7 +164,7 @@ static void registerer() {
                        + "/" + std::to_string(numa_id) 
 #endif // USE_NUMA
                        + "/" + std::to_string(cuda_id);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_ZeroCopy_HostGPU,
+      benchmark::RegisterBenchmark(name.c_str(), Comm_ZeroCopy_HostToGPU,
 #if USE_NUMA
         numa_id,
 #endif // USE_NUMA

@@ -22,5 +22,6 @@ sugar_include(numamemcpy-duplex)
 sugar_include(prefetch)
 sugar_include(prefetch-duplex)
 sugar_include(utils)
-sugar_include(zero-copy)
+sugar_include(zerocopy)
+sugar_include(zerocopy-duplex)
 
