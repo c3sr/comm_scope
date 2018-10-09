@@ -73,49 +73,70 @@ auto Comm_ZeroCopy_GPUGPU = [](benchmark::State &state, const int gpu0, const in
   std::vector<cudaStream_t> streams(duplex ? 2 : 1);
   std::vector<cudaEvent_t>   starts(duplex ? 2 : 1);
   std::vector<cudaEvent_t>    stops(duplex ? 2 : 1);
-  std::vector<void *> ptrs;
+  std::vector<void *>          ptrs(duplex ? 2 : 1, nullptr);
 
-#define INIT(dev) \
-  OR_SKIP(utils::cuda_reset_device(gpu##dev)); \
-  OR_SKIP(cudaSetDevice(gpu##dev)); \
-  OR_SKIP(cudaMalloc(&ptrs[dev], bytes)); \
-  OR_SKIP(cudaMemset(ptrs[dev], 0, bytes)); \
-  OR_SKIP(cudaEventCreate(&starts[dev])); \
-  OR_SKIP(cudaEventCreate(&stops[dev]));
+  OR_SKIP(utils::cuda_reset_device(gpu0));
+  OR_SKIP(utils::cuda_reset_device(gpu1));
+  
 
-  INIT(0);
-  if (duplex) {
-    INIT(1);
+#define RD_INIT(src, dst, op_idx) \
+  OR_SKIP(cudaSetDevice(gpu##src)); \
+  OR_SKIP(cudaMalloc(&ptrs[op_idx], bytes)); \
+  OR_SKIP(cudaMemset(ptrs[op_idx], 0, bytes)); \
+  OR_SKIP(cudaSetDevice(gpu##dst)); \
+  OR_SKIP(cudaEventCreate(&starts[op_idx])); \
+  OR_SKIP(cudaEventCreate(&stops[op_idx])); \
+  OR_SKIP(cudaStreamCreate(&streams[op_idx]));
+
+// code runs on src, and data on dst
+#define WR_INIT(src, dst, op_idx) \
+  OR_SKIP(cudaSetDevice(gpu##dst)); \
+  OR_SKIP(cudaMalloc(&ptrs[op_idx], bytes)); \
+  OR_SKIP(cudaMemset(ptrs[op_idx], 0, bytes)); \
+  OR_SKIP(cudaSetDevice(gpu##src)); \
+  OR_SKIP(cudaEventCreate(&starts[op_idx])); \
+  OR_SKIP(cudaEventCreate(&stops[op_idx])); \
+  OR_SKIP(cudaStreamCreate(&streams[op_idx]));
+
+  if (READ == access_type) {
+    RD_INIT(0, 1, 0);
+    if (duplex) {
+      RD_INIT(1, 0, 1);
+    }
+  } else {
+    WR_INIT(0, 1, 0);
+    if (duplex) {
+      WR_INIT(1, 0, 1);
+    }
   }
-#undef INIT
 
   for (auto _ : state) {
     // READ: gpu1 reads from gpu0 (gpu0 is src, gpu1 is dst)
-#define READ_ITER(src, dst) \
+#define READ_ITER(src, dst, op_idx) \
     { \
     OR_SKIP(cudaSetDevice(gpu##dst)); \
-    OR_SKIP(cudaEventRecord(starts[dst])); \
-    gpu_read<<<256, 256>>>(static_cast<int32_t*>(ptrs[src]), bytes); \
-    OR_SKIP(cudaEventRecord(stops[dst])); \
+    OR_SKIP(cudaEventRecord(starts[op_idx], streams[op_idx])); \
+    gpu_read<int32_t><<<256, 256, 0, streams[op_idx]>>>(static_cast<int32_t*>(ptrs[op_idx]), bytes); \
+    OR_SKIP(cudaEventRecord(stops[op_idx], streams[op_idx])); \
     }
     // WRITE: gpu0 writes to gpu1 (gpu0 is src, gpu1 is dst)
-#define WRITE_ITER(src, dst) \
+#define WRITE_ITER(src, dst, op_idx) \
     { \
     OR_SKIP(cudaSetDevice(gpu##src)); \
-    OR_SKIP(cudaEventRecord(starts[src])); \
-    gpu_write<<<256, 256>>>(static_cast<int32_t*>(ptrs[dst]), bytes); \
-    OR_SKIP(cudaEventRecord(stops[src])); \
+    OR_SKIP(cudaEventRecord(starts[op_idx], streams[op_idx])); \
+    gpu_write<int32_t><<<256, 256, 0, streams[op_idx]>>>(static_cast<int32_t*>(ptrs[op_idx]), bytes); \
+    OR_SKIP(cudaEventRecord(stops[op_idx], streams[op_idx])); \
     }
 
     if (READ == access_type) {
-      READ_ITER(0, 1);
+      READ_ITER(0, 1, 0);
       if (duplex) {
-        READ_ITER(1, 0);
+        READ_ITER(1, 0, 1);
       }
     } else {
-      WRITE_ITER(0, 1);
+      WRITE_ITER(0, 1, 0);
       if (duplex) {
-        WRITE_ITER(1, 0);
+        WRITE_ITER(1, 0, 1);
       }
     }
 
@@ -155,12 +176,12 @@ static void registerer() {
   for (auto workload : {READ, WRITE}) {
     for (auto duplex : {false, true}) {
       for (auto id0 : unique_cuda_device_ids()) {
-        for (auto id1 : unique_numa_ids()) {
-          if (id0 != id1) {
+        for (auto id1 : unique_cuda_device_ids()) {
+          if (id0 < id1) {
             std::string name(NAME);
             if (duplex) name += "_Duplex";
             name += to_string(workload)
-                + "/" + std::to_string(id0);
+                + "/" + std::to_string(id0)
                 + "/" + std::to_string(id1);
             benchmark::RegisterBenchmark(name.c_str(), Comm_ZeroCopy_GPUGPU,
             id0, id1, workload, duplex)->ARGS()->UseManualTime();
