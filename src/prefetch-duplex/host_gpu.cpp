@@ -68,7 +68,7 @@ auto Comm_Prefetch_Duplex_HostGPU = [] (benchmark::State &state,
     OR_SKIP(cudaDeviceSynchronize());
   }
 
-  state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
+  state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes) * 2);
   state.counters["bytes"] = bytes;
   state.counters["cuda_id"] = cuda_id;
 #if USE_NUMA

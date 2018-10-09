@@ -65,7 +65,7 @@ auto Comm_Prefetch_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0, c
     OR_SKIP(cudaStreamSynchronize(streams[1]));
   }
 
-  state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
+  state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes) * 2);
   state.counters["bytes"] = bytes;
   state.counters["gpu0"] = gpu0;
   state.counters["gpu1"] = gpu1;
