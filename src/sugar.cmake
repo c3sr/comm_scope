@@ -20,6 +20,7 @@ sugar_include(memcpy-duplex)
 sugar_include(numa-memcpy)
 sugar_include(numamemcpy-duplex)
 sugar_include(prefetch)
+sugar_include(prefetch-duplex)
 sugar_include(utils)
 sugar_include(zero-copy)
 
