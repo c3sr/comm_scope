@@ -127,11 +127,22 @@ static void registerer() {
   for (auto cuda_id : unique_cuda_device_ids()) {
 
     cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, cuda_id);
-    if (!prop.concurrentManagedAccess) {
-      LOG(debug, "{} can't run on device {}: requires concurrent managed access", NAME, cuda_id);
+    cudaError_t err = cudaGetDeviceProperties(&prop, cuda_id);
+    if (err != cudaSuccess) {
+      LOG(error, "error getting device props in {}", NAME);
       continue;
     }
+    if (!prop.concurrentManagedAccess) {
+      LOG(debug, "device {} doesn't support {}: requires concurrent managed access", cuda_id, NAME);
+      continue;
+    }
+
+    // cudaDeviceProp prop;
+    // cudaGetDeviceProperties(&prop, cuda_id);
+    // if (true) {
+    //   LOG(debug, "device {} doesn't support {}: requires concurrent managed access", cuda_id, NAME);
+    //   continue;
+    // }
 
 #if USE_NUMA
     for (auto numa_id : unique_numa_ids()) {
@@ -150,8 +161,9 @@ static void registerer() {
     }
 #endif // USE_NUMA
   }
+  LOG(debug, "Done after_init for {}", NAME);
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer);
+SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
 
 #endif // CUDA_VERSION_MAJOR >= 8

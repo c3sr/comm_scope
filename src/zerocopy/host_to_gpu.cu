@@ -22,12 +22,10 @@
     return; \
 }
 
-
 typedef enum {
   READ,
   WRITE,
 } AccessType;
-
 
 std::string to_string(const AccessType &a) {
   if (a == READ) {
@@ -37,6 +35,18 @@ std::string to_string(const AccessType &a) {
   }
 }
 
+// typedef enum {
+//   FLUSH,
+//   NO_FLUSH,
+// } FlushType;
+
+// static std::string to_string(const FlushType &a) {
+//   if (a == FLUSH) {
+//     return "_Flush";
+//   } else {
+//     return "";
+//   }
+// }
 
 template <typename write_t>
 __global__ void gpu_write(write_t *ptr, const size_t bytes) {
@@ -65,10 +75,7 @@ __global__ void gpu_read(const read_t *ptr, const size_t bytes) {
 }
 
 
-auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, 
-  const int src_numa, 
-  const int dst_cuda, 
-  const AccessType access_type) {
+auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa, const int dst_cuda, const AccessType access_type) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -77,7 +84,7 @@ auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state,
 
   const size_t pageSize = page_size();
 
-  const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
+  const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
 
 #if USE_NUMA
   numa_bind_node(src_numa);
@@ -114,7 +121,7 @@ auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state,
   defer(cudaEventDestroy(stop));
 
   for (auto _ : state) {
-    flush_all(ptr, bytes);
+
     OR_SKIP(cudaEventRecord(start));
     if (READ == access_type) {
       gpu_read<int32_t><<<256, 256>>>((int32_t*) dptr, bytes);
@@ -169,4 +176,4 @@ static void registerer() {
 }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer);
+SCOPE_REGISTER_AFTER_INIT(registerer, NAME);

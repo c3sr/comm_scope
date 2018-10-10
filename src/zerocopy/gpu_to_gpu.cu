@@ -61,6 +61,7 @@ __global__ void gpu_read(const read_t *ptr, const size_t bytes) {
 
 auto Comm_ZeroCopy_GPUToGPU = [](benchmark::State &state, const int gpu0, const int gpu1, const AccessType access_type) {
 
+  LOG(debug, "Entered {}", NAME);
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
     return;
@@ -73,28 +74,31 @@ auto Comm_ZeroCopy_GPUToGPU = [](benchmark::State &state, const int gpu0, const 
   OR_SKIP(utils::cuda_reset_device(gpu0));
   OR_SKIP(utils::cuda_reset_device(gpu1));
 
+  OR_SKIP(cudaSetDevice(gpu0));
+  { \
+    cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0); \
+    if (cudaErrorPeerAccessAlreadyEnabled != err) { \
+      OR_SKIP(err); \
+    } \
+  }
+  OR_SKIP(cudaSetDevice(gpu1));
+  {
+    cudaError_t err = cudaDeviceEnablePeerAccess(gpu0, 0);
+    if (cudaErrorPeerAccessAlreadyEnabled != err) {
+      OR_SKIP(err);
+    }
+  }
+
   if (READ == access_type) {
     OR_SKIP(cudaSetDevice(gpu0));
     OR_SKIP(cudaMalloc(&ptr, bytes));
     OR_SKIP(cudaMemset(ptr, 0, bytes));
     OR_SKIP(cudaSetDevice(gpu1));
-    {
-      cudaError_t err = cudaDeviceEnablePeerAccess(gpu0, 0);
-      if (cudaErrorPeerAccessAlreadyEnabled != err) {
-        OR_SKIP(err);
-      }
-    }
   } else {
     OR_SKIP(cudaSetDevice(gpu1)); \
     OR_SKIP(cudaMalloc(&ptr, bytes)); \
     OR_SKIP(cudaMemset(ptr, 0, bytes)); \
     OR_SKIP(cudaSetDevice(gpu0)); \
-    { \
-      cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0); \
-      if (cudaErrorPeerAccessAlreadyEnabled != err) { \
-        OR_SKIP(err); \
-      } \
-    }
   }
   defer(cudaFree(ptr));
 
@@ -129,6 +133,7 @@ auto Comm_ZeroCopy_GPUToGPU = [](benchmark::State &state, const int gpu0, const 
 
 static void registerer() {
 
+  LOG(debug, "Registering {} benchmarks", NAME);
   std::string name;
   for (auto workload : {READ, WRITE}) {
       for (auto src_gpu : unique_cuda_device_ids()) {
@@ -156,4 +161,4 @@ static void registerer() {
   }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer);
+SCOPE_REGISTER_AFTER_INIT(registerer, NAME);

@@ -76,18 +76,27 @@ auto Comm_ZeroCopy_GPUGPU = [](benchmark::State &state, const int gpu0, const in
   OR_SKIP(utils::cuda_reset_device(gpu0));
   OR_SKIP(utils::cuda_reset_device(gpu1));
 
+  OR_SKIP(cudaSetDevice(gpu0));
+  { \
+    cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0); \
+    if (cudaErrorPeerAccessAlreadyEnabled != err) { \
+      OR_SKIP(err); \
+    } \
+  }
+  OR_SKIP(cudaSetDevice(gpu1));
+  {
+    cudaError_t err = cudaDeviceEnablePeerAccess(gpu0, 0);
+    if (cudaErrorPeerAccessAlreadyEnabled != err) {
+      OR_SKIP(err);
+    }
+  }
+
 #define RD_INIT(src, dst, op_idx) \
   OR_SKIP(cudaSetDevice(gpu##src)); \
   OR_SKIP(cudaMalloc(&ptrs[op_idx], bytes)); \
   OR_SKIP(cudaMemset(ptrs[op_idx], 0, bytes)); \
   OR_SKIP(cudaSetDevice(gpu##dst)); \
-  OR_SKIP(cudaStreamCreate(&streams[op_idx])); \
-  { \
-    cudaError_t err = cudaDeviceEnablePeerAccess(gpu##src, 0); \
-    if (cudaErrorPeerAccessAlreadyEnabled != err) { \
-      OR_SKIP(err); \
-    } \
-  }
+  OR_SKIP(cudaStreamCreate(&streams[op_idx]));
 
 // code runs on src, and data on dst
 #define WR_INIT(src, dst, op_idx) \
@@ -95,13 +104,7 @@ auto Comm_ZeroCopy_GPUGPU = [](benchmark::State &state, const int gpu0, const in
   OR_SKIP(cudaMalloc(&ptrs[op_idx], bytes)); \
   OR_SKIP(cudaMemset(ptrs[op_idx], 0, bytes)); \
   OR_SKIP(cudaSetDevice(gpu##src)); \
-  OR_SKIP(cudaStreamCreate(&streams[op_idx])); \
-  { \
-    cudaError_t err = cudaDeviceEnablePeerAccess(gpu##dst, 0); \
-    if (cudaErrorPeerAccessAlreadyEnabled != err) { \
-      OR_SKIP(err); \
-    } \
-  }
+  OR_SKIP(cudaStreamCreate(&streams[op_idx]));
 
   if (READ == access_type) {
     RD_INIT(0, 1, 0);
@@ -184,4 +187,4 @@ static void registerer() {
   }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer);
+SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
