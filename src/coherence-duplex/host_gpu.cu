@@ -164,6 +164,6 @@ static void registerer() {
   LOG(debug, "Done after_init for {}", NAME);
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SCOPE_REGISTER_AFTER_INIT(registerer);
 
 #endif // CUDA_VERSION_MAJOR >= 8

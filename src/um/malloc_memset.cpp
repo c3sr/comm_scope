@@ -81,6 +81,6 @@ static void registerer() {
 #endif // USE_NUMA
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SCOPE_REGISTER_AFTER_INIT(registerer);
 
 
