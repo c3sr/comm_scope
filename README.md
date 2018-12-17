@@ -13,7 +13,35 @@ Docker images are [available](https://hub.docker.com/r/c3sr/comm_scope/) on Dock
 
 See the `docs` folder for a description of the benchmarks.
 
+## Bumping the Version
+
+Install bump2version
+
+```pip install --user bump2version```
+
+Check that everything seems good (minor version, for example)
+
+```bump2version --dry-run minor --verbose```
+
+Actually bump the version
+
+```bump2version minor```
+
+Push the changes
+
+```git push && git push --tags```
+
+
 # Changelog
+
+## v0.6.0
+
+* Add unified memory allocation benchmarks
+* Flush CPU caches in zero-copy benchmarks
+* Add zerocopy duplex benchmarks
+* Add unified memory prefetch duplex benchmark
+* Add unified memory demand duplex benchmark
+* Conform to updated SCOPE_REGSITER_AFTER_INIT
 
 ## v0.5.0
 
