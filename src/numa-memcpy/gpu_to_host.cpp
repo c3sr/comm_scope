@@ -105,7 +105,7 @@ static void registerer() {
   }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer);
+SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
 
 
 #endif // USE_NUMA == 1

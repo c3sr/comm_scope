@@ -34,6 +34,10 @@ Push the changes
 
 # Changelog
 
+## v0.6.1
+
+* Conform to updated SCOPE_REGSITER_AFTER_INIT
+
 ## v0.6.0
 
 * Add unified memory allocation benchmarks
