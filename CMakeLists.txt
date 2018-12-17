@@ -5,7 +5,7 @@ endif()
 
 
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
-project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.6.0)
+project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.6.1)
 
 sugar_include("src")
 
