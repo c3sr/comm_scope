@@ -19,7 +19,7 @@ matrix:
     - env: DO_BUILD=0 DOCKER_CUDA=75 DOCKER_ARCH=amd64
     - env: DO_BUILD=0 DOCKER_CUDA=80 DOCKER_ARCH=amd64 
     - env: DO_BUILD=0 DOCKER_CUDA=92 DOCKER_ARCH=amd64
-  allow-failures:
+  allow_failures:
     - env: DO_BUILD=0 DOCKER_CUDA=75 DOCKER_ARCH=amd64
 script:
 - cd ${TRAVIS_BUILD_DIR}
