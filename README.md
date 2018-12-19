@@ -34,6 +34,10 @@ Push the changes
 
 # Changelog
 
+## v0.6.2
+
+* Fix checking non-existent cudaDeviceProp field in CUDA < 9
+
 ## v0.6.1
 
 * Conform to updated SCOPE_REGSITER_AFTER_INIT
