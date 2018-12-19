@@ -108,7 +108,12 @@ auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa, c
   void *dptr;
   cudaDeviceProp prop;
   OR_SKIP(cudaGetDeviceProperties(&prop, dst_cuda));
+
+#if __CUDACC_VER_MAJOR__ >= 9
   if (prop.canUseHostPointerForRegisteredMem) {
+#else
+  if (false) {
+#endif
     dptr = ptr;
   } else {
     OR_SKIP(cudaHostGetDevicePointer(&dptr, ptr, 0));
