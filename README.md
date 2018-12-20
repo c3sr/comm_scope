@@ -9,6 +9,11 @@ Docker images are [available](https://hub.docker.com/r/c3sr/comm_scope/) on Dock
 * [Carl Pearson](mailto:pearson@illinois.edu)
 * [Sarah Hashash](mailto:hashash2@illinois.edu)
 
+## Prerequisites
+
+* g++ >= 4.9
+* CUDA toolkit >= 8.0
+
 ## Documentation
 
 See the `docs` folder for a description of the benchmarks.
