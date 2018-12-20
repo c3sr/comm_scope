@@ -39,6 +39,11 @@ Push the changes
 
 # Changelog
 
+## v0.6.3
+
+* Add `USE_NUMA` CMake option
+* Fix compile errors when USE_NUMA=0 or NUMA cannot be found 
+
 ## v0.6.2
 
 * Fix checking non-existent cudaDeviceProp field in CUDA < 9
