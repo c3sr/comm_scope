@@ -75,7 +75,11 @@ __global__ void gpu_read(const read_t *ptr, const size_t bytes) {
 }
 
 
-auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa, const int dst_cuda, const AccessType access_type) {
+auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state,
+  #if USE_NUMA
+  const int src_numa,
+  #endif // USE_NUMA
+  const int dst_cuda, const AccessType access_type) {
 
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");

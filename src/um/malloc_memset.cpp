@@ -22,9 +22,9 @@
     return; \
 }
 
-auto Comm_UM_Malloc_Memset = [] (benchmark::State &state,
+auto Comm_UM_Malloc_Memset = [] (benchmark::State &state
   #if USE_NUMA
-  const int numa_id
+  , const int numa_id
   #endif // USE_NUMA
   ) {
 
