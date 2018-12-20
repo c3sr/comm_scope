@@ -3,6 +3,7 @@ if (NOT ENABLE_COMM)
   return()
 endif()
 
+option(USE_NUMA "Try to use libnuma" ON)
 
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.6.2)
@@ -21,15 +22,18 @@ set_property(TARGET comm_scope PROPERTY CUDA_STANDARD 11)
 
 
 ## NUMA
-find_package(numa)
-if(numa_FOUND)
-    target_compile_definitions(comm_scope PRIVATE -DUSE_NUMA=1)
-    target_link_libraries(comm_scope PUBLIC numa)
-    target_include_directories(comm_scope SYSTEM PRIVATE ${numa_INCLUDE_DIR})
-else()
-target_compile_definitions(comm_scope PRIVATE -DUSE_NUMA=0)
-  scope_warning("didn't find NUMA, some benchmarks will be unavailable.")
-endif(numa_FOUND)
+if (USE_NUMA)
+  find_package(numa)
+  if(numa_FOUND)
+      target_compile_definitions(comm_scope PRIVATE -DUSE_NUMA=1)
+      target_link_libraries(comm_scope PUBLIC numa)
+      target_include_directories(comm_scope SYSTEM PRIVATE ${numa_INCLUDE_DIR})
+  else()
+  target_compile_definitions(comm_scope PRIVATE -DUSE_NUMA=0)
+    scope_warning("didn't find NUMA, some benchmarks will be unavailable.")
+  endif(numa_FOUND)
+else(USE_NUMA)
+endif(USE_NUMA)
 
 ## OpenMP
 find_package(OpenMP)
