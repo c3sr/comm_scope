@@ -1,4 +1,4 @@
-option(ENABLE_COMM "Include Comm|Scope (github.com/c3sr/comm_scope)" ON)
+option(ENABLE_COMM "Include Comm|Scope (github.com/c3sr/comm_scope)" OFF)
 if (NOT ENABLE_COMM)
   return()
 endif()
