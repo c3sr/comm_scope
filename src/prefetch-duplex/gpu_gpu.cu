@@ -1,4 +1,4 @@
-#if CUDA_VERSION_MAJOR >= 8
+#if __CUDACC_VER_MAJOR__ >= 8
 
 #include <cassert>
 
@@ -93,4 +93,4 @@ static void registerer() {
 
 SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
 
-#endif // CUDA_VERSION_MAJOR >= 8
+#endif // __CUDACC_VER_MAJOR__ >= 8

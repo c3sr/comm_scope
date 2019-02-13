@@ -1,4 +1,4 @@
-#if CUDA_VERSION_MAJOR >= 8
+#if __CUDACC_VER_MAJOR__ >= 8
 
 #include <cassert>
 
@@ -12,11 +12,12 @@
 #include "scope/utils/utils.hpp"
 #include "scope/init/flags.hpp"
 
+#include "init/flags.hpp"
 #include "args.hpp"
 
-#define NAME "Comm_UM_Prefetch_GPUToHost"
+#define NAME "Comm_UM_Prefetch_HostToGPU"
 
-auto Comm_UM_Prefetch_GPUToHost = [](benchmark::State &state,
+auto Comm_UM_Prefetch_HostToGPU = [](benchmark::State &state,
 #if USE_NUMA
 const int numa_id,
 #endif // USE_NUMA
@@ -27,7 +28,7 @@ const int cuda_id) {
     return;
   }
 
-  const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
+  const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
 
 #if USE_NUMA
   numa_bind_node(numa_id);
@@ -39,7 +40,7 @@ const int cuda_id) {
   }
 
   if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
-    state.SkipWithError(NAME " failed to set CUDA device");
+    state.SkipWithError(NAME " failed to set CUDA dst device");
     return;
   }
 
@@ -69,17 +70,18 @@ const int cuda_id) {
   defer(cudaEventDestroy(stop));
 
   for (auto _ : state) {
-    if (PRINT_IF_ERROR(cudaMemPrefetchAsync(ptr, bytes, cuda_id))) {
-      state.SkipWithError(NAME " failed to prefetch to src");
+    if (PRINT_IF_ERROR(cudaMemPrefetchAsync(ptr, bytes, cudaCpuDeviceId))) {
+      state.SkipWithError(NAME " failed to move data to src");
       return;
     }
     if (PRINT_IF_ERROR(cudaDeviceSynchronize())) {
       state.SkipWithError(NAME " failed to synchronize");
       return;
     }
+
     cudaEventRecord(start);
-    if (PRINT_IF_ERROR(cudaMemPrefetchAsync(ptr, bytes, cudaCpuDeviceId))) {
-      state.SkipWithError(NAME " failed to move data to dst");
+    if (PRINT_IF_ERROR(cudaMemPrefetchAsync(ptr, bytes, cuda_id))) {
+      state.SkipWithError(NAME " failed to move data to src");
       return;
     }
     cudaEventRecord(stop);
@@ -101,7 +103,6 @@ const int cuda_id) {
 #endif // USE_NUMA
 
 #if USE_NUMA
-  // reset to run on any node
   numa_bind_node(-1);
 #endif // USE_NUMA
 };
@@ -116,7 +117,7 @@ static void registerer() {
                        + "/" + std::to_string(numa_id) 
 #endif // USE_NUMA
                        + "/" + std::to_string(cuda_id);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Prefetch_GPUToHost,
+      benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Prefetch_HostToGPU,
 #if USE_NUMA
         numa_id,
 #endif // USE_NUMA
@@ -129,4 +130,4 @@ static void registerer() {
 
 SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
 
-#endif // CUDA_VERSION_MAJOR >= 8
+#endif // __CUDACC_VER_MAJOR__ >= 8

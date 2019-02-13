@@ -17,9 +17,9 @@ sugar_files(
 )
 
 sugar_files(
-  comm_SOURCES
-  gpu_gpu.cpp
-  host_gpu.cpp
+  comm_CUDA_SOURCES
+  gpu_gpu.cu
+  host_gpu.cu
 )
 
 
