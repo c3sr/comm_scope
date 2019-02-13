@@ -45,14 +45,17 @@ if (OpenMP_FOUND)
   if (OpenMP_CXX_FLAGS)
     string(REPLACE ";" " " OpenMP_CXX_FLAGS ${OpenMP_CXX_FLAGS})
   endif()
-  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
-  foreach(flag IN ITEMS ${OpenMP_CXX_FLAGS})
-  LIST(APPEND CMAKE_CUDA_FLAGS
-    -Xcompiler
-    ${flag}
+  ## C++ flags
+  target_compile_options(comm_scope PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}>
   )
+
+  # CUDA flags
+  foreach(flag IN ITEMS ${OpenMP_CXX_FLAGS})
+    target_compile_options( comm_scope PRIVATE
+      $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${flag};>
+    )
   endforeach(flag)
 
   add_definitions(-DUSE_OPENMP=1)
@@ -60,13 +63,6 @@ else(OpenMP_FOUND)
   add_definitions(-DUSE_OPENMP=0)
   message(WARNING "didn't find OpenMP, some benchmarks will be unavailable.")
 endif(OpenMP_FOUND)
-
-# CUDA
-target_compile_definitions(comm_scope PRIVATE -DCUDA_VERSION_MAJOR=${CUDA_VERSION_MAJOR})
-target_compile_definitions(comm_scope PRIVATE -DCUDA_VERSION_MINOR=${CUDA_VERSION_MINOR})
-scope_status("CMAKE_CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
-string(REPLACE ";" " " CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS}")
-scope_status("CMAKE_CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
 
 # Get the git version
 git_get_head_revision(GIT_REFSPEC GIT_HASH)
