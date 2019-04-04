@@ -41,14 +41,18 @@ auto Comm_Duplex_Memcpy_GPUGPUPeer = [](benchmark::State &state, const int gpu0,
   // There are two copies, one gpu0 -> gpu1, one gpu1 -> gpu0
 
   // Create One stream per copy
-  cudaStream_t stream1, stream2;
+  cudaStream_t stream1 = nullptr;
+  cudaStream_t stream2 = nullptr;
   std::vector<cudaStream_t> streams = {stream1, stream2};
   OR_SKIP(cudaStreamCreate(&streams[0]), NAME "failed to create stream");
   OR_SKIP(cudaStreamCreate(&streams[1]), NAME "failed to create stream");
 
 
   // Start and stop events for each copy
-  cudaEvent_t start1, start2, stop1, stop2;
+  cudaEvent_t start1 = nullptr;
+  cudaEvent_t start2 = nullptr;
+  cudaEvent_t stop1 = nullptr;
+  cudaEvent_t stop2 = nullptr;
   std::vector<cudaEvent_t> starts = {start1, start2};
   std::vector<cudaEvent_t> stops = {stop1, stop2};
   OR_SKIP(cudaEventCreate(&starts[0]), NAME " failed to create event");
