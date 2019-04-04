@@ -22,3 +22,4 @@ sugar_files(
     gpu_to_host.cu
     host_to_gpu.cu
 )
+

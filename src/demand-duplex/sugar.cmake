@@ -3,10 +3,10 @@
 # see wiki for more info:
 #   https://github.com/ruslo/sugar/wiki/Collecting-sources
 
-if(DEFINED COMM_SCOPE_SRC_COHERENCE_SUGAR_CMAKE_)
+if(DEFINED COMM_SCOPE_SRC_DEMAND_DUPLEX_SUGAR_CMAKE_)
   return()
 else()
-  set(COMM_SCOPE_SRC_COHERENCE_SUGAR_CMAKE_ 1)
+  set(COMM_SCOPE_SRC_DEMAND_DUPLEX_SUGAR_CMAKE_ 1)
 endif()
 
 include(sugar_files)
@@ -18,9 +18,7 @@ sugar_files(
 
 sugar_files(
     comm_CUDA_SOURCES
-    gpu_to_gpu.cu
-    gpu_to_host.cu
-    gpu_to_host_mt.cu
-    host_to_gpu.cu
+    gpu_gpu.cu
+    host_gpu.cu
 )
 

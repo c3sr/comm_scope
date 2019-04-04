@@ -12,6 +12,7 @@ endif()
 include(sugar_files)
 include(sugar_include)
 
+sugar_include(ci)
 sugar_include(docs)
 sugar_include(src)
 

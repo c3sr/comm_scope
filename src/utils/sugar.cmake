@@ -13,6 +13,7 @@ include(sugar_files)
 
 sugar_files(
     comm_HEADERS
+    cache_control.hpp
     numa.hpp
     omp.hpp
 )

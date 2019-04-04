@@ -9,10 +9,11 @@ else()
   set(COMM_SCOPE_SRC_SUGAR_CMAKE_ 1)
 endif()
 
+include(sugar_files)
 include(sugar_include)
 
-sugar_include(coherence)
-sugar_include(coherence-duplex)
+sugar_include(demand)
+sugar_include(demand-duplex)
 sugar_include(init)
 sugar_include(latency)
 sugar_include(memcpy)

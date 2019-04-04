@@ -10,7 +10,7 @@
 
 #include "args.hpp"
 
-#define NAME "Comm_Coherence_Duplex_GPUGPU"
+#define NAME "Comm_Demand_Duplex_GPUGPU"
 
 #define OR_SKIP(stmt)                                                                                                  \
   if (PRINT_IF_ERROR(stmt)) {                                                                                          \
@@ -39,7 +39,7 @@ __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
   }
 }
 
-auto Comm_Coherence_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0, const int gpu1) {
+auto Comm_Demand_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0, const int gpu1) {
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
     return;
@@ -131,7 +131,7 @@ static void registerer() {
     for (size_t j : unique_cuda_device_ids()) {
       if (i < j) {
         std::string name = std::string(NAME) + "/" + std::to_string(i) + "/" + std::to_string(j);
-        benchmark::RegisterBenchmark(name.c_str(), Comm_Coherence_Duplex_GPUGPU, i, j)->SMALL_ARGS()->UseManualTime();
+        benchmark::RegisterBenchmark(name.c_str(), Comm_Demand_Duplex_GPUGPU, i, j)->SMALL_ARGS()->UseManualTime();
       }
     }
   }

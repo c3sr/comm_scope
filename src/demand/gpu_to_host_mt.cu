@@ -1,26 +1,26 @@
 #if __CUDACC_VER_MAJOR__ >= 8
 
-#include <thread>
+#include <chrono>
 #include <condition_variable>
 #include <memory>
-#include <chrono>
+#include <thread>
 
 #include <cuda_runtime.h>
 #if USE_NUMA
 #include <numa.h>
 #endif // USE_NUMA
 
+#include "scope/init/flags.hpp"
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
-#include "scope/init/flags.hpp"
 
 #include "args.hpp"
 #include "init/flags.hpp"
-#include "utils/numa.hpp"
 #include "init/numa.hpp"
 #include "utils/cache_control.hpp"
+#include "utils/numa.hpp"
 
-#define NAME "Comm_UM_Coherence_GPUToHostMt"
+#define NAME "Comm_UM_Demand_GPUToHostMt"
 
 typedef std::chrono::time_point<std::chrono::system_clock> time_point_t;
 
@@ -31,16 +31,16 @@ volatile bool ready = false;
 static void cpu_write(char *ptr, const size_t n, const size_t stride, time_point_t *start, time_point_t *stop) {
   {
     std::unique_lock<std::mutex> lk(m);
-    while(!ready) cv.wait(lk);
+    while (!ready)
+      cv.wait(lk);
   }
-  
+
   *start = std::chrono::system_clock::now();
   for (size_t i = 0; i < n; i += stride) {
     benchmark::DoNotOptimize(ptr[i] = 0);
   }
   *stop = std::chrono::system_clock::now();
 }
-
 
 template <bool NOOP = false>
 __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
@@ -63,19 +63,18 @@ __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
   }
 }
 
-auto Comm_UM_Coherence_GPUToHost_Mt = [] (benchmark::State &state,
+auto Comm_UM_Demand_GPUToHost_Mt = [](benchmark::State &state,
 #if USE_NUMA
-const int numa_id,
+                                      const int numa_id,
 #endif // USE_NUMA
-const int cuda_id,
-const int num_threads) {
-
+                                      const int cuda_id,
+                                      const int num_threads) {
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
     return;
   }
 
-  const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
+  const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
 #if USE_NUMA
   numa_bind_node(numa_id);
@@ -106,14 +105,13 @@ const int num_threads) {
   std::vector<time_point_t> starts(num_threads);
   std::vector<time_point_t> stops(num_threads);
 
-
   for (auto _ : state) {
     flush_all(ptr, bytes);
     if (PRINT_IF_ERROR(cudaMemAdvise(ptr, bytes, cudaMemAdviseSetPreferredLocation, cuda_id))) {
       state.SkipWithError(NAME " failed to advise");
       return;
     }
-    if(PRINT_IF_ERROR(cudaMemPrefetchAsync(ptr, bytes, cuda_id))) {
+    if (PRINT_IF_ERROR(cudaMemPrefetchAsync(ptr, bytes, cuda_id))) {
       state.SkipWithError(NAME " failed to prefetch");
       return;
     }
@@ -139,38 +137,34 @@ const int num_threads) {
       return;
     }
 
-
     // Create all threads
     for (int i = 0; i < num_threads; ++i) {
-      workers[i] = std::thread(cpu_write, &ptr[i * bytes / num_threads], bytes / num_threads, page_size(), &starts[i], &stops[i]);
+      workers[i] = std::thread(cpu_write, &ptr[i * bytes / num_threads], bytes / num_threads, page_size(), &starts[i],
+                               &stops[i]);
     }
 
     auto start = std::chrono::system_clock::now();
-        // unleash threads
-        {
-          std::unique_lock<std::mutex> lk(m);
-          ready = true;
-          cv.notify_all();
-        }
+    // unleash threads
+    {
+      std::unique_lock<std::mutex> lk(m);
+      ready = true;
+      cv.notify_all();
+    }
 
-    for (auto &w: workers) {
+    for (auto &w : workers) {
       w.join();
     }
-    
+
     auto stop = std::chrono::system_clock::now();
-    ready = false;
-    
-    auto elapsed_seconds =
-          std::chrono::duration_cast<std::chrono::duration<double>>(
-            stop - start).count();
+    ready     = false;
+
+    auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(stop - start).count();
 
     double maxElapsed = 0;
     for (const auto start : starts) {
       for (const auto stop : stops) {
-        auto elapsed_seconds =
-          std::chrono::duration_cast<std::chrono::duration<double>>(
-            stop - start).count();
-        maxElapsed = std::max(maxElapsed, elapsed_seconds);
+        auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(stop - start).count();
+        maxElapsed           = std::max(maxElapsed, elapsed_seconds);
       }
     }
 
@@ -178,7 +172,7 @@ const int num_threads) {
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters["bytes"] = bytes;
+  state.counters["bytes"]   = bytes;
   state.counters["cuda_id"] = cuda_id;
 #if USE_NUMA
   state.counters["numa_id"] = numa_id;
@@ -197,16 +191,18 @@ static void registerer() {
       for (auto numa_id : unique_numa_ids()) {
 #endif // USE_NUMA
         std::string name = std::string(NAME)
-#if USE_NUMA 
-                         + "/" + std::to_string(numa_id) 
-#endif // USE_NUMA
-                         + "/" + std::to_string(cuda_id)
-                         + "/" + std::to_string(num_threads);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Coherence_GPUToHost_Mt,
 #if USE_NUMA
-          numa_id,
+                           + "/" + std::to_string(numa_id)
 #endif // USE_NUMA
-          cuda_id, num_threads)->SMALL_ARGS()->UseManualTime()->MinTime(0.1);
+                           + "/" + std::to_string(cuda_id) + "/" + std::to_string(num_threads);
+        benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Demand_GPUToHost_Mt,
+#if USE_NUMA
+                                     numa_id,
+#endif // USE_NUMA
+                                     cuda_id, num_threads)
+            ->SMALL_ARGS()
+            ->UseManualTime()
+            ->MinTime(0.1);
 #if USE_NUMA
       }
 #endif // USE_NUMA

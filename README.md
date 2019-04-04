@@ -36,6 +36,16 @@ Push the changes
 
 ```git push && git push --tags```
 
+## Adding or changing names of source files
+
+Comm|Scope uses sugar to inform CMake about source files
+
+From within the scope directory tree
+
+```
+cd scopes
+python ../tools/generate_sugar_files.py --top comm_scope
+```
 
 # Changelog
 

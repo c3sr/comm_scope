@@ -7,23 +7,23 @@
 #include <numa.h>
 #endif // USE_NUMA
 
+#include "scope/init/flags.hpp"
 #include "scope/init/init.hpp"
 #include "scope/utils/utils.hpp"
-#include "scope/init/flags.hpp"
 
 #include "args.hpp"
 #include "init/flags.hpp"
-#include "utils/numa.hpp"
 #include "init/numa.hpp"
 #include "utils/cache_control.hpp"
+#include "utils/numa.hpp"
 
-#define NAME "Comm_Coherence_Duplex_HostGPU"
+#define NAME "Comm_Demand_Duplex_HostGPU"
 
-#define OR_SKIP(stmt) \
-  if (PRINT_IF_ERROR(stmt)) { \
-    state.SkipWithError(NAME); \
-    return; \
-}
+#define OR_SKIP(stmt)                                                                                                  \
+  if (PRINT_IF_ERROR(stmt)) {                                                                                          \
+    state.SkipWithError(NAME);                                                                                         \
+    return;                                                                                                            \
+  }
 
 template <bool NOOP = false>
 __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
@@ -46,19 +46,18 @@ __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
   }
 }
 
-auto Comm_Coherence_Duplex_HostGPU = [] (benchmark::State &state,
-  #if USE_NUMA
-  const int numa_id,
-  #endif // USE_NUMA
-  const int cuda_id) {
-
+auto Comm_Demand_Duplex_HostGPU = [](benchmark::State &state,
+#if USE_NUMA
+                                     const int numa_id,
+#endif // USE_NUMA
+                                     const int cuda_id) {
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
     return;
   }
 
   const size_t pageSize = page_size();
-  const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
+  const auto bytes      = 1ULL << static_cast<size_t>(state.range(0));
 
 #if USE_NUMA
   numa_bind_node(numa_id);
@@ -73,7 +72,6 @@ auto Comm_Coherence_Duplex_HostGPU = [] (benchmark::State &state,
   OR_SKIP(cudaMemset(ptrs[0], 0, bytes));
   OR_SKIP(cudaMemset(ptrs[1], 0, bytes));
   OR_SKIP(cudaDeviceSynchronize());
-  
 
   for (auto _ : state) {
     state.PauseTiming();
@@ -87,7 +85,6 @@ auto Comm_Coherence_Duplex_HostGPU = [] (benchmark::State &state,
       }
     }
     flush_all(ptrs[0], bytes);
-
 
     // move ptrs[1] to gpu
     err = cudaMemPrefetchAsync(ptrs[1], bytes, cuda_id);
@@ -107,7 +104,7 @@ auto Comm_Coherence_Duplex_HostGPU = [] (benchmark::State &state,
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes) * 2);
-  state.counters["bytes"] = bytes;
+  state.counters["bytes"]   = bytes;
   state.counters["cuda_id"] = cuda_id;
 #if USE_NUMA
   state.counters["numa_id"] = numa_id;
@@ -120,7 +117,6 @@ auto Comm_Coherence_Duplex_HostGPU = [] (benchmark::State &state,
   for (auto p : ptrs) {
     OR_SKIP(cudaFree(p));
   }
-
 };
 
 static void registerer() {
@@ -148,15 +144,16 @@ static void registerer() {
     for (auto numa_id : unique_numa_ids()) {
 #endif // USE_NUMA
       std::string name = std::string(NAME)
-#if USE_NUMA 
-                       + "/" + std::to_string(numa_id) 
-#endif // USE_NUMA
-                       + "/" + std::to_string(cuda_id);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_Coherence_Duplex_HostGPU,
 #if USE_NUMA
-        numa_id,
+                         + "/" + std::to_string(numa_id)
 #endif // USE_NUMA
-        cuda_id)->SMALL_ARGS();
+                         + "/" + std::to_string(cuda_id);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_Demand_Duplex_HostGPU,
+#if USE_NUMA
+                                   numa_id,
+#endif // USE_NUMA
+                                   cuda_id)
+          ->SMALL_ARGS();
 #if USE_NUMA
     }
 #endif // USE_NUMA

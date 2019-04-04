@@ -3,7 +3,7 @@
 # see wiki for more info:
 #   https://github.com/ruslo/sugar/wiki/Collecting-sources
 
-if(DEFINED COMM_SCOPE_SRC_PREFETCH_DEUPLX_SUGAR_CMAKE_)
+if(DEFINED COMM_SCOPE_SRC_PREFETCH_DUPLEX_SUGAR_CMAKE_)
   return()
 else()
   set(COMM_SCOPE_SRC_PREFETCH_DUPLEX_SUGAR_CMAKE_ 1)
@@ -17,9 +17,8 @@ sugar_files(
 )
 
 sugar_files(
-  comm_CUDA_SOURCES
-  gpu_gpu.cu
-  host_gpu.cu
+    comm_CUDA_SOURCES
+    gpu_gpu.cu
+    host_gpu.cu
 )
-
 
