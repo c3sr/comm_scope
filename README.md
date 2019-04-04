@@ -20,6 +20,8 @@ See the `docs` folder for a description of the benchmarks.
 
 ## Bumping the Version
 
+Update the changelog.
+
 Install bump2version
 
 ```pip install --user bump2version```
@@ -49,7 +51,20 @@ python ../tools/generate_sugar_files.py --top comm_scope
 
 # Changelog
 
-## v0.6.3
+## v0.7.1 (April 5 2019)
+
+* Add v0.7.0 and v0.7.1 changelog
+
+## v0.7.0 (April 5 2019)
+
+* Make POWER's cache flushing code match the linux kernel.
+* rename "Coherence" benchmarks to "Demand"
+* remove cudaSTreamSynchronize from the timing path of zerocopy-duplex, demand-duplex, and prefetch-duplex
+* Transition to better use of CMake's CUDA language support
+* Use NVCC's compiler defines to check the CUDA version
+* Disable Comm|Scope by default during Scope compilation
+
+## v0.6.3 (Dec 20 2018)
 
 * Add `USE_NUMA` CMake option
 * Fix compile errors when USE_NUMA=0 or NUMA cannot be found 
