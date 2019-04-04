@@ -38,6 +38,12 @@ auto Comm_Prefetch_Duplex_HostGPU = [] (benchmark::State &state,
 
   const size_t pageSize = page_size();
   const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
+  cudaStream_t stream0 = nullptr;
+  cudaStream_t stream1 = nullptr;
+  cudaEvent_t start = nullptr;
+  cudaEvent_t stop = nullptr;
+  cudaEvent_t other = nullptr;
+  char *ptrs[2] = {nullptr};
 
 #if USE_NUMA
   numa_bind_node(numa_id);
@@ -46,26 +52,35 @@ auto Comm_Prefetch_Duplex_HostGPU = [] (benchmark::State &state,
   OR_SKIP(utils::cuda_reset_device(cuda_id));
   OR_SKIP(cudaSetDevice(cuda_id));
 
-  char *ptrs[2] = {nullptr};
+  // one stream for h2d, one stream for d2h
+  OR_SKIP(cudaStreamCreate(&stream0));
+  OR_SKIP(cudaStreamCreate(&stream1));
+  OR_SKIP(cudaEventCreate(&start));
+  OR_SKIP(cudaEventCreate(&other));
+  OR_SKIP(cudaEventCreate(&stop));
+
   OR_SKIP(cudaMallocManaged(&ptrs[0], bytes));
   OR_SKIP(cudaMallocManaged(&ptrs[1], bytes));
   OR_SKIP(cudaMemset(ptrs[0], 0, bytes));
   OR_SKIP(cudaMemset(ptrs[1], 0, bytes));
   OR_SKIP(cudaDeviceSynchronize());
   
-
   for (auto _ : state) {
-    state.PauseTiming();
-
-    cudaError_t err;
     OR_SKIP(cudaMemPrefetchAsync(ptrs[0], bytes, cudaCpuDeviceId));
     flush_all(ptrs[0], bytes);
     OR_SKIP(cudaMemPrefetchAsync(ptrs[1], bytes, cuda_id));
 
-    state.ResumeTiming();
-    OR_SKIP(cudaMemPrefetchAsync(ptrs[1], bytes, cudaCpuDeviceId));
-    OR_SKIP(cudaMemPrefetchAsync(ptrs[0], bytes, cuda_id));
-    OR_SKIP(cudaDeviceSynchronize());
+    OR_SKIP(cudaEventRecord(start, stream0));
+    OR_SKIP(cudaMemPrefetchAsync(ptrs[1], bytes, cudaCpuDeviceId, stream0));
+    OR_SKIP(cudaEventRecord(other, stream1));
+    OR_SKIP(cudaMemPrefetchAsync(ptrs[0], bytes, cuda_id, stream1));
+    OR_SKIP(cudaStreamWaitEvent(stream0, other, 0 /*must be 0*/));
+    OR_SKIP(cudaEventRecord(stop, stream0));
+
+    OR_SKIP(cudaStreamSynchronize(stream0));
+    float millis = 0;
+    OR_SKIP(cudaEventElapsedTime(&millis, start, stop));
+    state.SetIterationTime(millis / 1000);
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes) * 2);
@@ -78,6 +93,12 @@ auto Comm_Prefetch_Duplex_HostGPU = [] (benchmark::State &state,
 #if USE_NUMA
   numa_bind_node(-1);
 #endif
+
+  OR_SKIP(cudaEventDestroy(start));
+  OR_SKIP(cudaEventDestroy(other));
+  OR_SKIP(cudaEventDestroy(stop));
+  OR_SKIP(cudaStreamDestroy(stream0));
+  OR_SKIP(cudaStreamDestroy(stream1));
 
   for (auto p : ptrs) {
     OR_SKIP(cudaFree(p));
@@ -107,7 +128,7 @@ static void registerer() {
 #if USE_NUMA
         numa_id,
 #endif // USE_NUMA
-        cuda_id)->SMALL_ARGS();
+        cuda_id)->SMALL_ARGS()->UseManualTime();
 #if USE_NUMA
     }
 #endif // USE_NUMA
