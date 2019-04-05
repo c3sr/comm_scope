@@ -50,15 +50,20 @@ inline void barrier_all() {
 
 #ifdef __powerpc__
 
-  asm volatile("sync %0"
+  // sync is a mnemonic for sync 0, heavyweight sync
+  asm volatile("sync"
                :        // no outputs
-               : "n"(0) // heavyweight barrier
-               :        // no clobbers
+               :        // no inputs
+               : "memory"
   );
 
 #elif __amd64__
 
-  asm volatile("mfence");
+  asm volatile("mfence"
+               : // no outputs
+               : // no inputs
+               : "memory"
+  );
 
 #else
 #warning "barrier_all not implemented"
