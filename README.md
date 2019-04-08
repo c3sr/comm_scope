@@ -51,6 +51,10 @@ python ../tools/generate_sugar_files.py --top comm_scope
 
 # Changelog
 
+## v0.7.2 (April 8 2019)
+
+* Add memory to the clobber list for for x86 and ppc64le cache flushing.
+
 ## v0.7.1 (April 5 2019)
 
 * Add v0.7.0 and v0.7.1 changelog
