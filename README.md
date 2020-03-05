@@ -70,7 +70,11 @@ python ../tools/generate_sugar_files.py --top comm_scope
 
 # Changelog
 
-## v0.8.0 (March 4 2020)
+## v0.8.1 (March 5 2020)
+
+* Disable peer access in non-peer `cudaMemcpyPeer` benchmarks
+
+## v0.8.0 (March 5 2020)
 
 * Add `cudaMemcpyPeer` uni/bidirectional benchmarks.
 
