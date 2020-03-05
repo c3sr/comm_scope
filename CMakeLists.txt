@@ -9,6 +9,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.7.2)
 
 sugar_include("src")
+add_subdirectory(src)
 
 scope_add_library(comm_scope OBJECT ${comm_SOURCES} ${comm_CUDA_SOURCES} )
 target_include_scope_directories(comm_scope)

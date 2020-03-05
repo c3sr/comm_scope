@@ -14,6 +14,25 @@ Docker images are [available](https://hub.docker.com/r/c3sr/comm_scope/) on Dock
 * g++ >= 4.9
 * CUDA toolkit >= 8.0
 
+
+## Getting started
+
+Get the latest [Scope release](https://github.com/c3sr/scope/releases/latest) and enable Comm|Scope:
+
+```
+<dowload or clone scope>
+mkdir build && cd build
+cmake .. -DENABLE_COMM=1
+make
+./scope --benchmark_list_tests=true
+```
+
+To choose specific benchmarks, filter by regex:
+
+```
+./scope --benchmark_list_tests=true --benchmark_filter=<regex>
+```
+
 ## Documentation
 
 See the `docs` folder for a description of the benchmarks.
@@ -51,6 +70,10 @@ python ../tools/generate_sugar_files.py --top comm_scope
 
 # Changelog
 
+## v0.8.0 (March 4 2020)
+
+* Add `cudaMemcpyPeer` uni/bidirectional benchmarks.
+
 ## v0.7.2 (April 8 2019)
 
 * Add memory to the clobber list for for x86 and ppc64le cache flushing.
@@ -63,7 +86,7 @@ python ../tools/generate_sugar_files.py --top comm_scope
 
 * Make POWER's cache flushing code match the linux kernel.
 * rename "Coherence" benchmarks to "Demand"
-* remove cudaSTreamSynchronize from the timing path of zerocopy-duplex, demand-duplex, and prefetch-duplex
+* remove cudaStreamSynchronize from the timing path of zerocopy-duplex, demand-duplex, and prefetch-duplex
 * Transition to better use of CMake's CUDA language support
 * Use NVCC's compiler defines to check the CUDA version
 * Disable Comm|Scope by default during Scope compilation
