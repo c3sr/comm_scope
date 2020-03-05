@@ -37,7 +37,7 @@ auto Comm_MemcpyPeer = [](benchmark::State &state, const int srcGpu, const int d
   OR_SKIP(cudaMemset(src, 0, bytes), NAME " failed to perform src cudaMemset");
   OR_SKIP(cudaStreamCreate(&stream), NAME " failed to create stream");
   if (srcGpu != dstGpu) {
-    err = cudaDeviceEnablePeerAccess(dstGpu, 0);
+    err = cudaDeviceDisablePeerAccess(dstGpu);
     if (cudaSuccess != err && cudaErrorPeerAccessNotEnabled != err) {
       state.SkipWithError(NAME " failed to disable peer access");
       return;
@@ -49,7 +49,7 @@ auto Comm_MemcpyPeer = [](benchmark::State &state, const int srcGpu, const int d
   defer(cudaFree(dst));
   OR_SKIP(cudaMemset(dst, 0, bytes), NAME " failed to perform dst cudaMemset");
   if (srcGpu != dstGpu) {
-    err = cudaDeviceEnablePeerAccess(srcGpu, 0);
+    err = cudaDeviceDisablePeerAccess(srcGpu);
     if (cudaSuccess != err && cudaErrorPeerAccessNotEnabled != err) {
       state.SkipWithError(NAME " failed to disable peer access");
       return;

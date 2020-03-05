@@ -49,7 +49,7 @@ auto Comm_Duplex_MemcpyPeer = [](benchmark::State &state, const int gpu0, const 
   defer(cudaEventDestroy(start));
   defer(cudaEventDestroy(stop));
   if (gpu0 != gpu1) {
-    err = cudaDeviceEnablePeerAccess(gpu1, 0);
+    err = cudaDeviceDisablePeerAccess(gpu1);
     if (cudaSuccess != err && cudaErrorPeerAccessNotEnabled != err) {
       state.SkipWithError(NAME " failed to disable peer access");
       return;
@@ -68,7 +68,7 @@ auto Comm_Duplex_MemcpyPeer = [](benchmark::State &state, const int gpu0, const 
   OR_SKIP(cudaEventCreate(&stop1), NAME " couldn't create stop1 event");
   defer(cudaEventDestroy(stop1));
   if (gpu0 != gpu1) {
-    err = cudaDeviceEnablePeerAccess(gpu0, 0);
+    err = cudaDeviceDisablePeerAccess(gpu0);
     if (cudaSuccess != err && cudaErrorPeerAccessNotEnabled != err) {
       state.SkipWithError(NAME " failed to disable peer access");
       return;
