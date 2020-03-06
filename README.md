@@ -80,6 +80,10 @@ python ../tools/generate_sugar_files.py --top comm_scope
 
 # Changelog
 
+## v0.8.2 (March 6 2020)
+
+* Fix a event-device mismatch in multi-GPU unidirectional `cudaMemcpyPeer` benchmarks
+
 ## v0.8.1 (March 5 2020)
 
 * Disable peer access in non-peer `cudaMemcpyPeer` benchmarks
