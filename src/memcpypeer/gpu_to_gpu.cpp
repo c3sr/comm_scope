@@ -30,12 +30,17 @@ auto Comm_MemcpyPeer = [](benchmark::State &state, const int srcGpu, const int d
   void *dst = nullptr;
   cudaStream_t stream;
   cudaError_t err;
+  cudaEvent_t start, stop;
 
   OR_SKIP(cudaSetDevice(srcGpu), NAME " failed to set src device");
   OR_SKIP(cudaMalloc(&src, bytes), NAME " failed to perform cudaMalloc");
   defer(cudaFree(src));
   OR_SKIP(cudaMemset(src, 0, bytes), NAME " failed to perform src cudaMemset");
   OR_SKIP(cudaStreamCreate(&stream), NAME " failed to create stream");
+  OR_SKIP(cudaEventCreate(&start), NAME " couldn't create start event");
+  OR_SKIP(cudaEventCreate(&stop), NAME " couldn't create stop event");
+  defer(cudaEventDestroy(start));
+  defer(cudaEventDestroy(stop));
   if (srcGpu != dstGpu) {
     err = cudaDeviceDisablePeerAccess(dstGpu);
     if (cudaSuccess != err && cudaErrorPeerAccessNotEnabled != err) {
@@ -56,10 +61,7 @@ auto Comm_MemcpyPeer = [](benchmark::State &state, const int srcGpu, const int d
     }
   }
 
-  cudaEvent_t start, stop;
-  OR_SKIP(cudaEventCreate(&stop), NAME " couldn't create stop event");
-  OR_SKIP(cudaEventCreate(&start), NAME " couldn't create start event");
-
+  OR_SKIP(cudaSetDevice(srcGpu), NAME " failed to set src device");
   for (auto _ : state) {
     OR_SKIP(cudaEventRecord(start, stream), NAME " failed to record start");
     OR_SKIP(cudaMemcpyPeerAsync(dst, dstGpu, src, srcGpu, bytes, stream), NAME " failed to memcpy");
