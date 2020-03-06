@@ -6,7 +6,7 @@ endif()
 option(USE_NUMA "Try to use libnuma" ON)
 
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
-project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.8.1)
+project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.8.2)
 
 sugar_include("src")
 add_subdirectory(src)
