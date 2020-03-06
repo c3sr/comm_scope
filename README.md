@@ -33,6 +33,16 @@ To choose specific benchmarks, filter by regex:
 ./scope --benchmark_list_tests=true --benchmark_filter=<regex>
 ```
 
+## FAQ
+
+** I get `CMake Error: Remove failed on file: <blah>: System Error: Device or resource busy`**
+
+This somtimes happens on network file systems. You can retry, or do the build on a local disk.
+
+** I get `-- The CXX compiler identification is GNU 4.8.5` after `module load gcc/5.4.0`.
+
+Try running `cmake -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc`.
+
 ## Documentation
 
 See the `docs` folder for a description of the benchmarks.
