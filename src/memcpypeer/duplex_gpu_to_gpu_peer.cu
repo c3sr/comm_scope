@@ -15,6 +15,17 @@
     return;                                                                                                            \
   }
 
+__global__ void busy_wait(clock_t *d, clock_t clock_count) {
+  clock_t start_clock = clock64();
+  clock_t clock_offset = 0;
+  while (clock_offset < clock_count) {
+    clock_offset = clock64() - start_clock;
+  }
+  if (d) {
+    *d = clock_offset;
+  }
+}
+
 auto Comm_Duplex_MemcpyPeer_Peer = [](benchmark::State &state, const int gpu0, const int gpu1) {
   if (!has_cuda) {
     state.SkipWithError(NAME " no CUDA device found");
@@ -50,6 +61,7 @@ auto Comm_Duplex_MemcpyPeer_Peer = [](benchmark::State &state, const int gpu0, c
   defer(cudaEventDestroy(stop));
   if (gpu0 != gpu1) {
     err = cudaDeviceEnablePeerAccess(gpu1, 0);
+    cudaGetLastError(); // clear error
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
       state.SkipWithError(NAME " failed to ensure peer access");
       return;
@@ -69,6 +81,7 @@ auto Comm_Duplex_MemcpyPeer_Peer = [](benchmark::State &state, const int gpu0, c
   defer(cudaEventDestroy(stop1));
   if (gpu0 != gpu1) {
     err = cudaDeviceEnablePeerAccess(gpu0, 0);
+    cudaGetLastError(); // clear error
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
       state.SkipWithError(NAME " failed to ensure peer access");
       return;
@@ -76,13 +89,32 @@ auto Comm_Duplex_MemcpyPeer_Peer = [](benchmark::State &state, const int gpu0, c
   }
   
 
+  size_t cycles = 4096;
   for (auto _ : state) {
     OR_SKIP(cudaSetDevice(gpu0), NAME " failed to set src device");
+    busy_wait<<<1,1, 0, stream0>>>(nullptr, cycles);
+    OR_SKIP(cudaGetLastError(), NAME " failed to busy_wait");
     OR_SKIP(cudaEventRecord(start, stream0), NAME " failed to record start");
     OR_SKIP(cudaMemcpyPeerAsync(dst1, gpu1, src0, gpu0, bytes, stream0), NAME " failed to memcpy");
     OR_SKIP(cudaSetDevice(gpu1), NAME " failed to set src device");
+    OR_SKIP(cudaStreamWaitEvent(stream1, start, 0), NAME " failed to wait");
     OR_SKIP(cudaMemcpyPeerAsync(dst0, gpu0, src1, gpu1, bytes, stream1), NAME " failed to memcpy");
     OR_SKIP(cudaEventRecord(stop1, stream1), NAME " failed to stop");
+
+    // if kernel has ended, it wasn't long enough to cover the host code.
+    // finish transfers, increase cycles, and try again
+    err = cudaEventQuery(start);
+    if (cudaSuccess == err) {
+      cycles *= 2;
+      OR_SKIP(cudaStreamSynchronize(stream0), NAME " failed to wait for stream0");
+      OR_SKIP(cudaStreamSynchronize(stream1), NAME " failed to wait for stream1");
+      continue;
+     } else if (cudaErrorNotReady == err) {
+      // kernel was long enough
+     } else {
+     OR_SKIP(err, NAME " errored while waiting for kernel");
+     }
+
     OR_SKIP(cudaSetDevice(gpu0), NAME " failed to set src device");
     OR_SKIP(cudaStreamWaitEvent(stream0, stop1, 0), NAME " failed to set src device");
     OR_SKIP(cudaEventRecord(stop, stream0), NAME " failed to stop");
@@ -96,6 +128,7 @@ auto Comm_Duplex_MemcpyPeer_Peer = [](benchmark::State &state, const int gpu0, c
   state.counters["bytes"]  = bytes;
   state.counters["gpu0"] = gpu0;
   state.counters["gpu1"] = gpu1;
+  state.counters["wait_cycles"] = cycles;
 };
 
 static void registerer() {
