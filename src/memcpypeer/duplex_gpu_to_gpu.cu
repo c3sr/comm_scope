@@ -15,7 +15,8 @@
     return;                                                                                                            \
   }
 
-__global__ void busy_wait2(clock_t *d, clock_t clock_count) {
+namespace comm_duplex_memcpypeer {
+__global__ void busy_wait(clock_t *d, clock_t clock_count) {
   clock_t start_clock = clock64();
   clock_t clock_offset = 0;
   while (clock_offset < clock_count) {
@@ -24,6 +25,7 @@ __global__ void busy_wait2(clock_t *d, clock_t clock_count) {
   if (d) {
     *d = clock_offset;
   }
+}
 }
 
 auto Comm_Duplex_MemcpyPeer = [](benchmark::State &state, const int gpu0, const int gpu1) {
@@ -92,16 +94,14 @@ auto Comm_Duplex_MemcpyPeer = [](benchmark::State &state, const int gpu0, const 
   size_t cycles = 4096;
   for (auto _ : state) {
     OR_SKIP(cudaSetDevice(gpu0), NAME " failed to set src device");
-    busy_wait2<<<1,1, 0, stream0>>>(nullptr, cycles);
+    comm_duplex_memcpypeer::busy_wait<<<1,1, 0, stream0>>>(nullptr, cycles);
     OR_SKIP(cudaGetLastError(), NAME " failed to busy_wait");
     OR_SKIP(cudaEventRecord(start, stream0), NAME " failed to record start");
     OR_SKIP(cudaMemcpyPeerAsync(dst1, gpu1, src0, gpu0, bytes, stream0), NAME " failed to memcpy");
     OR_SKIP(cudaSetDevice(gpu1), NAME " failed to set src device");
+    OR_SKIP(cudaStreamWaitEvent(stream1, start, 0), NAME " failed to set src device");
     OR_SKIP(cudaMemcpyPeerAsync(dst0, gpu0, src1, gpu1, bytes, stream1), NAME " failed to memcpy");
     OR_SKIP(cudaEventRecord(stop1, stream1), NAME " failed to stop");
-    OR_SKIP(cudaSetDevice(gpu0), NAME " failed to set src device");
-    OR_SKIP(cudaStreamWaitEvent(stream0, stop1, 0), NAME " failed to set src device");
-    OR_SKIP(cudaEventRecord(stop, stream0), NAME " failed to stop");
 
     // if kernel has ended, it wasn't long enough to cover the host code.
     // finish transfers, increase cycles, and try again
@@ -117,6 +117,9 @@ auto Comm_Duplex_MemcpyPeer = [](benchmark::State &state, const int gpu0, const 
      OR_SKIP(err, NAME " errored while waiting for kernel");
     }
 
+    OR_SKIP(cudaSetDevice(gpu0), NAME " failed to set src device");
+    OR_SKIP(cudaStreamWaitEvent(stream0, stop1, 0), NAME " failed to set src device");
+    OR_SKIP(cudaEventRecord(stop, stream0), NAME " failed to stop");
     OR_SKIP(cudaEventSynchronize(stop), NAME " failed to synchronize");
 
     float ms = 0.0f;
