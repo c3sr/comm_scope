@@ -17,6 +17,8 @@ Docker images are [available](https://hub.docker.com/r/c3sr/comm_scope/) on Dock
 
 ## Getting started
 
+**This project is a submodule of a larger project. Do not use this bare repository.**
+
 Get the latest [Scope release](https://github.com/c3sr/scope/releases/latest) and enable Comm|Scope:
 
 ```
