@@ -35,7 +35,7 @@ To choose specific benchmarks, filter by regex:
 ./scope --benchmark_list_tests=true --benchmark_filter=<regex>
 ```
 
-## FAQ
+## FAQ / Troubleshooting
 
 ** I get `CMake Error: Remove failed on file: <blah>: System Error: Device or resource busy`**
 
@@ -44,6 +44,10 @@ This somtimes happens on network file systems. You can retry, or do the build on
 ** I get `-- The CXX compiler identification is GNU 4.8.5` after `module load gcc/5.4.0`.
 
 Try running `cmake -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc`.
+
+** I get `CMake Error at CMakeLists.txt:11 (sugar_include): Unknown CMake command "sugar_include".`
+
+Did you clone this repository alone? If so, try starting at github.com/c3sr/scope
 
 ## Documentation
 
