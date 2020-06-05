@@ -55,7 +55,7 @@ See the `docs` folder for a description of the benchmarks.
 
 ## Bumping the Version
 
-Update the changelog.
+Update the changelog and commit the changes.
 
 Install bump2version
 
@@ -85,6 +85,15 @@ python ../tools/generate_sugar_files.py --top comm_scope
 ```
 
 # Changelog
+
+## v0.9.0 (June 5 2020)
+
+* Add CPU-GPU and GPU-GPU sparse data transfer benchmarks
+  * `cudaMemcpy3DAsync`
+  * `cudaMemcpy3DPeerAsync`
+  * `cudaMemcpy2DAsync`
+  * custom 3D kernel
+  * pack / `cudaMemcpyPeerAsync` / unpack
 
 ## v0.8.2 (March 6 2020)
 
