@@ -1,4 +1,4 @@
 set -x
 
 cd build
-./scope --benchmark_list_tests
+./comm_scope --benchmark_list_tests
