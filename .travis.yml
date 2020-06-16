@@ -1,5 +1,7 @@
 dist: bionic
 language: minimal
+
+# debug and release on amd64 and ppc64le
 arch:
   - amd64
   - ppc64le
@@ -7,6 +9,8 @@ env:
   - BUILD_TYPE=Debug
   - BUILD_TYPE=Release
 
+# also build with various things disabled,
+# inheriting amd64
 jobs:
   include:
     - env: USE_NUMA=0 BUILD_TYPE=Debug
