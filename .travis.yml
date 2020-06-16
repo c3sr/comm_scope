@@ -13,7 +13,7 @@ cache:
     $HOME/cmake
 
 install:
-  - ci/install_deps.sh || travis_terminate 1;
+  - ci/install.sh || travis_terminate 1;
 
 script:
   - ci/build.sh || travis_terminate 1;
