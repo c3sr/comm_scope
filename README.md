@@ -91,6 +91,8 @@ git set remote-url origin git@github.com:cwpearson/sysbench.git
 * Decouple from Scope project
 * Rely on `cwpearson/sysbench` instead of `c3sr/scope`
 * Add 3D strided memory transfer benchmarks
+* Remove some duplicate NUMA-/non-NUMA-aware implementations of cudaMemcpyAsync benchmarks
+* Add CPU benchmark of `cudaMemcpy3DPeerAsync`
 
 ## v0.9.0 (June 5 2020)
 
