@@ -1,26 +1,20 @@
+dist: bionic
 language: minimal
-dist: trusty
-sudo: true
-services:
-- docker
-cache:
-  apt: true
-  directories:
-  - "$HOME/.cache/cuda"
-  - "$HOME/.hunter"
-  - "$HOME/.cmake"
-addons:
-  
+arch:
+  - ppc64le
+  - amd64
 env:
-  global:
-  - RAI_ROOT=${HOME}/.rai
-matrix:
-  include:
-    - env: DO_BUILD=0 DOCKER_CUDA=75 DOCKER_ARCH=amd64
-    - env: DO_BUILD=0 DOCKER_CUDA=80 DOCKER_ARCH=amd64 
-    - env: DO_BUILD=0 DOCKER_CUDA=92 DOCKER_ARCH=amd64
-  allow_failures:
-    - env: DO_BUILD=0 DOCKER_CUDA=75 DOCKER_ARCH=amd64
+  - BUILD_TYPE=Release
+  - BUILD_TYPE=Debug
+
+
+cache:
+  directories:
+    $HOME/cmake
+
+install:
+  - ci/install_deps.sh || travis_terminate 1;
+
 script:
-- cd ${TRAVIS_BUILD_DIR}
-- ./ci/build_and_push_docker.sh
+  - ci/build.sh || travis_terminate 1;
+  - ci/test.sh || travis_terminate 1;
