@@ -16,7 +16,6 @@ jobs:
     - env: USE_NUMA=0 BUILD_TYPE=Debug
     - env: USE_NVTX=0 BUILD_TYPE=Debug
     - env: USE_OPENMP=0 BUILD_TYPE=Debug
-    - env: USE_CUDA=0 BUILD_TYPE=Debug
 
 cache:
   directories:
