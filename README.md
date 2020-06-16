@@ -17,16 +17,16 @@ Docker images are [available](https://hub.docker.com/r/c3sr/comm_scope/) on Dock
 
 ## Getting started
 
-**This project is a submodule of a larger project. Do not use this bare repository.**
+Download 
 
 Get the latest [Scope release](https://github.com/c3sr/scope/releases/latest) and enable Comm|Scope:
 
 ```
-<dowload or clone scope>
+<dowload or clone Comm|Scope>
 mkdir build && cd build
-cmake .. -DENABLE_COMM=1
+cmake ..
 make
-./scope --benchmark_list_tests=true
+./comm_scope --benchmark_list_tests=true
 ```
 
 To choose specific benchmarks, filter by regex:
@@ -44,14 +44,6 @@ This somtimes happens on network file systems. You can retry, or do the build on
 ** I get `-- The CXX compiler identification is GNU 4.8.5` after `module load gcc/5.4.0`.
 
 Try running `cmake -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc`.
-
-** I get `CMake Error at CMakeLists.txt:11 (sugar_include): Unknown CMake command "sugar_include".`
-
-Did you clone this repository alone? If so, try starting at github.com/c3sr/scope
-
-## Documentation
-
-See the `docs` folder for a description of the benchmarks.
 
 ## Bumping the Version
 
@@ -84,7 +76,21 @@ cd scopes
 python ../tools/generate_sugar_files.py --top comm_scope
 ```
 
+## Contributing
+
+Any work on the underlying `cwpearson/sysbench` library will probably benefit from changing from http to SSH:
+
+```
+cd thirdparty/sysbench
+git set remote-url origin git@github.com:cwpearson/sysbench.git
+```
+
 # Changelog
+
+## v0.10.0 (June 16 2020)
+* Decouple from Scope project
+* Rely on `cwpearson/sysbench` instead of `c3sr/scope`
+* Add 3D strided memory transfer benchmarks
 
 ## v0.9.0 (June 5 2020)
 

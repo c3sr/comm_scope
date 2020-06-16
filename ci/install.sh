@@ -22,6 +22,11 @@ cd $HOME
 
 sudo apt-get update 
 
+if [[ $USE_NUMA == "1" ]]; then
+sudo apt-get install -y --no-install-recommends --no-install-suggests \
+  libnuma-dev 
+fi
+
 ## install CUDA
 sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
 
