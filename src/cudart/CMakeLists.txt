@@ -1,0 +1,6 @@
+set(comm_SOURCES ${comm_SOURCES}
+  ${CMAKE_CURRENT_LIST_DIR}/cudaMemcpy3DPeerAsync.cpp
+PARENT_SCOPE)
+
+set(comm_CUDA_SOURCES ${comm_CUDA_SOURCES}
+PARENT_SCOPE)
