@@ -22,22 +22,25 @@ cd $HOME
 
 sudo apt-get update 
 
-if [[ $USE_NUMA == "1" ]]; then
+## install NUMA
+if [[ $USE_NUMA != "0" ]]; then
 sudo apt-get install -y --no-install-recommends --no-install-suggests \
   libnuma-dev 
 fi
 
 ## install CUDA
-sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
+if [[ $USE_CUDA != "0" ]]; then
+    sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
 
-if [[ $TRAVIS_CPU_ARCH == "ppc64le" ]]; then
-    CUDA102="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/ppc64el/cuda-repo-ubuntu1804_10.2.89-1_ppc64el.deb"
-elif [[ $TRAVIS_CPU_ARCH == "amd64" ]]; then
-    CUDA102="http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_10.2.89-1_amd64.deb"
+    if [[ $TRAVIS_CPU_ARCH == "ppc64le" ]]; then
+        CUDA102="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/ppc64el/cuda-repo-ubuntu1804_10.2.89-1_ppc64el.deb"
+    elif [[ $TRAVIS_CPU_ARCH == "amd64" ]]; then
+        CUDA102="http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_10.2.89-1_amd64.deb"
+    fi
+
+    wget -SL $CUDA102 -O cuda.deb
+    sudo dpkg -i cuda.deb
+    sudo apt-get update 
+    sudo apt-get install -y --no-install-recommends \
+    cuda-toolkit-10-2
 fi
-
-wget -SL $CUDA102 -O cuda.deb
-sudo dpkg -i cuda.deb
-sudo apt-get update 
-sudo apt-get install -y --no-install-recommends \
-  cuda-toolkit-10-2
