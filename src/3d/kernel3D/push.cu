@@ -1,8 +1,8 @@
 #include <cassert>
 #include <cuda_runtime.h>
 
-#include "scope/init/flags.hpp"
-#include "scope/init/init.hpp"
+ 
+ #include "sysbench/sysbench.hpp"
 
 #include "../args.hpp"
 
@@ -73,23 +73,7 @@ inline dim3 make_block_dim(const cudaExtent extent, int64_t threads) {
   return ret;
 }
 
-// to be used in benchmark loop
-#define OR_SKIP_LOOP(stmt, msg)                                                                                        \
-  if (PRINT_IF_ERROR(stmt)) {                                                                                          \
-    state.SkipWithError(msg);                                                                                          \
-    break;                                                                                                             \
-  }
-
-// during setup or teardown
-#define OR_SKIP(stmt, msg)                                                                                             \
-  if (PRINT_IF_ERROR(stmt)) {                                                                                          \
-    state.SkipWithError(msg);                                                                                          \
-  }
-
 auto Comm_3d_kernel3D_push = [](benchmark::State &state, const int gpu0, const int gpu1) {
-  if (!has_cuda) {
-    state.SkipWithError(NAME " no CUDA device found");
-  }
 
 #if SCOPE_USE_NVTX == 1
   {
@@ -100,8 +84,8 @@ auto Comm_3d_kernel3D_push = [](benchmark::State &state, const int gpu0, const i
   }
 #endif
 
-  OR_SKIP(utils::cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
-  OR_SKIP(utils::cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
+  OR_SKIP(cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
+  OR_SKIP(cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
 
   // create stream on src gpu (push)
   OR_SKIP(cudaSetDevice(gpu0), NAME "failed to create stream");
@@ -171,19 +155,19 @@ auto Comm_3d_kernel3D_push = [](benchmark::State &state, const int gpu0, const i
 
   for (auto _ : state) {
     // Start copy
-    OR_SKIP_LOOP(cudaEventRecord(start, stream), NAME " failed to record start event");
+    OR_SKIP_AND_BREAK(cudaEventRecord(start, stream), NAME " failed to record start event");
 
     Comm_3d_kernel3D_push_kernel<<<gridDim, blockDim, 0, stream>>>(dst.ptr, src.ptr, allocExt, copyExt, elemSize);
-    OR_SKIP_LOOP(cudaGetLastError(), "kernel");
+    OR_SKIP_AND_BREAK(cudaGetLastError(), "kernel");
 
-    OR_SKIP_LOOP(cudaEventRecord(stop, stream), NAME " failed to record stop event");
+    OR_SKIP_AND_BREAK(cudaEventRecord(stop, stream), NAME " failed to record stop event");
 
     // Wait for all copies to finish
-    OR_SKIP_LOOP(cudaEventSynchronize(stop), NAME " failed to synchronize");
+    OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), NAME " failed to synchronize");
 
     // Get the transfer time
     float millis;
-    OR_SKIP_LOOP(cudaEventElapsedTime(&millis, start, stop), NAME " failed to compute elapsed tiume");
+    OR_SKIP_AND_BREAK(cudaEventElapsedTime(&millis, start, stop), NAME " failed to compute elapsed tiume");
     state.SetIterationTime(millis / 1000);
   }
 
@@ -227,4 +211,4 @@ static void registerer() {
   }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SYSBENCH_AFTER_INIT(registerer, NAME);

@@ -1,14 +1,7 @@
 #if __CUDACC_VER_MAJOR__ >= 8
 
-#include <cassert>
-
-#include <cuda_runtime.h>
-
-#include "scope/init/flags.hpp"
-#include "scope/init/init.hpp"
-#include "scope/utils/utils.hpp"
-
 #include "args.hpp"
+#include "sysbench/sysbench.hpp"
 
 #define NAME "Comm_UM_Demand_GPUToGPU"
 
@@ -23,7 +16,7 @@ __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
   // lane ID 0-31
   const size_t lx = gx & 31;
   // warp ID
-  size_t wx             = gx / 32;
+  size_t wx = gx / 32;
   const size_t numWarps = (gridDim.x * blockDim.x + 32 - 1) / 32;
 
   if (0 == lx) {
@@ -33,21 +26,17 @@ __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
   }
 }
 
-auto Comm_UM_Demand_GPUToGPU = [](benchmark::State &state, const int src_gpu, const int dst_gpu) {
-  if (!has_cuda) {
-    state.SkipWithError(NAME " no CUDA device found");
-    return;
-  }
-
+auto Comm_UM_Demand_GPUToGPU = [](benchmark::State &state, const int src_gpu,
+                                  const int dst_gpu) {
   const size_t pageSize = page_size();
 
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
-  if (PRINT_IF_ERROR(utils::cuda_reset_device(src_gpu))) {
+  if (PRINT_IF_ERROR(cuda_reset_device(src_gpu))) {
     state.SkipWithError(NAME " failed to reset CUDA src device");
     return;
   }
-  if (PRINT_IF_ERROR(utils::cuda_reset_device(dst_gpu))) {
+  if (PRINT_IF_ERROR(cuda_reset_device(dst_gpu))) {
     state.SkipWithError(NAME " failed to reset CUDA src device");
     return;
   }
@@ -107,7 +96,7 @@ auto Comm_UM_Demand_GPUToGPU = [](benchmark::State &state, const int src_gpu, co
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
-  state.counters["bytes"]   = bytes;
+  state.counters["bytes"] = bytes;
   state.counters["src_gpu"] = src_gpu;
   state.counters["dst_gpu"] = dst_gpu;
 };
@@ -115,16 +104,18 @@ auto Comm_UM_Demand_GPUToGPU = [](benchmark::State &state, const int src_gpu, co
 static void registerer() {
   for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
     for (size_t j = i + 1; j < unique_cuda_device_ids().size(); ++j) {
-      auto src_gpu     = unique_cuda_device_ids()[i];
-      auto dst_gpu     = unique_cuda_device_ids()[j];
-      std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) + "/" + std::to_string(dst_gpu);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Demand_GPUToGPU, src_gpu, dst_gpu)
+      auto src_gpu = unique_cuda_device_ids()[i];
+      auto dst_gpu = unique_cuda_device_ids()[j];
+      std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) +
+                         "/" + std::to_string(dst_gpu);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Demand_GPUToGPU,
+                                   src_gpu, dst_gpu)
           ->SMALL_ARGS()
           ->UseManualTime();
     }
   }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SYSBENCH_AFTER_INIT(registerer, NAME);
 
 #endif // __CUDACC_VER_MAJOR__ >= 8

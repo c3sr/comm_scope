@@ -3,8 +3,8 @@
 #include <cassert>
 #include <cuda_runtime.h>
 
-#include "scope/init/flags.hpp"
-#include "scope/init/init.hpp"
+ 
+ #include "sysbench/sysbench.hpp"
 #include "../../init/numa.hpp"
 #include "../../utils/numa.hpp"
 
@@ -12,24 +12,7 @@
 
 #define NAME "Comm_3d_cudaMemcpy3DAsync_NUMAToGPU"
 
-// to be used in benchmark loop
-#define OR_SKIP_LOOP(stmt, msg)                                                                                        \
-  if (PRINT_IF_ERROR(stmt)) {                                                                                          \
-    state.SkipWithError(msg);                                                                                          \
-    break;                                                                                                             \
-  }
-
-// during setup or teardown
-#define OR_SKIP(stmt, msg)                                                                                             \
-  if (PRINT_IF_ERROR(stmt)) {                                                                                          \
-    state.SkipWithError(msg);                                                                                          \
-  }
-
 auto Comm_3d_cudaMemcpy3DAsync_NUMAToGPU = [](benchmark::State &state, const int numaId, const int cudaId) {
-
-  if (!has_cuda) {
-    state.SkipWithError(NAME " no CUDA device found");
-  }
 
   #if SCOPE_USE_NVTX == 1
 {
@@ -40,8 +23,8 @@ auto Comm_3d_cudaMemcpy3DAsync_NUMAToGPU = [](benchmark::State &state, const int
   #endif // SCOPE_USE_NVTX
 
   // bind to CPU & reset device
-  numa_bind_node(numaId);
-  OR_SKIP(utils::cuda_reset_device(cudaId), "failed to reset GPU");
+  numa::bind_node(numaId);
+  OR_SKIP(cuda_reset_device(cudaId), "failed to reset GPU");
 
   // stream for async copy
   cudaStream_t stream = nullptr;
@@ -95,16 +78,16 @@ auto Comm_3d_cudaMemcpy3DAsync_NUMAToGPU = [](benchmark::State &state, const int
 
   for (auto _ : state) {
     // Start copy
-    OR_SKIP_LOOP(cudaEventRecord(start, stream), NAME " failed to record start event");
-    OR_SKIP_LOOP(cudaMemcpy3DAsync(&params, stream), NAME " failed to start cudaMemcpy3DAsync");
-    OR_SKIP_LOOP(cudaEventRecord(stop, stream), NAME " failed to record stop event");
+    OR_SKIP_AND_BREAK(cudaEventRecord(start, stream), NAME " failed to record start event");
+    OR_SKIP_AND_BREAK(cudaMemcpy3DAsync(&params, stream), NAME " failed to start cudaMemcpy3DAsync");
+    OR_SKIP_AND_BREAK(cudaEventRecord(stop, stream), NAME " failed to record stop event");
 
     // Wait for all copies to finish
-    OR_SKIP_LOOP(cudaEventSynchronize(stop), NAME " failed to synchronize");
+    OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), NAME " failed to synchronize");
 
     // Get the transfer time
     float millis;
-    OR_SKIP_LOOP(cudaEventElapsedTime(&millis, start, stop), NAME " failed to compute elapsed tiume");
+    OR_SKIP_AND_BREAK(cudaEventElapsedTime(&millis, start, stop), NAME " failed to compute elapsed tiume");
     state.SetIterationTime(millis / 1000);
   }
 
@@ -128,7 +111,7 @@ auto Comm_3d_cudaMemcpy3DAsync_NUMAToGPU = [](benchmark::State &state, const int
 static void registerer() {
   std::string name;
 for (auto cudaId : unique_cuda_device_ids()) {
-    for (auto numaId : unique_numa_ids()) {
+    for (auto numaId : numa::ids()) {
 
           name = std::string(NAME) + "/" + std::to_string(numaId) + "/" + std::to_string(cudaId);
           benchmark::RegisterBenchmark(name.c_str(), Comm_3d_cudaMemcpy3DAsync_NUMAToGPU, numaId, cudaId)
@@ -141,6 +124,6 @@ for (auto cudaId : unique_cuda_device_ids()) {
 
 
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SYSBENCH_AFTER_INIT(registerer, NAME);
 
 #endif // USE_NUMA == 1

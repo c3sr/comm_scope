@@ -1,31 +1,20 @@
 #if __CUDACC_VER_MAJOR__ >= 8
 
-#include <cassert>
-
-#include <cuda_runtime.h>
-
-#include "scope/init/init.hpp"
-#include "scope/utils/utils.hpp"
-#include "scope/init/flags.hpp"
-
+ #include "sysbench/sysbench.hpp"
+ 
 #include "args.hpp"
 
 #define NAME "Comm_UM_Prefetch_GPUToGPU"
 
 auto Comm_UM_Prefetch_GPUToGPU = [](benchmark::State &state, const int src_gpu, const int dst_gpu) {
 
-  if (!has_cuda) {
-    state.SkipWithError(NAME " no CUDA device found");
-    return;
-  }
-
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
-  if (PRINT_IF_ERROR(utils::cuda_reset_device(src_gpu))) {
+  if (PRINT_IF_ERROR(cuda_reset_device(src_gpu))) {
     state.SkipWithError(NAME " failed to reset CUDA src device");
     return;
   }
-  if (PRINT_IF_ERROR(utils::cuda_reset_device(dst_gpu))) {
+  if (PRINT_IF_ERROR(cuda_reset_device(dst_gpu))) {
     state.SkipWithError(NAME " failed to reset CUDA src device");
     return;
   }
@@ -104,6 +93,6 @@ static void registerer() {
   }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SYSBENCH_AFTER_INIT(registerer, NAME);
 
 #endif // __CUDACC_VER_MAJOR__ >= 8

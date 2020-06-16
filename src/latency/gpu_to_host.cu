@@ -1,20 +1,8 @@
 #if __CUDACC_VER_MAJOR__ >= 8
 
-#include <cassert>
-
-#include <cuda_runtime.h>
-#if USE_NUMA
-#include <numa.h>
-#include "init/numa.hpp"
-#endif // USE_NUMA
-
-#include "scope/init/init.hpp"
-#include "scope/utils/utils.hpp"
-#include "scope/init/flags.hpp"
+ #include "sysbench/sysbench.hpp"
 
 #include "args.hpp"
-#include "init/flags.hpp"
-#include "utils/numa.hpp"
 
 #define NAME "Comm_UM_Latency_GPUToHost"
 
@@ -37,17 +25,12 @@ auto Comm_UM_Latency_GPUToHost = [] (benchmark::State &state,
 #endif // USE_NUMA
   const int cuda_id) {
 
-  if (!has_cuda) {
-    state.SkipWithError(NAME " no CUDA device found");
-    return;
-  }
-
   const size_t steps = state.range(0);
 
   const size_t stride = 65536 * 2;
   const size_t bytes  = sizeof(size_t) * (steps + 1) * stride;
 #if USE_NUMA
-  numa_bind_node(numa_id);
+  numa::bind_node(numa_id);
 #endif
   if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
     state.SkipWithError(NAME " failed to set CUDA device");
@@ -102,14 +85,14 @@ auto Comm_UM_Latency_GPUToHost = [] (benchmark::State &state,
 
 #if USE_NUMA
   // reset to run on any node
-  numa_bind_node(-1);
+  numa::bind_node(-1);
 #endif
 };
 
 static void registerer() {
   for (auto cuda_id : unique_cuda_device_ids()) {
 #if USE_NUMA
-    for (auto numa_id : unique_numa_ids()) {
+    for (auto numa_id : numa::ids()) {
 #endif // USE_NUMA
       std::string name = std::string(NAME)
 #if USE_NUMA 
@@ -127,6 +110,6 @@ static void registerer() {
   }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SYSBENCH_AFTER_INIT(registerer, NAME);
 
 #endif // __CUDACC_VER_MAJOR__ >= 8

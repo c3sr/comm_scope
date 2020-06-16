@@ -1,40 +1,23 @@
 #if __CUDACC_VER_MAJOR__ >= 8
 
-#include <cassert>
+#include "sysbench/sysbench.hpp"
 
-#include <cuda_runtime.h>
-#if USE_NUMA
-#include <numa.h>
-#include "init/numa.hpp"
-#endif // USE_NUMA
-
-#include "scope/init/init.hpp"
-#include "scope/utils/utils.hpp"
-#include "scope/init/flags.hpp"
-
-#include "init/flags.hpp"
 #include "args.hpp"
 
 #define NAME "Comm_UM_Prefetch_HostToGPU"
 
 auto Comm_UM_Prefetch_HostToGPU = [](benchmark::State &state,
 #if USE_NUMA
-const int numa_id,
+                                     const int numa_id,
 #endif // USE_NUMA
-const int cuda_id) {
-
-  if (!has_cuda) {
-    state.SkipWithError(NAME " no CUDA device found");
-    return;
-  }
-
-  const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
+                                     const int cuda_id) {
+  const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
 #if USE_NUMA
-  numa_bind_node(numa_id);
+  numa::bind_node(numa_id);
 #endif // USE_NUMA
 
-  if (PRINT_IF_ERROR(utils::cuda_reset_device(cuda_id))) {
+  if (PRINT_IF_ERROR(cuda_reset_device(cuda_id))) {
     state.SkipWithError(NAME " failed to reset device");
     return;
   }
@@ -103,31 +86,33 @@ const int cuda_id) {
 #endif // USE_NUMA
 
 #if USE_NUMA
-  numa_bind_node(-1);
+  numa::bind_node(-1);
 #endif // USE_NUMA
 };
 
 static void registerer() {
   for (auto cuda_id : unique_cuda_device_ids()) {
 #if USE_NUMA
-    for (auto numa_id : unique_numa_ids()) {
+    for (auto numa_id : numa::ids()) {
 #endif // USE_NUMA
       std::string name = std::string(NAME)
-#if USE_NUMA 
-                       + "/" + std::to_string(numa_id) 
+#if USE_NUMA
+                         + "/" + std::to_string(numa_id)
 #endif // USE_NUMA
-                       + "/" + std::to_string(cuda_id);
+                         + "/" + std::to_string(cuda_id);
       benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Prefetch_HostToGPU,
 #if USE_NUMA
-        numa_id,
+                                   numa_id,
 #endif // USE_NUMA
-        cuda_id)->SMALL_ARGS()->UseManualTime();
+                                   cuda_id)
+          ->SMALL_ARGS()
+          ->UseManualTime();
 #if USE_NUMA
     }
 #endif // USE_NUMA
   }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SYSBENCH_AFTER_INIT(registerer, NAME);
 
 #endif // __CUDACC_VER_MAJOR__ >= 8

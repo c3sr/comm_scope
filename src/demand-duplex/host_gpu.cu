@@ -1,29 +1,10 @@
 #if __CUDACC_VER_MAJOR__ >= 8
 
-#include <cassert>
-
-#include <cuda_runtime.h>
-#if USE_NUMA
-#include <numa.h>
-#endif // USE_NUMA
-
-#include "scope/init/flags.hpp"
-#include "scope/init/init.hpp"
-#include "scope/utils/utils.hpp"
+#include "sysbench/sysbench.hpp"
 
 #include "args.hpp"
-#include "init/flags.hpp"
-#include "init/numa.hpp"
-#include "utils/cache_control.hpp"
-#include "utils/numa.hpp"
 
 #define NAME "Comm_Demand_Duplex_HostGPU"
-
-#define OR_SKIP(stmt)                                                                                                  \
-  if (PRINT_IF_ERROR(stmt)) {                                                                                          \
-    state.SkipWithError(NAME);                                                                                         \
-    return;                                                                                                            \
-  }
 
 template <bool NOOP = false>
 __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
@@ -36,7 +17,7 @@ __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
   // lane ID 0-31
   const size_t lx = gx & 31;
   // warp ID
-  size_t wx             = gx / 32;
+  size_t wx = gx / 32;
   const size_t numWarps = (gridDim.x * blockDim.x + 32 - 1) / 32;
 
   if (0 == lx) {
@@ -46,32 +27,22 @@ __global__ void gpu_write(char *ptr, const size_t count, const size_t stride) {
   }
 }
 
-auto Comm_Demand_Duplex_HostGPU = [](benchmark::State &state,
-#if USE_NUMA
-                                     const int numa_id,
-#endif // USE_NUMA
+auto Comm_Demand_Duplex_HostGPU = [](benchmark::State &state, const int numa_id,
                                      const int cuda_id) {
-  if (!has_cuda) {
-    state.SkipWithError(NAME " no CUDA device found");
-    return;
-  }
-
   const size_t pageSize = page_size();
-  const auto bytes      = 1ULL << static_cast<size_t>(state.range(0));
+  const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
-#if USE_NUMA
-  numa_bind_node(numa_id);
-#endif
+  numa::ScopedBind binder(numa_id);
 
-  OR_SKIP(utils::cuda_reset_device(cuda_id));
-  OR_SKIP(cudaSetDevice(cuda_id));
+  OR_SKIP_AND_RETURN(cuda_reset_device(cuda_id), "");
+  OR_SKIP_AND_RETURN(cudaSetDevice(cuda_id), "");
 
   char *ptrs[2] = {nullptr};
-  OR_SKIP(cudaMallocManaged(&ptrs[0], bytes));
-  OR_SKIP(cudaMallocManaged(&ptrs[1], bytes));
-  OR_SKIP(cudaMemset(ptrs[0], 0, bytes));
-  OR_SKIP(cudaMemset(ptrs[1], 0, bytes));
-  OR_SKIP(cudaDeviceSynchronize());
+  OR_SKIP_AND_RETURN(cudaMallocManaged(&ptrs[0], bytes), "");
+  OR_SKIP_AND_RETURN(cudaMallocManaged(&ptrs[1], bytes), "");
+  OR_SKIP_AND_RETURN(cudaMemset(ptrs[0], 0, bytes), "");
+  OR_SKIP_AND_RETURN(cudaMemset(ptrs[1], 0, bytes), "");
+  OR_SKIP_AND_RETURN(cudaDeviceSynchronize(), "");
 
   for (auto _ : state) {
     state.PauseTiming();
@@ -91,7 +62,7 @@ auto Comm_Demand_Duplex_HostGPU = [](benchmark::State &state,
     if (err == cudaErrorInvalidDevice) {
       gpu_write<<<256, 256>>>(ptrs[1], bytes, pageSize);
     }
-    OR_SKIP(cudaDeviceSynchronize());
+    OR_SKIP_AND_BREAK(cudaDeviceSynchronize(), "");
 
     state.ResumeTiming();
     // access ptrs[0] on gpu
@@ -100,22 +71,16 @@ auto Comm_Demand_Duplex_HostGPU = [](benchmark::State &state,
     for (size_t i = 0; i < bytes; i += pageSize) {
       ptrs[1][i] = 0;
     }
-    OR_SKIP(cudaDeviceSynchronize());
+    OR_SKIP_AND_BREAK(cudaDeviceSynchronize(), "");
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes) * 2);
-  state.counters["bytes"]   = bytes;
+  state.counters["bytes"] = bytes;
   state.counters["cuda_id"] = cuda_id;
-#if USE_NUMA
   state.counters["numa_id"] = numa_id;
-#endif // USE_NUMA
-
-#if USE_NUMA
-  numa_bind_node(-1);
-#endif
 
   for (auto p : ptrs) {
-    OR_SKIP(cudaFree(p));
+    OR_SKIP_AND_RETURN(cudaFree(p), "");
   }
 };
 
@@ -129,38 +94,30 @@ static void registerer() {
       continue;
     }
     if (!prop.concurrentManagedAccess) {
-      LOG(debug, "device {} doesn't support {}: requires concurrent managed access", cuda_id, NAME);
+      LOG(debug,
+          "device {} doesn't support {}: requires concurrent managed access",
+          cuda_id, NAME);
       continue;
     }
 
     // cudaDeviceProp prop;
     // cudaGetDeviceProperties(&prop, cuda_id);
     // if (true) {
-    //   LOG(debug, "device {} doesn't support {}: requires concurrent managed access", cuda_id, NAME);
-    //   continue;
+    //   LOG(debug, "device {} doesn't support {}: requires concurrent managed
+    //   access", cuda_id, NAME); continue;
     // }
 
-#if USE_NUMA
-    for (auto numa_id : unique_numa_ids()) {
-#endif // USE_NUMA
-      std::string name = std::string(NAME)
-#if USE_NUMA
-                         + "/" + std::to_string(numa_id)
-#endif // USE_NUMA
-                         + "/" + std::to_string(cuda_id);
+    for (auto numa_id : numa::ids()) {
+      std::string name = std::string(NAME) + "/" + std::to_string(numa_id) +
+                         "/" + std::to_string(cuda_id);
       benchmark::RegisterBenchmark(name.c_str(), Comm_Demand_Duplex_HostGPU,
-#if USE_NUMA
-                                   numa_id,
-#endif // USE_NUMA
-                                   cuda_id)
+                                   numa_id, cuda_id)
           ->SMALL_ARGS();
-#if USE_NUMA
     }
-#endif // USE_NUMA
   }
   LOG(debug, "Done after_init for {}", NAME);
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SYSBENCH_AFTER_INIT(registerer, NAME);
 
 #endif // __CUDACC_VER_MAJOR__ >= 8

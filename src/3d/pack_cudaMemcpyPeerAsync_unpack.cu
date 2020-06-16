@@ -1,8 +1,7 @@
 #include <cassert>
 #include <cuda_runtime.h>
 
-#include "scope/init/flags.hpp"
-#include "scope/init/init.hpp"
+ #include "sysbench/sysbench.hpp"
 
 #include "args.hpp"
 
@@ -106,23 +105,7 @@ inline dim3 make_block_dim(const cudaExtent extent, int64_t threads) {
   return ret;
 }
 
-// to be used in benchmark loop
-#define OR_SKIP_LOOP(stmt, msg)                                                                                        \
-  if (PRINT_IF_ERROR(stmt)) {                                                                                          \
-    state.SkipWithError(msg);                                                                                          \
-    break;                                                                                                             \
-  }
-
-// during setup or teardown
-#define OR_SKIP(stmt, msg)                                                                                             \
-  if (PRINT_IF_ERROR(stmt)) {                                                                                          \
-    state.SkipWithError(msg);                                                                                          \
-  }
-
 auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state, const int gpu0, const int gpu1) {
-  if (!has_cuda) {
-    state.SkipWithError(NAME " no CUDA device found");
-  }
 
 #if SCOPE_USE_NVTX == 1
   {
@@ -133,8 +116,8 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state, const int 
   }
 #endif
 
-  OR_SKIP(utils::cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
-  OR_SKIP(utils::cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
+  OR_SKIP(cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
+  OR_SKIP(cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
 
   // create stream on src gpu for pack + copy
   OR_SKIP(cudaSetDevice(gpu0), NAME "failed to set device");
@@ -219,40 +202,40 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state, const int 
   gridDim.z = (copyExt.depth + blockDim.z - 1) / blockDim.z;
 
   for (auto _ : state) {
-    OR_SKIP_LOOP(cudaSetDevice(gpu0), "cudaSetDevice(gpu0)");
+    OR_SKIP_AND_BREAK(cudaSetDevice(gpu0), "cudaSetDevice(gpu0)");
 
     // Record start
-    OR_SKIP_LOOP(cudaEventRecord(start, srcStream), "failed to record start event");
+    OR_SKIP_AND_BREAK(cudaEventRecord(start, srcStream), "failed to record start event");
 
     // pack on source
     Comm_3d_pack_cudaMemcpyPeer_unpack_pack_kernel<<<gridDim, blockDim, 0, srcStream>>>(srcBuf, src.ptr, allocExt, copyExt, elemSize);
-    OR_SKIP_LOOP(cudaGetLastError(), "pack kernel");
+    OR_SKIP_AND_BREAK(cudaGetLastError(), "pack kernel");
 
     // copy
-    OR_SKIP_LOOP(cudaMemcpyPeerAsync(dstBuf, gpu1, srcBuf, gpu0, copyBytes, srcStream), "cudaMemcpyPeerAsync");
+    OR_SKIP_AND_BREAK(cudaMemcpyPeerAsync(dstBuf, gpu1, srcBuf, gpu0, copyBytes, srcStream), "cudaMemcpyPeerAsync");
 
     // block dst stream until copy finished
-    OR_SKIP_LOOP(cudaEventRecord(copyDone, srcStream), "copyDone");
-    OR_SKIP_LOOP(cudaStreamWaitEvent(dstStream, copyDone, 0 /*must be 0*/), "cudaStreamWaitEvent");
+    OR_SKIP_AND_BREAK(cudaEventRecord(copyDone, srcStream), "copyDone");
+    OR_SKIP_AND_BREAK(cudaStreamWaitEvent(dstStream, copyDone, 0 /*must be 0*/), "cudaStreamWaitEvent");
 
     // unpack on dst
-    OR_SKIP_LOOP(cudaSetDevice(gpu1), "cudaSetDevice(gpu1)");
+    OR_SKIP_AND_BREAK(cudaSetDevice(gpu1), "cudaSetDevice(gpu1)");
     Comm_3d_pack_cudaMemcpyPeer_unpack_unpack_kernel<<<gridDim, blockDim, 0, dstStream>>>(dst.ptr, dstBuf, allocExt, copyExt, elemSize);
-    OR_SKIP_LOOP(cudaGetLastError(), "unpack kernel");
+    OR_SKIP_AND_BREAK(cudaGetLastError(), "unpack kernel");
 
     // record unpack done
-    OR_SKIP_LOOP(cudaEventRecord(unpackDone, dstStream), "cudaEventRecord(unpackDone, dstStream)");
+    OR_SKIP_AND_BREAK(cudaEventRecord(unpackDone, dstStream), "cudaEventRecord(unpackDone, dstStream)");
 
     // record all operations done
-    OR_SKIP_LOOP(cudaStreamWaitEvent(srcStream, unpackDone, 0 /*must be 0*/), "wait for unpackDone");
-    OR_SKIP_LOOP(cudaEventRecord(stop, srcStream), NAME " failed to record stop event");
+    OR_SKIP_AND_BREAK(cudaStreamWaitEvent(srcStream, unpackDone, 0 /*must be 0*/), "wait for unpackDone");
+    OR_SKIP_AND_BREAK(cudaEventRecord(stop, srcStream), NAME " failed to record stop event");
 
     // Wait for all copies to finish
-    OR_SKIP_LOOP(cudaEventSynchronize(stop), "cudaEventSynchronize(stop)");
+    OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), "cudaEventSynchronize(stop)");
 
     // Get the transfer time
     float millis;
-    OR_SKIP_LOOP(cudaEventElapsedTime(&millis, start, stop), NAME " failed to compute elapsed time");
+    OR_SKIP_AND_BREAK(cudaEventElapsedTime(&millis, start, stop), NAME " failed to compute elapsed time");
     state.SetIterationTime(millis / 1000);
   }
 
@@ -301,4 +284,4 @@ static void registerer() {
   }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SYSBENCH_AFTER_INIT(registerer, NAME);

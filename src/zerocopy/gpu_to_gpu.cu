@@ -1,13 +1,5 @@
-#include <cuda_runtime.h>
 
-#include "scope/init/init.hpp"
-#include "scope/utils/utils.hpp"
-#include "scope/init/flags.hpp"
-
-#include "init/flags.hpp"
-#include "utils/numa.hpp"
-#include "init/numa.hpp"
-#include "utils/cache_control.hpp"
+ #include "sysbench/sysbench.hpp"
 
 #include "args.hpp"
 
@@ -62,17 +54,13 @@ __global__ void gpu_read(const read_t *ptr, const size_t bytes) {
 auto Comm_ZeroCopy_GPUToGPU = [](benchmark::State &state, const int gpu0, const int gpu1, const AccessType access_type) {
 
   LOG(debug, "Entered {}", NAME);
-  if (!has_cuda) {
-    state.SkipWithError(NAME " no CUDA device found");
-    return;
-  }
 
   const size_t pageSize = page_size();
   const auto bytes   = 1ULL << static_cast<size_t>(state.range(0));
   void *ptr = nullptr;
 
-  OR_SKIP(utils::cuda_reset_device(gpu0));
-  OR_SKIP(utils::cuda_reset_device(gpu1));
+  OR_SKIP(cuda_reset_device(gpu0));
+  OR_SKIP(cuda_reset_device(gpu1));
 
   OR_SKIP(cudaSetDevice(gpu0));
   { \
@@ -161,4 +149,4 @@ static void registerer() {
   }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SYSBENCH_AFTER_INIT(registerer, NAME);

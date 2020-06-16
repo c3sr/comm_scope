@@ -8,9 +8,8 @@
 #include "init/numa.hpp"
 #endif // USE_NUMA
 
-#include "scope/init/init.hpp"
-#include "scope/utils/utils.hpp"
-#include "scope/init/flags.hpp"
+ #include "sysbench/sysbench.hpp"
+ 
 
 #include "args.hpp"
 
@@ -22,18 +21,13 @@ const int numa_id,
 #endif // USE_NUMA
 const int cuda_id) {
 
-  if (!has_cuda) {
-    state.SkipWithError(NAME " no CUDA device found");
-    return;
-  }
-
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
 #if USE_NUMA
-  numa_bind_node(numa_id);
+  numa::bind_node(numa_id);
 #endif // USE_NUMA
 
-  if (PRINT_IF_ERROR(utils::cuda_reset_device(cuda_id))) {
+  if (PRINT_IF_ERROR(cuda_reset_device(cuda_id))) {
     state.SkipWithError(NAME " failed to reset device");
     return;
   }
@@ -102,14 +96,14 @@ const int cuda_id) {
 
 #if USE_NUMA
   // reset to run on any node
-  numa_bind_node(-1);
+  numa::bind_node(-1);
 #endif // USE_NUMA
 };
 
 static void registerer() {
   for (auto cuda_id : unique_cuda_device_ids()) {
 #if USE_NUMA
-    for (auto numa_id : unique_numa_ids()) {
+    for (auto numa_id : numa::ids()) {
 #endif // USE_NUMA
       std::string name = std::string(NAME)
 #if USE_NUMA 
@@ -127,6 +121,6 @@ static void registerer() {
   }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SYSBENCH_AFTER_INIT(registerer, NAME);
 
 #endif // __CUDACC_VER_MAJOR__ >= 8

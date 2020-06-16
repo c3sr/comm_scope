@@ -4,9 +4,8 @@
 
 #include <cuda_runtime.h>
 
-#include "scope/init/flags.hpp"
-#include "scope/init/init.hpp"
-#include "scope/utils/utils.hpp"
+ 
+ #include "sysbench/sysbench.hpp"
 
 #include "args.hpp"
 
@@ -19,10 +18,6 @@
   }
 
 auto Comm_Prefetch_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0, const int gpu1) {
-  if (!has_cuda) {
-    state.SkipWithError(NAME " no CUDA device found");
-    return;
-  }
 
   if (gpu0 == gpu1) {
     state.SkipWithError(NAME " requires two different GPUs");
@@ -39,7 +34,7 @@ auto Comm_Prefetch_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0, c
   cudaEvent_t stop1 = nullptr;
 
 #define INIT(dev)                                                                                                      \
-  OR_SKIP(utils::cuda_reset_device(gpu##dev));                                                                         \
+  OR_SKIP(cuda_reset_device(gpu##dev));                                                                         \
   OR_SKIP(cudaSetDevice(gpu##dev));                                                                                    \
   OR_SKIP(cudaStreamCreate(&streams[dev]));                                                                            \
   OR_SKIP(cudaMallocManaged(&ptrs[dev], bytes));                                                                       \
@@ -111,6 +106,6 @@ static void registerer() {
   }
 }
 
-SCOPE_REGISTER_AFTER_INIT(registerer, NAME);
+SYSBENCH_AFTER_INIT(registerer, NAME);
 
 #endif // __CUDACC_VER_MAJOR__ >= 8
