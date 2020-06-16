@@ -1,0 +1,3 @@
+[submodule "thirdparty/sysbench"]
+	path = thirdparty/sysbench
+	url = git@github.com:cwpearson/sysbench.git
