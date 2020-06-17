@@ -1,12 +1,6 @@
-#if USE_NUMA == 1
+#include <sstream>
 
-#include <cassert>
-#include <cuda_runtime.h>
-
- 
- #include "sysbench/sysbench.hpp"
-#include "../../init/numa.hpp"
-#include "../../utils/numa.hpp"
+#include "sysbench/sysbench.hpp"
 
 #include "../args.hpp"
 
@@ -23,7 +17,7 @@ auto Comm_3d_cudaMemcpy3DAsync_NUMAToGPU = [](benchmark::State &state, const int
   #endif // SYSBENCH_USE_NVTX
 
   // bind to CPU & reset device
-  numa::bind_node(numaId);
+  numa::ScopedBind binder(numaId);
   OR_SKIP(cuda_reset_device(cudaId), "failed to reset GPU");
 
   // stream for async copy
@@ -125,5 +119,3 @@ for (auto cudaId : unique_cuda_device_ids()) {
 
 
 SYSBENCH_AFTER_INIT(registerer, NAME);
-
-#endif // USE_NUMA == 1

@@ -20,7 +20,7 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToNUMA = [](benchmark::State &state,
 #endif // SYSBENCH_USE_NVTX
 
   // bind to CPU & reset device
-  numa::bind_node(numaId);
+  numa::ScopedBind binder(numaId);
   OR_SKIP(cuda_reset_device(cudaId), "failed to reset GPU");
 
   // stream for async copy
