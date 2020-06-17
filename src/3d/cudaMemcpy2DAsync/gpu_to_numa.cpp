@@ -1,5 +1,4 @@
-#include <cassert>
-#include <cuda_runtime.h>
+#include <sstream>
 
 #include "sysbench/sysbench.hpp"
 
@@ -11,14 +10,14 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToNUMA = [](benchmark::State &state,
                                               const int numaId,
                                               const int cudaId) {
 
-#if SCOPE_USE_NVTX == 1
+#if SYSBENCH_USE_NVTX == 1
   {
     std::stringstream name;
     name << NAME << "/" << numaId << "/" << cudaId << "/" << state.range(0)
          << "/" << state.range(1) << "/" << state.range(2);
     nvtxRangePush(name.str().c_str());
   }
-#endif // SCOPE_USE_NVTX
+#endif // SYSBENCH_USE_NVTX
 
   // bind to CPU & reset device
   numa::bind_node(numaId);
@@ -104,7 +103,7 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToNUMA = [](benchmark::State &state,
   OR_SKIP(cudaFree(src.ptr), NAME "failed to cudaFree");
   numa::bind_node(-1);
 
-#if SCOPE_USE_NVTX == 1
+#if SYSBENCH_USE_NVTX == 1
   nvtxRangePop();
 #endif
 };

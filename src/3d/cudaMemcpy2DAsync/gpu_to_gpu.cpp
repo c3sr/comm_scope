@@ -1,4 +1,6 @@
- #include "sysbench/sysbench.hpp"
+#include <sstream>
+
+#include "sysbench/sysbench.hpp"
 
 #include "../args.hpp"
 
@@ -6,7 +8,7 @@
 
 auto Comm_3d_cudaMemcpy2DAsync_GPUToGPU = [](benchmark::State &state, const int gpu0, const int gpu1) {
 
-#if SCOPE_USE_NVTX == 1
+#if SYSBENCH_USE_NVTX == 1
   {
     std::stringstream name;
     name << NAME << "/" << gpu0 << "/" << gpu1 << "/" << state.range(0) << "/" << state.range(1) << "/"
@@ -101,7 +103,7 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToGPU = [](benchmark::State &state, const int 
   OR_SKIP(cudaFree(src.ptr), "cudaFree");
   OR_SKIP(cudaFree(dst.ptr), "cudaFree");
 
-#if SCOPE_USE_NVTX == 1
+#if SYSBENCH_USE_NVTX == 1
   nvtxRangePop();
 #endif
 };

@@ -87,7 +87,7 @@ auto Comm_cudart_cudaMemcpy3DPeerAsync = [](benchmark::State &state,
   OR_SKIP(cudaFree(src.ptr), NAME "failed to cudaFree");
   OR_SKIP(cudaFree(dst.ptr), NAME "failed to cudaFree");
 
-#if SCOPE_USE_NVTX == 1
+#if SYSBENCH_USE_NVTX == 1
   nvtxRangePop();
 #endif
 };

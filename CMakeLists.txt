@@ -6,14 +6,48 @@ option(USE_OpenMP "Use OpenMP for some benchmarks" ON)
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.9.0)
 
+# Set a default build type if none was specified
+set(default_build_type "Release")
+ 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
+  set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
+      STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+    "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# configure sysbench to match
+# FORCE to override variable if it's already cached
+set(SYSBENCH_USE_CUDA ON CACHE BOOL "use CUDA" FORCE)
+set(SYSBENCH_USE_NUMA ${USE_NUMA} CACHE BOOL "text" FORCE)
+set(SYSBENCH_USE_OPENMP ${USE_OPENMP} CACHE BOOL "" FORCE)
+set(SYSBENCH_USE_NVTX ${USE_NVTX} CACHE BOOL "" FORCE)
+
 add_subdirectory(thirdparty/sysbench)
-
 add_subdirectory(src)
-
 add_executable(comm_scope ${comm_SOURCES} ${comm_CUDA_SOURCES})
 
+target_compile_options(comm_scope PRIVATE
+    -Wall 
+    -Wextra 
+    -Wcast-qual 
+    -Wcast-align 
+    -Wstrict-aliasing 
+    -Wpointer-arith 
+    -Winit-self 
+    -Wshadow 
+    -Wswitch-enum 
+    -Wredundant-decls 
+    -Wfloat-equal 
+    -Wundef 
+    -Wvla
+    -fmax-errors=1 
+    -Wfatal-errors
+  )
 
 set_property(TARGET comm_scope PROPERTY CUDA_STANDARD 11)
 target_compile_features(comm_scope PUBLIC cxx_std_11)
@@ -34,3 +68,5 @@ configure_file (
 )
 target_include_directories(comm_scope PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src)
 
+add_executable(enable-turbo src/enable_turbo.cpp)
+target_link_libraries(enable-turbo sysbench::sysbench)

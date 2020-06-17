@@ -1,6 +1,4 @@
 set(comm_SOURCES ${comm_SOURCES}
-${CMAKE_CURRENT_LIST_DIR}/cudamallocmanaged_memset.cpp
-${CMAKE_CURRENT_LIST_DIR}/cudamallocmanaged.cpp
 ${CMAKE_CURRENT_LIST_DIR}/malloc_memset.cpp
 ${CMAKE_CURRENT_LIST_DIR}/malloc.cpp
 PARENT_SCOPE)

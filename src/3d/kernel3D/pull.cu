@@ -1,8 +1,6 @@
-#include <cassert>
-#include <cuda_runtime.h>
+#include <sstream>
 
- 
- #include "sysbench/sysbench.hpp"
+#include "sysbench/sysbench.hpp"
 
 #include "../args.hpp"
 
@@ -75,7 +73,7 @@ inline dim3 make_block_dim(const cudaExtent extent, int64_t threads) {
 
 auto Comm_3d_kernel3D_pull = [](benchmark::State &state, const int gpu0, const int gpu1) {
 
-#if SCOPE_USE_NVTX == 1
+#if SYSBENCH_USE_NVTX == 1
   {
     std::stringstream name;
     name << NAME << "/" << gpu0 << "/" << gpu1 << "/" << state.range(0) << "/" << state.range(1) << "/"
@@ -188,7 +186,7 @@ auto Comm_3d_kernel3D_pull = [](benchmark::State &state, const int gpu0, const i
   OR_SKIP(cudaFree(src.ptr), "cudaFree");
   OR_SKIP(cudaFree(dst.ptr), "cudaFree");
 
-#if SCOPE_USE_NVTX == 1
+#if SYSBENCH_USE_NVTX == 1
   nvtxRangePop();
 #endif
 };
