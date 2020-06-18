@@ -6,29 +6,35 @@
 
 #define NAME "Comm_3d_kernel3D_push"
 
-__global__ void Comm_3d_kernel3D_push_kernel(void *__restrict__ dst, const void *__restrict__ src,
-                                             const cudaExtent allocExtent, const cudaExtent copyExtent,
+__global__ void Comm_3d_kernel3D_push_kernel(void *__restrict__ dst,
+                                             const void *__restrict__ src,
+                                             const cudaExtent allocExtent,
+                                             const cudaExtent copyExtent,
                                              const size_t elemSize) {
 
   const unsigned int tz = blockDim.z * blockIdx.z + threadIdx.z;
   const unsigned int ty = blockDim.y * blockIdx.y + threadIdx.y;
   const unsigned int tx = blockDim.x * blockIdx.x + threadIdx.x;
 
-  for (unsigned int zi = tz; zi < copyExtent.depth; zi += blockDim.z * gridDim.z) {
-    for (unsigned int yi = ty; yi < copyExtent.height; yi += blockDim.y * gridDim.y) {
-      for (unsigned int xi = tx; xi < copyExtent.width; xi += blockDim.x * gridDim.x) {
-        unsigned int ii = zi * allocExtent.height * allocExtent.width + yi * allocExtent.width + xi;
+  for (unsigned int zi = tz; zi < copyExtent.depth;
+       zi += blockDim.z * gridDim.z) {
+    for (unsigned int yi = ty; yi < copyExtent.height;
+         yi += blockDim.y * gridDim.y) {
+      for (unsigned int xi = tx; xi < copyExtent.width;
+           xi += blockDim.x * gridDim.x) {
+        unsigned int ii = zi * allocExtent.height * allocExtent.width +
+                          yi * allocExtent.width + xi;
         if (4 == elemSize) {
-          uint32_t *pDst       = reinterpret_cast<uint32_t *>(dst);
+          uint32_t *pDst = reinterpret_cast<uint32_t *>(dst);
           const uint32_t *pSrc = reinterpret_cast<const uint32_t *>(src);
-          uint32_t v           = pSrc[ii];
-          pDst[ii]             = v;
+          uint32_t v = pSrc[ii];
+          pDst[ii] = v;
         } else if (8 == elemSize) {
-          uint64_t *pDst       = reinterpret_cast<uint64_t *>(dst);
+          uint64_t *pDst = reinterpret_cast<uint64_t *>(dst);
           const uint64_t *pSrc = reinterpret_cast<const uint64_t *>(src);
-          pDst[ii]             = pSrc[ii];
+          pDst[ii] = pSrc[ii];
         } else {
-          char *pDst       = reinterpret_cast<char *>(dst);
+          char *pDst = reinterpret_cast<char *>(dst);
           const char *pSrc = reinterpret_cast<const char *>(src);
           memcpy(&pDst[ii * elemSize], &pSrc[ii * elemSize], elemSize);
         }
@@ -71,51 +77,56 @@ inline dim3 make_block_dim(const cudaExtent extent, int64_t threads) {
   return ret;
 }
 
-auto Comm_3d_kernel3D_push = [](benchmark::State &state, const int gpu0, const int gpu1) {
+auto Comm_3d_kernel3D_push = [](benchmark::State &state, const int gpu0,
+                                const int gpu1) {
 
 #if SYSBENCH_USE_NVTX == 1
   {
     std::stringstream name;
-    name << NAME << "/" << gpu0 << "/" << gpu1 << "/" << state.range(0) << "/" << state.range(1) << "/"
-         << state.range(2);
+    name << NAME << "/" << gpu0 << "/" << gpu1 << "/" << state.range(0) << "/"
+         << state.range(1) << "/" << state.range(2);
     nvtxRangePush(name.str().c_str());
   }
 #endif
 
-  OR_SKIP(cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
-  OR_SKIP(cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0),
+                     NAME " failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1),
+                     NAME " failed to reset CUDA device");
 
   // create stream on src gpu (push)
-  OR_SKIP(cudaSetDevice(gpu0), NAME "failed to create stream");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to create stream");
   cudaStream_t stream = nullptr;
-  OR_SKIP(cudaStreamCreate(&stream), NAME "failed to create stream");
+  OR_SKIP_AND_RETURN(cudaStreamCreate(&stream), NAME "failed to create stream");
 
   // Start and stop events on src gpu (push)
   cudaEvent_t start = nullptr;
-  cudaEvent_t stop  = nullptr;
-  OR_SKIP(cudaEventCreate(&start), NAME " failed to create event");
-  OR_SKIP(cudaEventCreate(&stop), NAME " failed to create event");
+  cudaEvent_t stop = nullptr;
+  OR_SKIP_AND_RETURN(cudaEventCreate(&start), NAME " failed to create event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&stop), NAME " failed to create event");
 
   // target size to transfer
   cudaExtent copyExt;
-  copyExt.width  = static_cast<size_t>(state.range(0));
+  copyExt.width = static_cast<size_t>(state.range(0));
   copyExt.height = static_cast<size_t>(state.range(1));
-  copyExt.depth  = static_cast<size_t>(state.range(2));
+  copyExt.depth = static_cast<size_t>(state.range(2));
   const size_t copyBytes = copyExt.width * copyExt.height * copyExt.depth;
 
   // properties of the allocation
   cudaExtent allocExt;
-  allocExt.width  = 512; // how many bytes in a row
+  allocExt.width = 512;  // how many bytes in a row
   allocExt.height = 512; // how many rows in a plane
-  allocExt.depth  = 512;
+  allocExt.depth = 512;
 
   cudaPitchedPtr src, dst;
 
   // allocate on gpu0 and enable peer access
-  OR_SKIP(cudaSetDevice(gpu0), NAME "failed to set device");
-  OR_SKIP(cudaMalloc3D(&src, allocExt), NAME " failed to perform cudaMalloc3D");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaMalloc3D(&src, allocExt),
+                     NAME " failed to perform cudaMalloc3D");
   allocExt.width = src.pitch;
-  OR_SKIP(cudaMemset3D(src, 0, allocExt), NAME " failed to perform src cudaMemset3D");
+  OR_SKIP_AND_RETURN(cudaMemset3D(src, 0, allocExt),
+                     NAME " failed to perform src cudaMemset3D");
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0);
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
@@ -124,9 +135,11 @@ auto Comm_3d_kernel3D_push = [](benchmark::State &state, const int gpu0, const i
   }
 
   // allocate on gpu1 and enable peer access
-  OR_SKIP(cudaSetDevice(gpu1), NAME "failed to set device");
-  OR_SKIP(cudaMalloc3D(&dst, allocExt), NAME " failed to perform cudaMalloc3D");
-  OR_SKIP(cudaMemset3D(dst, 0, allocExt), NAME " failed to perform src cudaMemset3D");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaMalloc3D(&dst, allocExt),
+                     NAME " failed to perform cudaMalloc3D");
+  OR_SKIP_AND_RETURN(cudaMemset3D(dst, 0, allocExt),
+                     NAME " failed to perform src cudaMemset3D");
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu0, 0);
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
@@ -149,42 +162,47 @@ auto Comm_3d_kernel3D_push = [](benchmark::State &state, const int gpu0, const i
   gridDim.z = (copyExt.depth + blockDim.z - 1) / blockDim.z;
 
   // push, so run kernel on source device
-  OR_SKIP(cudaSetDevice(gpu0), NAME " unable to set push device");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME " unable to set push device");
 
   for (auto _ : state) {
     // Start copy
-    OR_SKIP_AND_BREAK(cudaEventRecord(start, stream), NAME " failed to record start event");
+    OR_SKIP_AND_BREAK(cudaEventRecord(start, stream),
+                      NAME " failed to record start event");
 
-    Comm_3d_kernel3D_push_kernel<<<gridDim, blockDim, 0, stream>>>(dst.ptr, src.ptr, allocExt, copyExt, elemSize);
+    Comm_3d_kernel3D_push_kernel<<<gridDim, blockDim, 0, stream>>>(
+        dst.ptr, src.ptr, allocExt, copyExt, elemSize);
     OR_SKIP_AND_BREAK(cudaGetLastError(), "kernel");
 
-    OR_SKIP_AND_BREAK(cudaEventRecord(stop, stream), NAME " failed to record stop event");
+    OR_SKIP_AND_BREAK(cudaEventRecord(stop, stream),
+                      NAME " failed to record stop event");
 
     // Wait for all copies to finish
-    OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), NAME " failed to synchronize");
+    OR_SKIP_AND_BREAK(cudaEventSynchronize(stop),
+                      NAME " failed to synchronize");
 
     // Get the transfer time
     float millis;
-    OR_SKIP_AND_BREAK(cudaEventElapsedTime(&millis, start, stop), NAME " failed to compute elapsed tiume");
+    OR_SKIP_AND_BREAK(cudaEventElapsedTime(&millis, start, stop),
+                      NAME " failed to compute elapsed tiume");
     state.SetIterationTime(millis / 1000);
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(copyBytes));
   state.counters["bytes"] = copyBytes;
-  state.counters["gpu0"]  = gpu0;
-  state.counters["gpu1"]  = gpu1;
-  state.counters["dbx"]  = blockDim.x;
-  state.counters["dby"]  = blockDim.y;
-  state.counters["dbz"]  = blockDim.z;
-  state.counters["dgx"]  = gridDim.x;
-  state.counters["dgy"]  = gridDim.y;
-  state.counters["dgz"]  = gridDim.x;
+  state.counters["gpu0"] = gpu0;
+  state.counters["gpu1"] = gpu1;
+  state.counters["dbx"] = blockDim.x;
+  state.counters["dby"] = blockDim.y;
+  state.counters["dbz"] = blockDim.z;
+  state.counters["dgx"] = gridDim.x;
+  state.counters["dgy"] = gridDim.y;
+  state.counters["dgz"] = gridDim.x;
 
-  OR_SKIP(cudaEventDestroy(start), "cudaEventDestroy");
-  OR_SKIP(cudaEventDestroy(stop), "cudaEventDestroy");
-  OR_SKIP(cudaStreamDestroy(stream), "cudaStreamDestroy");
-  OR_SKIP(cudaFree(src.ptr), "cudaFree");
-  OR_SKIP(cudaFree(dst.ptr), "cudaFree");
+  OR_SKIP_AND_RETURN(cudaEventDestroy(start), "cudaEventDestroy");
+  OR_SKIP_AND_RETURN(cudaEventDestroy(stop), "cudaEventDestroy");
+  OR_SKIP_AND_RETURN(cudaStreamDestroy(stream), "cudaStreamDestroy");
+  OR_SKIP_AND_RETURN(cudaFree(src.ptr), "cudaFree");
+  OR_SKIP_AND_RETURN(cudaFree(dst.ptr), "cudaFree");
 
 #if SYSBENCH_USE_NVTX == 1
   nvtxRangePop();
@@ -201,8 +219,12 @@ static void registerer() {
       if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok1, gpu0, gpu1)) &&
           !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok2, gpu1, gpu0))) {
         if ((ok1 && ok2) || i == j) {
-          name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" + std::to_string(gpu1);
-          benchmark::RegisterBenchmark(name.c_str(), Comm_3d_kernel3D_push, gpu0, gpu1)->TINY_ARGS()->UseManualTime();
+          name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" +
+                 std::to_string(gpu1);
+          benchmark::RegisterBenchmark(name.c_str(), Comm_3d_kernel3D_push,
+                                       gpu0, gpu1)
+              ->TINY_ARGS()
+              ->UseManualTime();
         }
       }
     }

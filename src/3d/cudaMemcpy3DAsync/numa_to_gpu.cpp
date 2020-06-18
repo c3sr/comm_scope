@@ -18,17 +18,17 @@ auto Comm_3d_cudaMemcpy3DAsync_NUMAToGPU = [](benchmark::State &state, const int
 
   // bind to CPU & reset device
   numa::ScopedBind binder(numaId);
-  OR_SKIP(cuda_reset_device(cudaId), "failed to reset GPU");
+  OR_SKIP_AND_RETURN(cuda_reset_device(cudaId), "failed to reset GPU");
 
   // stream for async copy
   cudaStream_t stream = nullptr;
-  OR_SKIP(cudaStreamCreate(&stream), NAME "failed to create stream");
+  OR_SKIP_AND_RETURN(cudaStreamCreate(&stream), NAME "failed to create stream");
 
   // Start and stop event for copy
   cudaEvent_t start = nullptr;
   cudaEvent_t stop  = nullptr;
-  OR_SKIP(cudaEventCreate(&start), NAME " failed to create event");
-  OR_SKIP(cudaEventCreate(&stop), NAME " failed to create event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&start), NAME " failed to create event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&stop), NAME " failed to create event");
 
   // target size to transfer
   cudaExtent copyExt;
@@ -46,18 +46,18 @@ auto Comm_3d_cudaMemcpy3DAsync_NUMAToGPU = [](benchmark::State &state, const int
   cudaPitchedPtr src, dst;
 
   // allocate on cudaId. cudaMalloc3D may adjust the extent to align
-  OR_SKIP(cudaSetDevice(cudaId), NAME "failed to set device");
-  OR_SKIP(cudaMalloc3D(&dst, allocExt), "failed to perform cudaMalloc3D");
+  OR_SKIP_AND_RETURN(cudaSetDevice(cudaId), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaMalloc3D(&dst, allocExt), "failed to perform cudaMalloc3D");
   allocExt.width = dst.pitch;
   const size_t allocBytes = allocExt.width * allocExt.height * allocExt.depth;
-  OR_SKIP(cudaMemset3D(dst, 0, allocExt), "failed to perform dst cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset3D(dst, 0, allocExt), "failed to perform dst cudaMemset");
 
   // allocate on CPU. 
   src.ptr = aligned_alloc(page_size(), allocBytes);
   src.pitch = dst.pitch;
   src.xsize = dst.xsize;
   src.ysize = dst.ysize;
-  OR_SKIP(cudaHostRegister(src.ptr, allocBytes, cudaHostRegisterPortable), "cudaHostRegister()");
+  OR_SKIP_AND_RETURN(cudaHostRegister(src.ptr, allocBytes, cudaHostRegisterPortable), "cudaHostRegister()");
   std::memset(src.ptr, 0, allocBytes);
 
   cudaMemcpy3DParms params;
@@ -90,12 +90,12 @@ auto Comm_3d_cudaMemcpy3DAsync_NUMAToGPU = [](benchmark::State &state, const int
   state.counters["numaId"]  = numaId;
   state.counters["cudaId"]  = cudaId;
 
-  OR_SKIP(cudaHostUnregister(src.ptr), "cudaHostUnregister");
+  OR_SKIP_AND_RETURN(cudaHostUnregister(src.ptr), "cudaHostUnregister");
   free(src.ptr);
-  OR_SKIP(cudaEventDestroy(start), "cudaEventDestroy");
-  OR_SKIP(cudaEventDestroy(stop), "cudaEventDestroy");
-  OR_SKIP(cudaStreamDestroy(stream), "cudaStreamDestroy");
-  OR_SKIP(cudaFree(dst.ptr), NAME "failed to cudaFree");
+  OR_SKIP_AND_RETURN(cudaEventDestroy(start), "cudaEventDestroy");
+  OR_SKIP_AND_RETURN(cudaEventDestroy(stop), "cudaEventDestroy");
+  OR_SKIP_AND_RETURN(cudaStreamDestroy(stream), "cudaStreamDestroy");
+  OR_SKIP_AND_RETURN(cudaFree(dst.ptr), NAME "failed to cudaFree");
 
   #if SYSBENCH_USE_NVTX == 1
   nvtxRangePop();

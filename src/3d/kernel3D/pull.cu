@@ -82,19 +82,19 @@ auto Comm_3d_kernel3D_pull = [](benchmark::State &state, const int gpu0, const i
   }
 #endif
 
-  OR_SKIP(cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
-  OR_SKIP(cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
 
   // create stream on dst gpu (pull)
-  OR_SKIP(cudaSetDevice(gpu1), NAME "failed to create stream");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to create stream");
   cudaStream_t stream = nullptr;
-  OR_SKIP(cudaStreamCreate(&stream), NAME "failed to create stream");
+  OR_SKIP_AND_RETURN(cudaStreamCreate(&stream), NAME "failed to create stream");
 
   // Start and stop events on dst gpu (pull)
   cudaEvent_t start = nullptr;
   cudaEvent_t stop  = nullptr;
-  OR_SKIP(cudaEventCreate(&start), NAME " failed to create event");
-  OR_SKIP(cudaEventCreate(&stop), NAME " failed to create event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&start), NAME " failed to create event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&stop), NAME " failed to create event");
 
   // target size to transfer
   cudaExtent copyExt;
@@ -112,10 +112,10 @@ auto Comm_3d_kernel3D_pull = [](benchmark::State &state, const int gpu0, const i
   cudaPitchedPtr src, dst;
 
   // allocate on gpu0 and enable peer access
-  OR_SKIP(cudaSetDevice(gpu0), NAME "failed to set device");
-  OR_SKIP(cudaMalloc3D(&src, allocExt), NAME " failed to perform cudaMalloc3D");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaMalloc3D(&src, allocExt), NAME " failed to perform cudaMalloc3D");
   allocExt.width = src.pitch;
-  OR_SKIP(cudaMemset3D(src, 0, allocExt), NAME " failed to perform src cudaMemset3D");
+  OR_SKIP_AND_RETURN(cudaMemset3D(src, 0, allocExt), NAME " failed to perform src cudaMemset3D");
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0);
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
@@ -124,9 +124,9 @@ auto Comm_3d_kernel3D_pull = [](benchmark::State &state, const int gpu0, const i
   }
 
   // allocate on gpu1 and enable peer access
-  OR_SKIP(cudaSetDevice(gpu1), NAME "failed to set device");
-  OR_SKIP(cudaMalloc3D(&dst, allocExt), NAME " failed to perform cudaMalloc3D");
-  OR_SKIP(cudaMemset3D(dst, 0, allocExt), NAME " failed to perform dst cudaMemset3D");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaMalloc3D(&dst, allocExt), NAME " failed to perform cudaMalloc3D");
+  OR_SKIP_AND_RETURN(cudaMemset3D(dst, 0, allocExt), NAME " failed to perform dst cudaMemset3D");
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu0, 0);
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
@@ -149,7 +149,7 @@ auto Comm_3d_kernel3D_pull = [](benchmark::State &state, const int gpu0, const i
   gridDim.z = (copyExt.depth + blockDim.z - 1) / blockDim.z;
 
   // pull so run kernel on dst device
-  OR_SKIP(cudaSetDevice(gpu1), NAME " unable to set pull device");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME " unable to set pull device");
 
   for (auto _ : state) {
     // Start copy
@@ -180,11 +180,11 @@ auto Comm_3d_kernel3D_pull = [](benchmark::State &state, const int gpu0, const i
   state.counters["dgy"]  = gridDim.y;
   state.counters["dgz"]  = gridDim.x;
 
-  OR_SKIP(cudaEventDestroy(start), "cudaEventDestroy");
-  OR_SKIP(cudaEventDestroy(stop), "cudaEventDestroy");
-  OR_SKIP(cudaStreamDestroy(stream), "cudaStreamDestroy");
-  OR_SKIP(cudaFree(src.ptr), "cudaFree");
-  OR_SKIP(cudaFree(dst.ptr), "cudaFree");
+  OR_SKIP_AND_RETURN(cudaEventDestroy(start), "cudaEventDestroy");
+  OR_SKIP_AND_RETURN(cudaEventDestroy(stop), "cudaEventDestroy");
+  OR_SKIP_AND_RETURN(cudaStreamDestroy(stream), "cudaStreamDestroy");
+  OR_SKIP_AND_RETURN(cudaFree(src.ptr), "cudaFree");
+  OR_SKIP_AND_RETURN(cudaFree(dst.ptr), "cudaFree");
 
 #if SYSBENCH_USE_NVTX == 1
   nvtxRangePop();

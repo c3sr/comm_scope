@@ -128,34 +128,34 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
   }
 #endif
 
-  OR_SKIP(cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
-  OR_SKIP(cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
 
   // create stream on src gpu for pack + copy
-  OR_SKIP(cudaSetDevice(gpu0), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to set device");
   cudaStream_t srcStream = nullptr;
-  OR_SKIP(cudaStreamCreate(&srcStream), NAME "failed to create source stream");
+  OR_SKIP_AND_RETURN(cudaStreamCreate(&srcStream), NAME "failed to create source stream");
 
   // create a stream on the dst gpu for unpack
-  OR_SKIP(cudaSetDevice(gpu1), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to set device");
   cudaStream_t dstStream = nullptr;
-  OR_SKIP(cudaStreamCreate(&dstStream), NAME "failed to create dst stream");
+  OR_SKIP_AND_RETURN(cudaStreamCreate(&dstStream), NAME "failed to create dst stream");
 
   // Start and stop events on src gpu
-  OR_SKIP(cudaSetDevice(gpu0), NAME "failed to create stream");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to create stream");
   cudaEvent_t start = nullptr;
   cudaEvent_t stop = nullptr;
-  OR_SKIP(cudaEventCreate(&start), NAME " failed to create event");
-  OR_SKIP(cudaEventCreate(&stop), NAME " failed to create event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&start), NAME " failed to create event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&stop), NAME " failed to create event");
 
   // event to serialize unpack after copy
   cudaEvent_t copyDone = nullptr;
-  OR_SKIP(cudaEventCreate(&copyDone), NAME " failed to create event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&copyDone), NAME " failed to create event");
 
   // event to serialize stop after unpack
-  OR_SKIP(cudaSetDevice(gpu1), "cudaSetDevice");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), "cudaSetDevice");
   cudaEvent_t unpackDone = nullptr;
-  OR_SKIP(cudaEventCreate(&unpackDone), " failed to created unpackDone event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&unpackDone), " failed to created unpackDone event");
 
   // target size to transfer
   cudaExtent copyExt;
@@ -177,10 +177,10 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
   void *srcBuf, *dstBuf;
 
   // allocate on gpu0 and enable peer access
-  OR_SKIP(cudaSetDevice(gpu0), NAME "failed to set device");
-  OR_SKIP(cudaMalloc3D(&src, allocExt), NAME " failed to perform cudaMalloc3D");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaMalloc3D(&src, allocExt), NAME " failed to perform cudaMalloc3D");
   allocExt.width = src.pitch;
-  OR_SKIP(cudaMalloc(&srcBuf, copyBytes),
+  OR_SKIP_AND_RETURN(cudaMalloc(&srcBuf, copyBytes),
           NAME " failed to alloc flat src buffer");
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0);
@@ -190,9 +190,9 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
   }
 
   // allocate on gpu1 and enable peer access
-  OR_SKIP(cudaSetDevice(gpu1), NAME "failed to set device");
-  OR_SKIP(cudaMalloc3D(&dst, allocExt), NAME " failed to perform cudaMalloc3D");
-  OR_SKIP(cudaMalloc(&dstBuf, copyBytes),
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaMalloc3D(&dst, allocExt), NAME " failed to perform cudaMalloc3D");
+  OR_SKIP_AND_RETURN(cudaMalloc(&dstBuf, copyBytes),
           NAME " failed to alloc flat dst buffer");
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu0, 0);
@@ -277,16 +277,16 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
   state.counters["dgy"] = gridDim.y;
   state.counters["dgz"] = gridDim.x;
 
-  OR_SKIP(cudaFree(src.ptr), "cudaFree");
-  OR_SKIP(cudaFree(dst.ptr), "cudaFree");
-  OR_SKIP(cudaFree(srcBuf), "cudaFree");
-  OR_SKIP(cudaFree(dstBuf), "cudaFree");
-  OR_SKIP(cudaStreamDestroy(srcStream), "cudaStreamDestroy");
-  OR_SKIP(cudaStreamDestroy(dstStream), "cudaStreamDestroy");
-  OR_SKIP(cudaEventDestroy(start), "cudaEventDestroy");
-  OR_SKIP(cudaEventDestroy(stop), "cudaEventDestroy");
-  OR_SKIP(cudaEventDestroy(copyDone), "cudaEventDestroy");
-  OR_SKIP(cudaEventDestroy(unpackDone), "cudaEventDestroy");
+  OR_SKIP_AND_RETURN(cudaFree(src.ptr), "cudaFree");
+  OR_SKIP_AND_RETURN(cudaFree(dst.ptr), "cudaFree");
+  OR_SKIP_AND_RETURN(cudaFree(srcBuf), "cudaFree");
+  OR_SKIP_AND_RETURN(cudaFree(dstBuf), "cudaFree");
+  OR_SKIP_AND_RETURN(cudaStreamDestroy(srcStream), "cudaStreamDestroy");
+  OR_SKIP_AND_RETURN(cudaStreamDestroy(dstStream), "cudaStreamDestroy");
+  OR_SKIP_AND_RETURN(cudaEventDestroy(start), "cudaEventDestroy");
+  OR_SKIP_AND_RETURN(cudaEventDestroy(stop), "cudaEventDestroy");
+  OR_SKIP_AND_RETURN(cudaEventDestroy(copyDone), "cudaEventDestroy");
+  OR_SKIP_AND_RETURN(cudaEventDestroy(unpackDone), "cudaEventDestroy");
 
 #if SYSBENCH_USE_NVTX == 1
   nvtxRangePop();

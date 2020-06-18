@@ -17,18 +17,18 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToGPU = [](benchmark::State &state, const int 
   }
 #endif
 
-  OR_SKIP(cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
-  OR_SKIP(cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
 
   // Create One stream per copy
   cudaStream_t stream = nullptr;
-  OR_SKIP(cudaStreamCreate(&stream), NAME "failed to create stream");
+  OR_SKIP_AND_RETURN(cudaStreamCreate(&stream), NAME "failed to create stream");
 
   // Start and stop events for each copy
   cudaEvent_t start = nullptr;
   cudaEvent_t stop  = nullptr;
-  OR_SKIP(cudaEventCreate(&start), NAME " failed to create event");
-  OR_SKIP(cudaEventCreate(&stop), NAME " failed to create event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&start), NAME " failed to create event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&stop), NAME " failed to create event");
 
   // target size to transfer
   cudaExtent copyExt;
@@ -46,10 +46,10 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToGPU = [](benchmark::State &state, const int 
   cudaPitchedPtr src, dst;
 
   // allocate on gpu0 and enable peer access
-  OR_SKIP(cudaSetDevice(gpu0), NAME "failed to set device");
-  OR_SKIP(cudaMalloc3D(&src, allocExt), NAME " failed to perform cudaMalloc3D");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaMalloc3D(&src, allocExt), NAME " failed to perform cudaMalloc3D");
   allocExt.width = src.pitch;
-  OR_SKIP(cudaMemset3D(src, 0, allocExt), NAME " failed to perform src cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset3D(src, 0, allocExt), NAME " failed to perform src cudaMemset");
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0);
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
@@ -58,9 +58,9 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToGPU = [](benchmark::State &state, const int 
   }
 
   // allocate on gpu1 and enable peer access
-  OR_SKIP(cudaSetDevice(gpu1), NAME "failed to set device");
-  OR_SKIP(cudaMalloc3D(&dst, allocExt), NAME " failed to perform cudaMalloc3D");
-  OR_SKIP(cudaMemset3D(dst, 0, allocExt), NAME " failed to perform dst cudaMemset");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaMalloc3D(&dst, allocExt), NAME " failed to perform cudaMalloc3D");
+  OR_SKIP_AND_RETURN(cudaMemset3D(dst, 0, allocExt), NAME " failed to perform dst cudaMemset");
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu0, 0);
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
@@ -97,11 +97,11 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToGPU = [](benchmark::State &state, const int 
   state.counters["gpu0"]  = gpu0;
   state.counters["gpu1"]  = gpu1;
 
-  OR_SKIP(cudaEventDestroy(start), "cudaEventDestroy");
-  OR_SKIP(cudaEventDestroy(stop), "cudaEventDestroy");
-  OR_SKIP(cudaStreamDestroy(stream), "cudaStreamDestroy");
-  OR_SKIP(cudaFree(src.ptr), "cudaFree");
-  OR_SKIP(cudaFree(dst.ptr), "cudaFree");
+  OR_SKIP_AND_RETURN(cudaEventDestroy(start), "cudaEventDestroy");
+  OR_SKIP_AND_RETURN(cudaEventDestroy(stop), "cudaEventDestroy");
+  OR_SKIP_AND_RETURN(cudaStreamDestroy(stream), "cudaStreamDestroy");
+  OR_SKIP_AND_RETURN(cudaFree(src.ptr), "cudaFree");
+  OR_SKIP_AND_RETURN(cudaFree(dst.ptr), "cudaFree");
 
 #if SYSBENCH_USE_NVTX == 1
   nvtxRangePop();
