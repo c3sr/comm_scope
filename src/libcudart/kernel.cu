@@ -1,4 +1,4 @@
-/* Measure the runtime cost of cudaMemcpy3DPeerAsync
+/* Measure the runtime cost of a kernel launch
  */
 
 #include "sysbench/sysbench.hpp"
@@ -16,7 +16,9 @@ template<> struct S<0> {
 template<unsigned N>
 __global__ void Comm_cudart_kernel_kernel(S<N> s) {(void)s; }
 
-auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu) {
+auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu, const int numaId) {
+  numa::ScopedBind binder(numaId);
+
   OR_SKIP_AND_RETURN(cuda_reset_device(gpu), "failed to reset CUDA device");
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu), "");
 
@@ -65,11 +67,13 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu) {
 static void registerer() {
   std::string name;
   for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
+    for (int numaId : numa::ids()) {
       auto gpu = unique_cuda_device_ids()[i];
-      name = std::string(NAME) + "/" + std::to_string(gpu);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_cudart_kernel, gpu)
-          ->DenseRange(0, 12, 1)
-          ->UseRealTime();
+      name = std::string(NAME) + "/" + std::to_string(numaId) + "/" + std::to_string(gpu);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_cudart_kernel, gpu, numaId)
+      ->DenseRange(0, 12, 1)->ArgName("log2(N)")
+      ->UseRealTime();
+    }
   }
 }
 
