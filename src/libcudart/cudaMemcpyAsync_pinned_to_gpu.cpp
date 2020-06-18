@@ -59,7 +59,7 @@ auto Comm_cudart_cudaMemcpyAsync_PinnedToGPU = [](benchmark::State &state,
 static void registerer() {
   std::string name;
   for (size_t i = 0; i < numa::ids().size(); ++i) {
-    for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
+    for (size_t j = 0; j < unique_cuda_device_ids().size(); ++j) {
       auto numa_id = numa::ids()[i];
       auto gpu = unique_cuda_device_ids()[j];
 name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" +
