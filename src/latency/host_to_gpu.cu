@@ -21,9 +21,7 @@ __global__ void gpu_traverse(size_t *ptr, const size_t steps) {
 }
 
 auto Comm_UM_Latency_HostToGPU = [](benchmark::State &state,
-  #if USE_NUMA
   const int numa_id,
-  #endif // USE_NUMA
   const int cuda_id) {
 
   const size_t steps = state.range(0);
@@ -31,9 +29,7 @@ auto Comm_UM_Latency_HostToGPU = [](benchmark::State &state,
   const size_t stride = 65536 * 2;
   const size_t bytes  = sizeof(size_t) * (steps + 1) * stride;
 
-#if USE_NUMA
-  numa::bind_node(numa_id);
-#endif
+  numa::ScopedBind binder(numa_id);
 
   if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
     state.SkipWithError(NAME " failed to set CUDA dst device");
@@ -101,33 +97,19 @@ auto Comm_UM_Latency_HostToGPU = [](benchmark::State &state,
   }
   state.counters["strides"] = steps;
   state.counters["cuda_id"] = cuda_id;
-#if USE_NUMA
   state.counters["numa_id"] = numa_id;
-#endif // USE_NUMA
-
-#if USE_NUMA
-  numa::bind_node(-1);
-#endif
 };
 
 static void registerer() {
   for (auto cuda_id : unique_cuda_device_ids()) {
-#if USE_NUMA
     for (auto numa_id : numa::ids()) {
-#endif // USE_NUMA
       std::string name = std::string(NAME)
-#if USE_NUMA 
                        + "/" + std::to_string(numa_id) 
-#endif // USE_NUMA
                        + "/" + std::to_string(cuda_id);
       benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Latency_HostToGPU,
-#if USE_NUMA
         numa_id,
-#endif // USE_NUMA
         cuda_id)->SMALL_ARGS()->UseManualTime();
-#if USE_NUMA
     }
-#endif // USE_NUMA
   }
 }
 

@@ -7,15 +7,11 @@
 #define NAME "Comm_UM_Prefetch_HostToGPU"
 
 auto Comm_UM_Prefetch_HostToGPU = [](benchmark::State &state,
-#if USE_NUMA
                                      const int numa_id,
-#endif // USE_NUMA
                                      const int cuda_id) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
-#if USE_NUMA
-  numa::bind_node(numa_id);
-#endif // USE_NUMA
+  numa::ScopedBind binder(numa_id);
 
   if (PRINT_IF_ERROR(cuda_reset_device(cuda_id))) {
     state.SkipWithError(NAME " failed to reset device");
@@ -81,35 +77,21 @@ auto Comm_UM_Prefetch_HostToGPU = [](benchmark::State &state,
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
   state.counters["bytes"] = bytes;
   state.counters["cuda_id"] = cuda_id;
-#if USE_NUMA
   state.counters["numa_id"] = numa_id;
-#endif // USE_NUMA
-
-#if USE_NUMA
-  numa::bind_node(-1);
-#endif // USE_NUMA
 };
 
 static void registerer() {
   for (auto cuda_id : unique_cuda_device_ids()) {
-#if USE_NUMA
     for (auto numa_id : numa::ids()) {
-#endif // USE_NUMA
       std::string name = std::string(NAME)
-#if USE_NUMA
                          + "/" + std::to_string(numa_id)
-#endif // USE_NUMA
                          + "/" + std::to_string(cuda_id);
       benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Prefetch_HostToGPU,
-#if USE_NUMA
                                    numa_id,
-#endif // USE_NUMA
                                    cuda_id)
           ->SMALL_ARGS()
           ->UseManualTime();
-#if USE_NUMA
     }
-#endif // USE_NUMA
   }
 }
 

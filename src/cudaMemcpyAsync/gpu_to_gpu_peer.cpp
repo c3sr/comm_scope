@@ -8,46 +8,51 @@ auto Comm_Memcpy_GPUToGPUPeer = [](benchmark::State &state, const int src_gpu,
                                    const int dst_gpu) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
-  OR_SKIP(cuda_reset_device(src_gpu), NAME " failed to reset src CUDA device");
-  OR_SKIP(cuda_reset_device(dst_gpu), NAME " failed to reset dst CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(src_gpu),
+                     "failed to reset src CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(dst_gpu),
+                     "failed to reset dst CUDA device");
 
   char *src = nullptr;
   char *dst = nullptr;
 
-  OR_SKIP(cudaSetDevice(src_gpu), NAME " failed to set src device");
-  OR_SKIP(cudaMalloc(&src, bytes), NAME " failed to perform cudaMalloc");
+  OR_SKIP_AND_RETURN(cudaSetDevice(src_gpu), "failed to set src device");
+  OR_SKIP_AND_RETURN(cudaMalloc(&src, bytes), "failed to perform cudaMalloc");
   defer(cudaFree(src));
-  OR_SKIP(cudaMemset(src, 0, bytes), NAME " failed to perform src cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset(src, 0, bytes),
+                     "failed to perform src cudaMemset");
   cudaError_t err = cudaDeviceEnablePeerAccess(dst_gpu, 0);
   if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
-    state.SkipWithError(NAME " failed to ensure peer access");
+    state.SkipWithError("failed to ensure peer access");
     return;
   }
 
-  OR_SKIP(cudaSetDevice(dst_gpu), NAME " failed to set dst device");
-  OR_SKIP(cudaMalloc(&dst, bytes), NAME " failed to perform cudaMalloc");
+  OR_SKIP_AND_RETURN(cudaSetDevice(dst_gpu), "failed to set dst device");
+  OR_SKIP_AND_RETURN(cudaMalloc(&dst, bytes), "failed to perform cudaMalloc");
   defer(cudaFree(dst));
-  OR_SKIP(cudaMemset(dst, 0, bytes), NAME " failed to perform dst cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset(dst, 0, bytes),
+                     "failed to perform dst cudaMemset");
   err = cudaDeviceEnablePeerAccess(src_gpu, 0);
   if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
-    state.SkipWithError(NAME " failed to ensure peer access");
+    state.SkipWithError("failed to ensure peer access");
     return;
   }
 
   cudaEvent_t start, stop;
-  OR_SKIP(cudaEventCreate(&stop), NAME " couldn't create stop event");
-  OR_SKIP(cudaEventCreate(&start), NAME " couldn't create start event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&stop), "couldn't create stop event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&start), "couldn't create start event");
 
   for (auto _ : state) {
-    OR_SKIP(cudaEventRecord(start, NULL), NAME " failed to record start");
-    OR_SKIP(cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice),
-            NAME " failed to memcpy");
-    OR_SKIP(cudaEventRecord(stop, NULL), NAME " failed to stop");
-    OR_SKIP(cudaEventSynchronize(stop), NAME " failed to synchronize");
+    OR_SKIP_AND_BREAK(cudaEventRecord(start, NULL), "failed to record start");
+    OR_SKIP_AND_BREAK(
+        cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice),
+        "failed to memcpy");
+    OR_SKIP_AND_BREAK(cudaEventRecord(stop, NULL), "failed to stop");
+    OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), "failed to synchronize");
 
     float msecTotal = 0.0f;
-    OR_SKIP(cudaEventElapsedTime(&msecTotal, start, stop),
-            NAME "failed to compute elapsed time");
+    OR_SKIP_AND_BREAK(cudaEventElapsedTime(&msecTotal, start, stop),
+                      "failed to compute elapsed time");
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
