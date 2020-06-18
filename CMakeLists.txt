@@ -70,3 +70,9 @@ target_include_directories(comm_scope PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 add_executable(enable-turbo src/enable_turbo.cpp)
 target_link_libraries(enable-turbo sysbench::sysbench)
+
+add_executable(set-maximum src/set_maximum.cpp)
+target_link_libraries(set-maximum sysbench::sysbench)
+
+add_executable(set-minimum src/set_minimum.cpp)
+target_link_libraries(set-minimum sysbench::sysbench)
