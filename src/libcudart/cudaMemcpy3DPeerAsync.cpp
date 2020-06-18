@@ -19,7 +19,6 @@ auto Comm_cudart_cudaMemcpy3DPeerAsync = [](benchmark::State &state,
   copyExt.width = 130;
   copyExt.height = 170;
   copyExt.depth = 190;
-  const size_t copyBytes = copyExt.width * copyExt.height * copyExt.depth;
 
   // properties of the allocation
   cudaExtent allocExt;
