@@ -105,6 +105,7 @@ static void registerer() {
   std::string name;
   for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
     for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
+      for(size_t numThreads = 1; numThreads <= numa::cpus_in_nodes(numa::cpu_nodes()).size(); numThreads *= 2) {
       auto gpu0 = unique_cuda_device_ids()[i];
       auto gpu1 = unique_cuda_device_ids()[j];
       int ok1, ok2;
@@ -116,11 +117,9 @@ static void registerer() {
           benchmark::RegisterBenchmark(
               name.c_str(), Comm_cudart_cudaMemcpy3DPeerAsync, gpu0, gpu1,
               std::ref(gStream), std::ref(gParams))
-              ->Threads(1)
-              ->Threads(2)
-              ->Threads(4)
-              ->Threads(8)
+              ->Threads(numThreads)
               ->UseRealTime();
+        }
         }
       }
     }
