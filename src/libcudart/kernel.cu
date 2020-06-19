@@ -69,6 +69,7 @@ static void registerer() {
   std::string name;
   for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
     for (int numaId : numa::ids()) {
+      for(size_t numThreads = 1; numThreads <= numa::cpus_in_node(numaId).size(); numThreads *= 2) {
       auto gpu = unique_cuda_device_ids()[i];
       name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
              std::to_string(gpu);
@@ -76,11 +77,9 @@ static void registerer() {
                                    numaId)
           ->DenseRange(0, 12, 1)
           ->ArgName("log2")
-          ->Threads(1)
-          ->Threads(2)
-          ->Threads(4)
-          ->Threads(8)
+          ->Threads(numThreads)
           ->UseRealTime();
+      }
     }
   }
 }
