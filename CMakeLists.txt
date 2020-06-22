@@ -32,21 +32,45 @@ add_subdirectory(src)
 add_executable(comm_scope ${comm_SOURCES} ${comm_CUDA_SOURCES})
 
 target_compile_options(comm_scope PRIVATE
-    -Wall 
-    -Wextra 
-    -Wcast-qual 
-    -Wcast-align 
-    -Wstrict-aliasing 
-    -Wpointer-arith 
-    -Winit-self 
-    -Wshadow 
-    -Wswitch-enum 
-    -Wredundant-decls 
-    -Wfloat-equal 
-    -Wundef 
-    -Wvla
-    -fmax-errors=1 
-    -Wfatal-errors
+$<$<COMPILE_LANGUAGE:CXX>:
+    -Wall; 
+    -Wextra;
+    -Wcast-qual;
+    -Wcast-align;
+    -Wstrict-aliasing;
+    -Wpointer-arith;
+    -Winit-self;
+    -Wshadow;
+    -Wswitch-enum;
+    -Wredundant-decls;
+    -Wfloat-equal;
+    -Wundef;
+    -Wvla;
+    -fmax-errors=1;
+    -Wfatal-errors;
+>
+  )
+
+# causes lots of warnings in CUDA includes
+# -Xcompiler=-Wundef;
+# -Xcompiler=-Wredundant-decls;
+target_compile_options(comm_scope PRIVATE
+$<$<COMPILE_LANGUAGE:CUDA>:
+    -lineinfo;
+    -Xcompiler=-Wall; 
+    -Xcompiler=-Wextra;
+    -Xcompiler=-Wcast-qual;
+    -Xcompiler=-Wcast-align;
+    -Xcompiler=-Wstrict-aliasing;
+    -Xcompiler=-Wpointer-arith;
+    -Xcompiler=-Winit-self;
+    -Xcompiler=-Wshadow;
+    -Xcompiler=-Wswitch-enum;
+    -Xcompiler=-Wfloat-equal;
+    -Xcompiler=-Wvla;
+    -Xcompiler=-fmax-errors=1;
+    -Xcompiler=-Wfatal-errors;
+>
   )
 
 set_property(TARGET comm_scope PROPERTY CUDA_STANDARD 11)
