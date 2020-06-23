@@ -1,7 +1,7 @@
 /* Measure the runtime cost of cudaMemcpy3DPeerAsync
  */
 
-#include "sysbench/sysbench.hpp"
+#include "scope/scope.hpp"
 
 #define NAME "Comm_cudart_cudaMemcpy3DPeerAsync"
 
@@ -95,7 +95,7 @@ auto Comm_cudart_cudaMemcpy3DPeerAsync = [&](benchmark::State &state,
     OR_SKIP_AND_RETURN(cudaFree(params.srcPtr.ptr), NAME "failed to cudaFree");
     OR_SKIP_AND_RETURN(cudaFree(params.dstPtr.ptr), NAME "failed to cudaFree");
 
-#if SYSBENCH_USE_NVTX == 1
+#if SCOPE_USE_NVTX == 1
     nvtxRangePop();
 #endif
   }
@@ -126,4 +126,4 @@ static void registerer() {
   }
 }
 
-SYSBENCH_AFTER_INIT(registerer, NAME);
+SCOPE_AFTER_INIT(registerer, NAME);

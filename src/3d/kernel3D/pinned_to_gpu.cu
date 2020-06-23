@@ -1,6 +1,6 @@
 #include <sstream>
 
-#include "sysbench/sysbench.hpp"
+#include "scope/scope.hpp"
 
 #include "../args.hpp"
 
@@ -80,14 +80,14 @@ inline dim3 make_block_dim(const cudaExtent extent, int64_t threads) {
 auto Comm_3d_kernel3D_PinnedToGPU = [](benchmark::State &state, const int numaId,
                                      const int cudaId) {
 
-#if SYSBENCH_USE_NVTX == 1
+#if SCOPE_USE_NVTX == 1
   {
     std::stringstream name;
     name << NAME << "/" << numaId << "/" << cudaId << "/" << state.range(0)
          << "/" << state.range(1) << "/" << state.range(2);
     nvtxRangePush(name.str().c_str());
   }
-#endif // SYSBENCH_USE_NVTX
+#endif // SCOPE_USE_NVTX
 
   // bind to CPU & reset device
   numa::ScopedBind binder(numaId);
@@ -187,7 +187,7 @@ auto Comm_3d_kernel3D_PinnedToGPU = [](benchmark::State &state, const int numaId
   OR_SKIP_AND_RETURN(cudaStreamDestroy(stream), "cudaStreamDestroy");
   OR_SKIP_AND_RETURN(cudaFree(dst.ptr), NAME "failed to cudaFree");
 
-#if SYSBENCH_USE_NVTX == 1
+#if SCOPE_USE_NVTX == 1
   nvtxRangePop();
 #endif
 };
@@ -207,4 +207,4 @@ static void registerer() {
   }
 }
 
-SYSBENCH_AFTER_INIT(registerer, NAME);
+SCOPE_AFTER_INIT(registerer, NAME);

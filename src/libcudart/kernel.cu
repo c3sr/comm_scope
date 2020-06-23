@@ -1,7 +1,7 @@
 /* Measure the runtime cost of a kernel launch
  */
 
-#include "sysbench/sysbench.hpp"
+#include "scope/scope.hpp"
 
 #define NAME "Comm_cudart_kernel"
 
@@ -84,4 +84,4 @@ static void registerer() {
   }
 }
 
-SYSBENCH_AFTER_INIT(registerer, NAME);
+SCOPE_AFTER_INIT(registerer, NAME);

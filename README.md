@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/c3sr/comm_scope.svg?branch=master)](https://travis-ci.com/c3sr/comm_scope)
 
-CUDA- and NUMA-Aware Multi-CPU / Multi-GPU communication benchmarks for [C3SR Scope](https://github.com/c3sr/scope).
+CUDA- and NUMA-Aware Multi-CPU / Multi-GPU communication benchmarks.
 
 Docker images are [available](https://hub.docker.com/r/c3sr/comm_scope/) on Docker Hub.
 
@@ -13,18 +13,15 @@ Docker images are [available](https://hub.docker.com/r/c3sr/comm_scope/) on Dock
 
 ## Prerequisites
 
+* CMake 3.17+
 * g++ >= 4.9
 * CUDA toolkit >= 8.0
 
-
 ## Getting started
-
-Download 
-
-Get the latest [Scope release](https://github.com/c3sr/scope/releases/latest) and enable Comm|Scope:
 
 ```
 <dowload or clone Comm|Scope>
+git submodule update --init --recursive
 mkdir build && cd build
 cmake ..
 make
@@ -34,7 +31,7 @@ make
 To choose specific benchmarks, filter by regex:
 
 ```
-./scope --benchmark_list_tests=true --benchmark_filter=<regex>
+./comm_scope --benchmark_list_tests=true --benchmark_filter=<regex>
 ```
 
 ## FAQ / Troubleshooting
@@ -67,20 +64,9 @@ Push the changes
 
 ```git push && git push --tags```
 
-## Adding or changing names of source files
-
-Comm|Scope uses sugar to inform CMake about source files
-
-From within the scope directory tree
-
-```
-cd scopes
-python ../tools/generate_sugar_files.py --top comm_scope
-```
-
 ## Contributing
 
-Any work on the underlying `cwpearson/sysbench` library will probably benefit from changing from http to SSH:
+Any work on the underlying `cwpearson/sysbench` library will probably benefit from changing the submodule from http to SSH:
 
 ```
 cd thirdparty/sysbench
@@ -89,12 +75,12 @@ git set remote-url origin git@github.com:cwpearson/sysbench.git
 
 # Changelog
 
-## v0.10.0 (June 16 2020)
-* Decouple from Scope project
+## v0.10.0 (June 23 2020)
 * Rely on `cwpearson/sysbench` instead of `c3sr/scope`
+* Remove dependence on sugar
 * Add 3D strided memory transfer benchmarks
+* Add CUDA runtime microbenchmarks
 * Remove some duplicate NUMA-/non-NUMA-aware implementations of cudaMemcpyAsync benchmarks
-* Add CPU benchmark of `cudaMemcpy3DPeerAsync`
 
 ## v0.9.0 (June 5 2020)
 

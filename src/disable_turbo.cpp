@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "sysbench/sysbench.hpp"
+#include "scope/scope.hpp"
 
 int main(int argc, char **argv) {
   using namespace turbo;

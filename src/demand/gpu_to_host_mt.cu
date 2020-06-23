@@ -5,7 +5,7 @@
 #include <memory>
 #include <thread>
 
-#include "sysbench/sysbench.hpp"
+#include "scope/scope.hpp"
 
 #include "args.hpp"
 
@@ -146,13 +146,13 @@ auto Comm_UM_Demand_GPUToHost_Mt = [](benchmark::State &state,
             .count();
 
     double maxElapsed = 0;
-    for (const auto start : starts) {
-      for (const auto stop : stops) {
-        auto elapsed_seconds =
-            std::chrono::duration_cast<std::chrono::duration<double>>(stop -
-                                                                      start)
+    for (const auto threadStart : starts) {
+      for (const auto threadStop : stops) {
+        auto threadElapsed =
+            std::chrono::duration_cast<std::chrono::duration<double>>(threadStop -
+                                                                      threadStart)
                 .count();
-        maxElapsed = std::max(maxElapsed, elapsed_seconds);
+        maxElapsed = std::max(maxElapsed, threadElapsed);
       }
     }
 
@@ -182,6 +182,6 @@ static void registerer() {
   }
 }
 
-SYSBENCH_AFTER_INIT(registerer, NAME);
+SCOPE_AFTER_INIT(registerer, NAME);
 
 #endif // __CUDACC_VER_MAJOR__ >= 8

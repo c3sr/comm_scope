@@ -1,6 +1,6 @@
 #include <sstream>
 
-#include "sysbench/sysbench.hpp"
+#include "scope/scope.hpp"
 
 #include "../args.hpp"
 
@@ -8,13 +8,13 @@
 
 auto Comm_3d_cudaMemcpy3DAsync_PinnedToGPU = [](benchmark::State &state, const int numaId, const int cudaId) {
 
-  #if SYSBENCH_USE_NVTX == 1
+  #if SCOPE_USE_NVTX == 1
 {
   std::stringstream name;
   name << NAME << "/" << numaId << "/" << cudaId  << "/" << state.range(0) << "/" << state.range(1) << "/" << state.range(2);
   nvtxRangePush(name.str().c_str());
 }
-  #endif // SYSBENCH_USE_NVTX
+  #endif // SCOPE_USE_NVTX
 
   // bind to CPU & reset device
   numa::ScopedBind binder(numaId);
@@ -97,7 +97,7 @@ auto Comm_3d_cudaMemcpy3DAsync_PinnedToGPU = [](benchmark::State &state, const i
   OR_SKIP_AND_RETURN(cudaStreamDestroy(stream), "cudaStreamDestroy");
   OR_SKIP_AND_RETURN(cudaFree(dst.ptr), NAME "failed to cudaFree");
 
-  #if SYSBENCH_USE_NVTX == 1
+  #if SCOPE_USE_NVTX == 1
   nvtxRangePop();
   #endif
 };
@@ -118,4 +118,4 @@ for (auto cudaId : unique_cuda_device_ids()) {
 
 
 
-SYSBENCH_AFTER_INIT(registerer, NAME);
+SCOPE_AFTER_INIT(registerer, NAME);

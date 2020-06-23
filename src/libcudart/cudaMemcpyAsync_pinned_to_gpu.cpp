@@ -1,7 +1,7 @@
 /* Measure the runtime cost of cudaMemcpy3DPeerAsync
  */
 
-#include "sysbench/sysbench.hpp"
+#include "scope/scope.hpp"
 
 #define NAME "Comm_cudart_cudaMemcpyAsync_PinnedToGPU"
 
@@ -70,4 +70,4 @@ name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" +
       }
     }
 
-SYSBENCH_AFTER_INIT(registerer, NAME);
+SCOPE_AFTER_INIT(registerer, NAME);

@@ -1,6 +1,6 @@
 #if __CUDACC_VER_MAJOR__ >= 8
 
-#include "sysbench/sysbench.hpp"
+#include "scope/scope.hpp"
 
 #include "args.hpp"
 
@@ -118,6 +118,6 @@ static void registerer() {
   LOG(debug, "Done after_init for {}", NAME);
 }
 
-SYSBENCH_AFTER_INIT(registerer, NAME);
+SCOPE_AFTER_INIT(registerer, NAME);
 
 #endif // __CUDACC_VER_MAJOR__ >= 8

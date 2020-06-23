@@ -1,6 +1,6 @@
 #include <sstream>
 
-#include "sysbench/sysbench.hpp"
+#include "scope/scope.hpp"
 
 #include "args.hpp"
 
@@ -119,7 +119,7 @@ inline dim3 make_block_dim(const cudaExtent extent, int64_t threads) {
 auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
                                              const int gpu0, const int gpu1) {
 
-#if SYSBENCH_USE_NVTX == 1
+#if SCOPE_USE_NVTX == 1
   {
     std::stringstream name;
     name << NAME << "/" << gpu0 << "/" << gpu1 << "/" << state.range(0) << "/"
@@ -288,7 +288,7 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
   OR_SKIP_AND_RETURN(cudaEventDestroy(copyDone), "cudaEventDestroy");
   OR_SKIP_AND_RETURN(cudaEventDestroy(unpackDone), "cudaEventDestroy");
 
-#if SYSBENCH_USE_NVTX == 1
+#if SCOPE_USE_NVTX == 1
   nvtxRangePop();
 #endif
 };
@@ -315,4 +315,4 @@ static void registerer() {
   }
 }
 
-SYSBENCH_AFTER_INIT(registerer, NAME);
+SCOPE_AFTER_INIT(registerer, NAME);

@@ -2,7 +2,7 @@ option(USE_NUMA "Compile with support for libnuma" ON)
 option(USE_NVTX "Add NVTX ranges to some benchmarks" ON)
 option(USE_OpenMP "Use OpenMP for some benchmarks" ON)
 
-# sysbench requires 3.17
+# scope requires 3.17
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.9.0)
 
@@ -20,12 +20,12 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# configure sysbench to match
+# configure scope to match
 # FORCE to override variable if it's already cached
-set(SYSBENCH_USE_CUDA ON CACHE BOOL "use CUDA" FORCE)
-set(SYSBENCH_USE_NUMA ${USE_NUMA} CACHE BOOL "text" FORCE)
-set(SYSBENCH_USE_OPENMP ${USE_OPENMP} CACHE BOOL "" FORCE)
-set(SYSBENCH_USE_NVTX ${USE_NVTX} CACHE BOOL "" FORCE)
+set(SCOPE_USE_CUDA ON CACHE BOOL "use CUDA" FORCE)
+set(SCOPE_USE_NUMA ${USE_NUMA} CACHE BOOL "text" FORCE)
+set(SCOPE_USE_OPENMP ${USE_OPENMP} CACHE BOOL "" FORCE)
+set(SCOPE_USE_NVTX ${USE_NVTX} CACHE BOOL "" FORCE)
 
 add_subdirectory(thirdparty/sysbench)
 add_subdirectory(src)
@@ -75,7 +75,7 @@ $<$<COMPILE_LANGUAGE:CUDA>:
 
 set_property(TARGET comm_scope PROPERTY CUDA_STANDARD 11)
 target_compile_features(comm_scope PUBLIC cxx_std_11)
-target_link_libraries(comm_scope sysbench::sysbench)
+target_link_libraries(comm_scope scope::scope)
 
 # Get the git version
 git_get_head_revision(GIT_REFSPEC GIT_HASH)
@@ -93,16 +93,16 @@ configure_file (
 target_include_directories(comm_scope PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 add_executable(enable-turbo src/enable_turbo.cpp)
-target_link_libraries(enable-turbo sysbench::sysbench)
+target_link_libraries(enable-turbo scope::scope)
 
 add_executable(disable-turbo src/disable_turbo.cpp)
-target_link_libraries(disable-turbo sysbench::sysbench)
+target_link_libraries(disable-turbo scope::scope)
 
 add_executable(read-turbo src/read_turbo.cpp)
-target_link_libraries(read-turbo sysbench::sysbench)
+target_link_libraries(read-turbo scope::scope)
 
 add_executable(set-maximum src/set_maximum.cpp)
-target_link_libraries(set-maximum sysbench::sysbench)
+target_link_libraries(set-maximum scope::scope)
 
 add_executable(set-minimum src/set_minimum.cpp)
-target_link_libraries(set-minimum sysbench::sysbench)
+target_link_libraries(set-minimum scope::scope)

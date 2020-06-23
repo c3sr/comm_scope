@@ -1,6 +1,6 @@
 #include <sstream>
 
-#include "sysbench/sysbench.hpp"
+#include "scope/scope.hpp"
 
 #include "../args.hpp"
 
@@ -10,7 +10,7 @@ auto Comm_3d_cudaMemcpy3DPeerAsync_GPUToGPU = [](benchmark::State &state,
                                                  const int gpu0,
                                                  const int gpu1) {
 
-#if SYSBENCH_USE_NVTX == 1
+#if SCOPE_USE_NVTX == 1
   {
     std::stringstream name;
     name << NAME << "/" << gpu0 << "/" << gpu1 << "/" << state.range(0) << "/"
@@ -113,7 +113,7 @@ auto Comm_3d_cudaMemcpy3DPeerAsync_GPUToGPU = [](benchmark::State &state,
   OR_SKIP_AND_RETURN(cudaFree(src.ptr), NAME "failed to cudaFree");
   OR_SKIP_AND_RETURN(cudaFree(dst.ptr), NAME "failed to cudaFree");
 
-#if SYSBENCH_USE_NVTX == 1
+#if SCOPE_USE_NVTX == 1
   nvtxRangePop();
 #endif
 };
@@ -140,4 +140,4 @@ static void registerer() {
   }
 }
 
-SYSBENCH_AFTER_INIT(registerer, NAME);
+SCOPE_AFTER_INIT(registerer, NAME);

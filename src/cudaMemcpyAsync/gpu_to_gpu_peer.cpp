@@ -1,4 +1,4 @@
-#include "sysbench/sysbench.hpp"
+#include "scope/scope.hpp"
 
 #include "args.hpp"
 
@@ -83,4 +83,4 @@ static void registerer() {
   }
 }
 
-SYSBENCH_AFTER_INIT(registerer, NAME);
+SCOPE_AFTER_INIT(registerer, NAME);
