@@ -66,17 +66,18 @@ Push the changes
 
 ## Contributing
 
-Any work on the underlying `cwpearson/sysbench` library will probably benefit from changing the submodule from http to SSH:
+Any work on the underlying `cwpearson/libscope` library will probably benefit from changing the submodule from http to SSH:
 
 ```
-cd thirdparty/sysbench
-git set remote-url origin git@github.com:cwpearson/sysbench.git
+cd thirdparty/libscope
+git set remote-url origin git@github.com:cwpearson/libscope.git
 ```
 
 # Changelog
 
 ## v0.10.0 (June 23 2020)
-* Rely on `cwpearson/sysbench` instead of `c3sr/scope`
+* Rely on `cwpearson/libscope` instead of `c3sr/scope`
+* `cwpearson/libscope` v1.0.0
 * Remove dependence on sugar
 * Add 3D strided memory transfer benchmarks
 * Add CUDA runtime microbenchmarks

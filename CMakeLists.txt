@@ -4,7 +4,7 @@ option(USE_OpenMP "Use OpenMP for some benchmarks" ON)
 
 # scope requires 3.17
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
-project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.9.0)
+project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.10.0)
 
 # Set a default build type if none was specified
 set(default_build_type "Release")
