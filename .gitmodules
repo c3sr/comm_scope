@@ -1,3 +1,3 @@
-[submodule "thirdparty/sysbench"]
-	path = thirdparty/sysbench
-	url = https://github.com/cwpearson/sysbench.git
+[submodule "thirdparty/libscope"]
+	path = thirdparty/libscope
+	url = https://github.com/cwpearson/libscope.git

@@ -27,7 +27,7 @@ set(SCOPE_USE_NUMA ${USE_NUMA} CACHE BOOL "text" FORCE)
 set(SCOPE_USE_OPENMP ${USE_OPENMP} CACHE BOOL "" FORCE)
 set(SCOPE_USE_NVTX ${USE_NVTX} CACHE BOOL "" FORCE)
 
-add_subdirectory(thirdparty/sysbench)
+add_subdirectory(thirdparty/libscope)
 add_subdirectory(src)
 add_executable(comm_scope ${comm_SOURCES} ${comm_CUDA_SOURCES})
 
