@@ -28,7 +28,11 @@ auto Comm_cudart_cudaGraphInstantiate_kernel = [](benchmark::State &state,
   for (auto _ : state) {
     state.PauseTiming();
     OR_SKIP_AND_BREAK(
-        cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal), "");
+        cudaStreamBeginCapture(stream
+#if __CUDACC_VER_MAJOR__ >= 10 && __CUDACC_VER_MINOR > 0
+		, cudaStreamCaptureModeGlobal
+#endif
+		), "");
         for (int i = 0; i < iters; ++i) {
           Comm_cudart_cudaGraphInstantiate_kernel_kernel<<<1, 1, 0, stream>>>();
         }

@@ -1,5 +1,5 @@
-
-
+/* compiled with nvcc for __CUDACC_VER_MAJOR__ 
+*/
 #include "scope/scope.hpp"
 
 #include "args.hpp"
@@ -33,7 +33,11 @@ auto Comm_cudart_cudaGraphInstantiate_cudaMemcpyAsync = [](benchmark::State &sta
   for (auto _ : state) {
     state.PauseTiming();
     OR_SKIP_AND_BREAK(
-        cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal), "");
+        cudaStreamBeginCapture(stream
+#if __CUDACC_VER_MAJOR__ >= 10 && __CUDACC_VER_MINOR__ > 0
+		, cudaStreamCaptureModeGlobal
+#endif
+		), "");
   for (int i = 0; i < iters; ++i) {
     cudaMemcpyAsync(dst, src, 100, cudaMemcpyDefault, stream);
   }

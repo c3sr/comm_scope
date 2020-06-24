@@ -1,4 +1,5 @@
-
+/* compiled with nvcc so __CUDACC_VER_MAJOR__ is defined
+*/
 
 #include "scope/scope.hpp"
 
@@ -29,7 +30,11 @@ auto Comm_cudart_cudaGraphLaunch_cudaMemcpyAsync = [](benchmark::State &state, c
 
   // create the graph to launch
   OR_SKIP_AND_RETURN(
-      cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal), "");
+      cudaStreamBeginCapture(stream 
+#if __CUDACC_VER_MAJOR__ >= 10 && __CUDACC_VER_MINOR__ > 0
+	      ,cudaStreamCaptureModeGlobal
+#endif
+	      ), "");
   for (int i = 0; i < iters; ++i) {
     cudaMemcpyAsync(dst, src, 100, cudaMemcpyDefault, stream);
   }
