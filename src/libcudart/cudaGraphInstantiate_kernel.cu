@@ -29,7 +29,7 @@ auto Comm_cudart_cudaGraphInstantiate_kernel = [](benchmark::State &state,
     state.PauseTiming();
     OR_SKIP_AND_BREAK(
         cudaStreamBeginCapture(stream
-#if __CUDACC_VER_MAJOR__ >= 10 && __CUDACC_VER_MINOR > 0
+#if __CUDACC_VER_MAJOR__ >= 10 && __CUDACC_VER_MINOR__ > 0
 		, cudaStreamCaptureModeGlobal
 #endif
 		), "");

@@ -29,7 +29,7 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu,
 
 #define LAUNCH(n)                                                              \
   case n: {                                                                    \
-    Comm_cudart_kernel_kernel<(1 << n)><<<1, 1>>>(S<(1 << n)>());              \
+    Comm_cudart_kernel_kernel<(n)><<<1, 1>>>(S<(n)>());              \
     break;                                                                     \
   }
 
@@ -38,17 +38,17 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu,
     switch (nArgs) {
       LAUNCH(0)
       LAUNCH(1)
-      LAUNCH(2)
-      LAUNCH(3)
       LAUNCH(4)
-      LAUNCH(5)
-      LAUNCH(6)
-      LAUNCH(7)
       LAUNCH(8)
-      LAUNCH(9)
-      LAUNCH(10)
-      LAUNCH(11)
-      LAUNCH(12)
+      LAUNCH(32)
+      LAUNCH(64)
+      LAUNCH(96)
+      LAUNCH(128)
+      LAUNCH(256)
+      LAUNCH(512)
+      LAUNCH(1024)
+      LAUNCH(2048)
+      LAUNCH(4096)
     default: {
       state.SkipWithError("unexpected number of params");
       break;
@@ -74,9 +74,20 @@ static void registerer() {
       name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
              std::to_string(gpu);
       benchmark::RegisterBenchmark(name.c_str(), Comm_cudart_kernel, gpu,
-                                   numaId)
-          ->DenseRange(0, 12, 1)
-          ->ArgName("log2")
+                                   numaId)      
+          ->Arg(0)
+          ->Arg(1)
+          ->Arg(4)
+          ->Arg(8)
+          ->Arg(32)
+          ->Arg(64)
+          ->Arg(96)
+          ->Arg(128)
+          ->Arg(256)
+          ->Arg(512)
+          ->Arg(1024)
+          ->Arg(2048)
+          ->Arg(4096)
           ->Threads(numThreads)
           ->UseRealTime();
       }
