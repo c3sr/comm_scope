@@ -28,8 +28,6 @@ auto Comm_cudart_cudaMallocManaged = [](benchmark::State &state,
   state.counters["bytes"] = bytes;
   state.counters["cuda_id"] = cuda_id;
   state.counters["numa_id"] = numa_id;
-
-  numa::bind_node(-1);
 };
 
 static void registerer() {
