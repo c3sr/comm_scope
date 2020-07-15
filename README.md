@@ -30,12 +30,34 @@ To choose specific benchmarks, filter by regex:
 ```
 ## OLCF Summit
 
+Get a launch node: `bsub -W 2:00 -nnodes 1 -P csc362 -Is /bin/zsh`
+
+You will need to load a newer gcc, as well as CUDA, to build **and run** Comm|Scope
 ```
 module load cuda
 module load gcc/5.4.0
-cmake ..
-make
 ```
+
+Then to build, do
+
+```
+cmake ..
+make -j
+```
+
+An example job submission script is in `scripts/summit`.
+
+You may ignore messages like the following, where libscope fails to control CPU turbo and the governor.
+On managed systems like Summit, this is not necessary.
+
+```
+[2020-07-15 17:58:00.763] [scope] [error] unable to disable CPU turbo: no permission. Run with higher privileges?
+[2020-07-15 17:58:00.763] [scope] [error] unable to set OS CPU governor to maximum: no permission. Run with higher privileges?
+```
+
+
+
+
 
 ## FAQ / Troubleshooting
 
