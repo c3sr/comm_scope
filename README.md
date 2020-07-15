@@ -28,6 +28,14 @@ To choose specific benchmarks, filter by regex:
 ```
 ./comm_scope --benchmark_list_tests=true --benchmark_filter=<regex>
 ```
+## OLCF Summit
+
+```
+module load cuda
+module load gcc/5.4.0
+cmake ..
+make
+```
 
 ## FAQ / Troubleshooting
 
@@ -39,7 +47,6 @@ This somtimes happens on network file systems. You can retry, or do the build on
 
 A different version of GCC may be in the CMake cache.
 Try running `cmake -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc`, or deleting your build directory and restarting.
-
 
 ## Bumping the Version
 
