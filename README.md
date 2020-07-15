@@ -6,11 +6,6 @@ CUDA- and NUMA-Aware Multi-CPU / Multi-GPU communication benchmarks.
 
 Docker images are [available](https://hub.docker.com/r/c3sr/comm_scope/) on Docker Hub.
 
-## Contributors
-
-* [Carl Pearson](mailto:pearson@illinois.edu)
-* [Sarah Hashash](mailto:hashash2@illinois.edu)
-
 ## Prerequisites
 
 * CMake 3.17+
@@ -42,7 +37,9 @@ This somtimes happens on network file systems. You can retry, or do the build on
 
 ** I get `-- The CXX compiler identification is GNU 4.8.5` after `module load gcc/5.4.0`.
 
-Try running `cmake -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc`.
+A different version of GCC may be in the CMake cache.
+Try running `cmake -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc`, or deleting your build directory and restarting.
+
 
 ## Bumping the Version
 
@@ -72,6 +69,11 @@ Any work on the underlying `cwpearson/libscope` library will probably benefit fr
 cd thirdparty/libscope
 git set remote-url origin git@github.com:cwpearson/libscope.git
 ```
+
+## Contributors
+
+* [Carl Pearson](mailto:pearson@illinois.edu)
+* [Sarah Hashash](mailto:hashash2@illinois.edu)
 
 # Changelog
 
@@ -168,4 +170,6 @@ git set remote-url origin git@github.com:cwpearson/libscope.git
 
 * Add `--numa_ids` command line flag.
 * Use `--cuda_device_ids` and --`numa_ids` to select CUDA and NUMA devices for benchmarks.
+
+
 
