@@ -1,4 +1,7 @@
-#include <cassert>
+/* it seems that above certain sizes, cudaMemcpyPeerAsync is not async 
+  so limit to 2^27 
+*/
+
 #include <cuda_runtime.h>
 
 #include "scope/scope.hpp"
@@ -97,7 +100,7 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPU = [](benchmark::State &state,
   size_t cycles = 4096;
   for (auto _ : state) {
     // make kernel longer until it hides host code
-    while (true) {
+    restart_iteration: // use a label here instead of a nested loop so OR_SKIP_AND_BREAK breaks out of benchmark loop
       OR_SKIP_AND_BREAK(cudaSetDevice(gpu0), NAME " failed to set src device");
       comm_cudaMemcpyPeerAsync_Duplex_GPUGPU::busy_wait<<<1, 1, 0, stream0>>>(
           nullptr, cycles);
@@ -124,18 +127,18 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPU = [](benchmark::State &state,
       // finish transfers, increase cycles, and try again
       err = cudaEventQuery(start);
       if (cudaSuccess == err) {
-        cycles *= 1.5;
+        cycles *= 2;
+        std::cerr << cycles << "\n";
         OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream0),
                           NAME " failed to wait for stream0");
         OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream1),
                           NAME " failed to wait for stream1");
-        continue;
+        goto restart_iteration;
       } else if (cudaErrorNotReady == err) {
-        break; // kernel was long enough
+        // kernel was long enough
       } else {
         OR_SKIP_AND_BREAK(err, NAME " errored while waiting for kernel");
       }
-    }
 
     OR_SKIP_AND_BREAK(cudaEventSynchronize(stop),
                       NAME " failed to synchronize");

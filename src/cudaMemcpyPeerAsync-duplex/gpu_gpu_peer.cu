@@ -91,7 +91,7 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer = [](benchmark::State &state,
   for (auto _ : state) {
 
     // keep making kernel longer and longer until it hides all host code
-    while (true) {
+    restart_iteration:
       OR_SKIP_AND_BREAK(cudaSetDevice(gpu0), "failed to set src device");
       busy_wait<<<1, 1, 0, stream0>>>(nullptr, cycles);
       OR_SKIP_AND_BREAK(cudaGetLastError(), "failed to busy_wait");
@@ -121,14 +121,12 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer = [](benchmark::State &state,
                           "failed to wait for stream0");
         OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream1),
                           "failed to wait for stream1");
-        continue;
+        goto restart_iteration;
       } else if (cudaErrorNotReady == err) {
         // kernel was long enough
-        break;
       } else {
         OR_SKIP_AND_BREAK(err, "errored while waiting for kernel");
       }
-    }
 
     OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), "failed to synchronize");
     float ms = 0.0f;
