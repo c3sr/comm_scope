@@ -1,7 +1,7 @@
 #include <cassert>
 #include <cuda_runtime.h>
 
- #include "scope/scope.hpp"
+#include "scope/scope.hpp"
 
 #include "args.hpp"
 
@@ -18,12 +18,15 @@ __global__ void busy_wait(clock_t *d, clock_t clock_count) {
   }
 }
 
-auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer = [](benchmark::State &state, const int gpu0, const int gpu1) {
-
+auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer = [](benchmark::State &state,
+                                                     const int gpu0,
+                                                     const int gpu1) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0), "failed to reset src CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1), "failed to reset dst CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0),
+                     "failed to reset src CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1),
+                     "failed to reset dst CUDA device");
 
   void *src0 = nullptr;
   void *src1 = nullptr;
@@ -35,12 +38,16 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer = [](benchmark::State &state, co
   cudaEvent_t start, stop1, stop;
 
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), "failed to set src device");
-  OR_SKIP_AND_RETURN(cudaMalloc(&src0, bytes), "failed to perform src0 cudaMalloc");
-  OR_SKIP_AND_RETURN(cudaMalloc(&dst0, bytes), "failed to perform src1 cudaMalloc");
+  OR_SKIP_AND_RETURN(cudaMalloc(&src0, bytes),
+                     "failed to perform src0 cudaMalloc");
+  OR_SKIP_AND_RETURN(cudaMalloc(&dst0, bytes),
+                     "failed to perform src1 cudaMalloc");
   defer(cudaFree(src0));
   defer(cudaFree(dst0));
-  OR_SKIP_AND_RETURN(cudaMemset(src0, 0, bytes), "failed to perform src0 cudaMemset");
-  OR_SKIP_AND_RETURN(cudaMemset(dst0, 0, bytes), "failed to perform src1 cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset(src0, 0, bytes),
+                     "failed to perform src0 cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset(dst0, 0, bytes),
+                     "failed to perform src1 cudaMemset");
   OR_SKIP_AND_RETURN(cudaStreamCreate(&stream0), "failed to create stream");
   defer(cudaStreamDestroy(stream0));
   OR_SKIP_AND_RETURN(cudaEventCreate(&start), "couldn't create start event");
@@ -57,12 +64,16 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer = [](benchmark::State &state, co
   }
 
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), "failed to set dst device");
-  OR_SKIP_AND_RETURN(cudaMalloc(&src1, bytes), "failed to perform src1 cudaMalloc");
-  OR_SKIP_AND_RETURN(cudaMalloc(&dst1, bytes), "failed to perform dst1 cudaMalloc");
+  OR_SKIP_AND_RETURN(cudaMalloc(&src1, bytes),
+                     "failed to perform src1 cudaMalloc");
+  OR_SKIP_AND_RETURN(cudaMalloc(&dst1, bytes),
+                     "failed to perform dst1 cudaMalloc");
   defer(cudaFree(src1));
   defer(cudaFree(dst1));
-  OR_SKIP_AND_RETURN(cudaMemset(src1, 0, bytes), "failed to perform dst cudaMemset");
-  OR_SKIP_AND_RETURN(cudaMemset(dst1, 0, bytes), "failed to perform dst cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset(src1, 0, bytes),
+                     "failed to perform dst cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset(dst1, 0, bytes),
+                     "failed to perform dst cudaMemset");
   OR_SKIP_AND_RETURN(cudaStreamCreate(&stream1), "failed to create stream");
   defer(cudaStreamDestroy(stream1));
   OR_SKIP_AND_RETURN(cudaEventCreate(&stop1), "couldn't create stop1 event");
@@ -75,7 +86,6 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer = [](benchmark::State &state, co
       return;
     }
   }
-  
 
   size_t cycles = 4096;
   for (auto _ : state) {
@@ -83,16 +93,23 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer = [](benchmark::State &state, co
     // keep making kernel longer and longer until it hides all host code
     while (true) {
       OR_SKIP_AND_BREAK(cudaSetDevice(gpu0), "failed to set src device");
-      busy_wait<<<1,1, 0, stream0>>>(nullptr, cycles);
+      busy_wait<<<1, 1, 0, stream0>>>(nullptr, cycles);
       OR_SKIP_AND_BREAK(cudaGetLastError(), "failed to busy_wait");
-      OR_SKIP_AND_BREAK(cudaEventRecord(start, stream0), "failed to record start");
-      OR_SKIP_AND_BREAK(cudaMemcpyPeerAsync(dst1, gpu1, src0, gpu0, bytes, stream0), "failed to memcpy");
+      OR_SKIP_AND_BREAK(cudaEventRecord(start, stream0),
+                        "failed to record start");
+      OR_SKIP_AND_BREAK(
+          cudaMemcpyPeerAsync(dst1, gpu1, src0, gpu0, bytes, stream0),
+          "failed to memcpy");
       OR_SKIP_AND_BREAK(cudaSetDevice(gpu1), "failed to set src device");
-      OR_SKIP_AND_BREAK(cudaStreamWaitEvent(stream1, start, 0), "failed to wait");
-      OR_SKIP_AND_BREAK(cudaMemcpyPeerAsync(dst0, gpu0, src1, gpu1, bytes, stream1), "failed to memcpy");
+      OR_SKIP_AND_BREAK(cudaStreamWaitEvent(stream1, start, 0),
+                        "failed to wait");
+      OR_SKIP_AND_BREAK(
+          cudaMemcpyPeerAsync(dst0, gpu0, src1, gpu1, bytes, stream1),
+          "failed to memcpy");
       OR_SKIP_AND_BREAK(cudaEventRecord(stop1, stream1), "failed to stop");
       OR_SKIP_AND_BREAK(cudaSetDevice(gpu0), "failed to set src device");
-      OR_SKIP_AND_BREAK(cudaStreamWaitEvent(stream0, stop1, 0), "failed to set src device");
+      OR_SKIP_AND_BREAK(cudaStreamWaitEvent(stream0, stop1, 0),
+                        "failed to set src device");
       OR_SKIP_AND_BREAK(cudaEventRecord(stop, stream0), "failed to stop");
 
       // if kernel has ended, it wasn't long enough to cover the host code:
@@ -100,24 +117,27 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer = [](benchmark::State &state, co
       err = cudaEventQuery(start);
       if (cudaSuccess == err) {
         cycles *= 2;
-        OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream0), "failed to wait for stream0");
-        OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream1), "failed to wait for stream1");
+        OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream0),
+                          "failed to wait for stream0");
+        OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream1),
+                          "failed to wait for stream1");
         continue;
-       } else if (cudaErrorNotReady == err) {
+      } else if (cudaErrorNotReady == err) {
         // kernel was long enough
         break;
-       } else {
-       OR_SKIP_AND_BREAK(err, "errored while waiting for kernel");
+      } else {
+        OR_SKIP_AND_BREAK(err, "errored while waiting for kernel");
       }
-  }
+    }
 
     OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), "failed to synchronize");
     float ms = 0.0f;
-    OR_SKIP_AND_BREAK(cudaEventElapsedTime(&ms, start, stop), NAME "failed to compute elapsed time");
+    OR_SKIP_AND_BREAK(cudaEventElapsedTime(&ms, start, stop),
+                      NAME "failed to compute elapsed time");
     state.SetIterationTime(ms / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes) * 2);
-  state.counters["bytes"]  = bytes;
+  state.counters["bytes"] = bytes;
   state.counters["gpu0"] = gpu0;
   state.counters["gpu1"] = gpu1;
   state.counters["wait_cycles"] = cycles;
@@ -129,8 +149,12 @@ static void registerer() {
     for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
       auto gpu0 = unique_cuda_device_ids()[i];
       auto gpu1 = unique_cuda_device_ids()[j];
-      name        = std::string(NAME) + "/" + std::to_string(gpu0) + "/" + std::to_string(gpu1);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer, gpu0, gpu1)->SMALL_ARGS()->UseManualTime();
+      name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" +
+             std::to_string(gpu1);
+      benchmark::RegisterBenchmark(
+          name.c_str(), Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer, gpu0, gpu1)
+          ->SMALL_ARGS()
+          ->UseManualTime();
     }
   }
 }
