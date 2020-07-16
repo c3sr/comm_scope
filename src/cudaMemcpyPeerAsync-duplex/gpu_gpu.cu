@@ -1,7 +1,6 @@
 /* it seems that above certain sizes, cudaMemcpyPeerAsync is not async 
   so limit to 2^27 
 */
-
 #include <cuda_runtime.h>
 
 #include "scope/scope.hpp"
@@ -128,7 +127,6 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPU = [](benchmark::State &state,
       err = cudaEventQuery(start);
       if (cudaSuccess == err) {
         cycles *= 2;
-        std::cerr << cycles << "\n";
         OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream0),
                           NAME " failed to wait for stream0");
         OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream1),
