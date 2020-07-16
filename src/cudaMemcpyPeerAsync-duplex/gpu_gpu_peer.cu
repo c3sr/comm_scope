@@ -51,7 +51,7 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer = [](benchmark::State &state, co
     err = cudaDeviceEnablePeerAccess(gpu1, 0);
     cudaGetLastError(); // clear error
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
-      state.SkipWithError("failed to ensure peer access");
+      state.SkipWithError("failed to enable peer access to gpu1");
       return;
     }
   }
@@ -71,7 +71,7 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer = [](benchmark::State &state, co
     err = cudaDeviceEnablePeerAccess(gpu0, 0);
     cudaGetLastError(); // clear error
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
-      state.SkipWithError("failed to ensure peer access");
+      state.SkipWithError("failed to enable peer access to gpu0");
       return;
     }
   }
@@ -79,35 +79,39 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPUPeer = [](benchmark::State &state, co
 
   size_t cycles = 4096;
   for (auto _ : state) {
-    OR_SKIP_AND_BREAK(cudaSetDevice(gpu0), "failed to set src device");
-    busy_wait<<<1,1, 0, stream0>>>(nullptr, cycles);
-    OR_SKIP_AND_BREAK(cudaGetLastError(), "failed to busy_wait");
-    OR_SKIP_AND_BREAK(cudaEventRecord(start, stream0), "failed to record start");
-    OR_SKIP_AND_BREAK(cudaMemcpyPeerAsync(dst1, gpu1, src0, gpu0, bytes, stream0), "failed to memcpy");
-    OR_SKIP_AND_BREAK(cudaSetDevice(gpu1), "failed to set src device");
-    OR_SKIP_AND_BREAK(cudaStreamWaitEvent(stream1, start, 0), "failed to wait");
-    OR_SKIP_AND_BREAK(cudaMemcpyPeerAsync(dst0, gpu0, src1, gpu1, bytes, stream1), "failed to memcpy");
-    OR_SKIP_AND_BREAK(cudaEventRecord(stop1, stream1), "failed to stop");
 
-    // if kernel has ended, it wasn't long enough to cover the host code.
-    // finish transfers, increase cycles, and try again
-    err = cudaEventQuery(start);
-    if (cudaSuccess == err) {
-      cycles *= 2;
-      OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream0), "failed to wait for stream0");
-      OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream1), "failed to wait for stream1");
-      continue;
-     } else if (cudaErrorNotReady == err) {
-      // kernel was long enough
-     } else {
-     OR_SKIP_AND_BREAK(err, "errored while waiting for kernel");
-     }
+    // keep making kernel longer and longer until it hides all host code
+    while (true) {
+      OR_SKIP_AND_BREAK(cudaSetDevice(gpu0), "failed to set src device");
+      busy_wait<<<1,1, 0, stream0>>>(nullptr, cycles);
+      OR_SKIP_AND_BREAK(cudaGetLastError(), "failed to busy_wait");
+      OR_SKIP_AND_BREAK(cudaEventRecord(start, stream0), "failed to record start");
+      OR_SKIP_AND_BREAK(cudaMemcpyPeerAsync(dst1, gpu1, src0, gpu0, bytes, stream0), "failed to memcpy");
+      OR_SKIP_AND_BREAK(cudaSetDevice(gpu1), "failed to set src device");
+      OR_SKIP_AND_BREAK(cudaStreamWaitEvent(stream1, start, 0), "failed to wait");
+      OR_SKIP_AND_BREAK(cudaMemcpyPeerAsync(dst0, gpu0, src1, gpu1, bytes, stream1), "failed to memcpy");
+      OR_SKIP_AND_BREAK(cudaEventRecord(stop1, stream1), "failed to stop");
+      OR_SKIP_AND_BREAK(cudaSetDevice(gpu0), "failed to set src device");
+      OR_SKIP_AND_BREAK(cudaStreamWaitEvent(stream0, stop1, 0), "failed to set src device");
+      OR_SKIP_AND_BREAK(cudaEventRecord(stop, stream0), "failed to stop");
 
-    OR_SKIP_AND_BREAK(cudaSetDevice(gpu0), "failed to set src device");
-    OR_SKIP_AND_BREAK(cudaStreamWaitEvent(stream0, stop1, 0), "failed to set src device");
-    OR_SKIP_AND_BREAK(cudaEventRecord(stop, stream0), "failed to stop");
+      // if kernel has ended, it wasn't long enough to cover the host code:
+      // finish transfers, increase cycles, and try again
+      err = cudaEventQuery(start);
+      if (cudaSuccess == err) {
+        cycles *= 2;
+        OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream0), "failed to wait for stream0");
+        OR_SKIP_AND_BREAK(cudaStreamSynchronize(stream1), "failed to wait for stream1");
+        continue;
+       } else if (cudaErrorNotReady == err) {
+        // kernel was long enough
+        break;
+       } else {
+       OR_SKIP_AND_BREAK(err, "errored while waiting for kernel");
+      }
+  }
+
     OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), "failed to synchronize");
-
     float ms = 0.0f;
     OR_SKIP_AND_BREAK(cudaEventElapsedTime(&ms, start, stop), NAME "failed to compute elapsed time");
     state.SetIterationTime(ms / 1000);
