@@ -115,6 +115,10 @@ git set remote-url origin git@github.com:cwpearson/libscope.git
 
 # Changelog
 
+## v0.11.2 (July 17 2020)
+* cwpearson/libscope v1.1.2
+* silence some warnings
+
 ## v0.11.1 (July 17 2020)
 * cwpearson/libscope v1.1.1
 
