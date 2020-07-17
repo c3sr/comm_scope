@@ -28,6 +28,19 @@ To choose specific benchmarks, filter by regex:
 ```
 ./comm_scope --benchmark_list_tests=true --benchmark_filter=<regex>
 ```
+
+To limit the visible GPUs, use the `--cuda` option:
+
+```
+./comm_scope --cuda 0 --cuda 1
+```
+
+To limit the visible NUMA nodes, use the `--numa` option:
+
+```
+./comm_scope --numa 8
+```
+
 ## OLCF Summit
 
 Get a launch node: `bsub -W 2:00 -nnodes 1 -P csc362 -Is /bin/zsh`
@@ -45,7 +58,7 @@ cmake ..
 make -j
 ```
 
-An example job submission script is in `scripts/summit`.
+Example job submission scripts are in `scripts/summit`.
 
 You may ignore messages like the following, where libscope fails to control CPU turbo and the governor.
 On managed systems like Summit, this is not necessary.
@@ -54,10 +67,6 @@ On managed systems like Summit, this is not necessary.
 [2020-07-15 17:58:00.763] [scope] [error] unable to disable CPU turbo: no permission. Run with higher privileges?
 [2020-07-15 17:58:00.763] [scope] [error] unable to set OS CPU governor to maximum: no permission. Run with higher privileges?
 ```
-
-
-
-
 
 ## FAQ / Troubleshooting
 
