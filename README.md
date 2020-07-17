@@ -115,6 +115,11 @@ git set remote-url origin git@github.com:cwpearson/libscope.git
 
 # Changelog
 
+## v0.11.0 (July 17 2020)
+* cwpearson/libscope v1.1.0
+* `cudaGraphInstantiate` and `cudaGraphLaunch`
+* Reduce maximum `cudaMemcpyPeerAsync` size, since it is not truly async above ~2^27 which breaks the measurement strategy.
+
 ## v0.10.0 (June 23 2020)
 * Rely on `cwpearson/libscope` instead of `c3sr/scope`
 * `cwpearson/libscope` v1.0.0
