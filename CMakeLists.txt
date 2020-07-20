@@ -77,6 +77,9 @@ set_property(TARGET comm_scope PROPERTY CUDA_STANDARD 11)
 target_compile_features(comm_scope PUBLIC cxx_std_11)
 target_link_libraries(comm_scope scope::scope)
 
+# libscope requires this for do_not_optimize
+set_property(TARGET comm_scope PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+
 # Get the git version
 git_get_head_revision(GIT_REFSPEC GIT_HASH)
 git_local_changes(GIT_LOCAL_CHANGES)
