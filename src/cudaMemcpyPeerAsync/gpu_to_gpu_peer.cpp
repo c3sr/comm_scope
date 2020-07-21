@@ -70,7 +70,6 @@ auto Comm_cudaMemcpyPeerAsync_GPUToGPUPeer = [](benchmark::State &state,
 };
 
 static void registerer() {
-  std::string name;
   for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
     for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
       auto srcGpu = unique_cuda_device_ids()[i];
@@ -79,7 +78,7 @@ static void registerer() {
       if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&s2d, srcGpu, dstGpu)) &&
           !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&d2s, dstGpu, srcGpu))) {
         if (s2d && d2s) {
-          name = std::string(NAME) + "/" + std::to_string(srcGpu) + "/" +
+          std::string name = std::string(NAME) + "/" + std::to_string(srcGpu) + "/" +
                  std::to_string(dstGpu);
           benchmark::RegisterBenchmark(name.c_str(),
                                        Comm_cudaMemcpyPeerAsync_GPUToGPUPeer,

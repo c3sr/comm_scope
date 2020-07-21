@@ -6,9 +6,11 @@
 
 #define NAME "Comm_cudart_cudaGraphLaunch_kernel"
 
-__global__ void Comm_cudart_cudaGraphLaunch_kernel_kernel(){}
+__global__ void Comm_cudart_cudaGraphLaunch_kernel_kernel() {}
 
-auto Comm_cudart_cudaGraphLaunch_kernel = [](benchmark::State &state, const int numaId, const int cudaId) {
+auto Comm_cudart_cudaGraphLaunch_kernel = [](benchmark::State &state,
+                                             const int numaId,
+                                             const int cudaId) {
   const int iters = state.range(0);
 
   numa::ScopedBind binder(numaId);
@@ -22,14 +24,16 @@ auto Comm_cudart_cudaGraphLaunch_kernel = [](benchmark::State &state, const int 
   OR_SKIP_AND_RETURN(cudaStreamCreate(&stream), "failed to create stream");
 
   // create the graph to launch
-  OR_SKIP_AND_RETURN(
-      cudaStreamBeginCapture(stream
-#if __CUDACC_VER_MAJOR__ >= 10 && __CUDACC_VER_MINOR__ > 0
-	      , cudaStreamCaptureModeGlobal
+  OR_SKIP_AND_RETURN(cudaStreamBeginCapture(stream
+#if __CUDACC_VER_MAJOR__ >= 11 ||                                              \
+    (__CUDACC_VER_MAJOR__ >= 10 && __CUDACC_VER_MINOR__ > 0)
+                                            ,
+                                            cudaStreamCaptureModeGlobal
 #endif
-	      ), "");
+                                            ),
+                     "");
   for (int i = 0; i < iters; ++i) {
-    Comm_cudart_cudaGraphLaunch_kernel_kernel<<<1,1,0,stream>>>();
+    Comm_cudart_cudaGraphLaunch_kernel_kernel<<<1, 1, 0, stream>>>();
   }
   OR_SKIP_AND_RETURN(cudaStreamEndCapture(stream, &graph), "");
   OR_SKIP_AND_RETURN(cudaGraphInstantiate(&instance, graph, NULL, NULL, 0), "");
@@ -53,9 +57,8 @@ static void registerer() {
     for (auto numaId : numa::ids()) {
       std::string name = std::string(NAME) + "/" + std::to_string(numaId) +
                          "/" + std::to_string(cudaId);
-      benchmark::RegisterBenchmark(name.c_str(),
-                                   Comm_cudart_cudaGraphLaunch_kernel,
-                                   numaId, cudaId)
+      benchmark::RegisterBenchmark(
+          name.c_str(), Comm_cudart_cudaGraphLaunch_kernel, numaId, cudaId)
           ->GRAPH_ARGS();
     }
   }

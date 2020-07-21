@@ -69,12 +69,11 @@ auto Comm_cudaMemcpyPeerAync_GPUToGPU = [](benchmark::State &state,
 };
 
 static void registerer() {
-  std::string name;
   for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
     for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
       auto srcGpu = unique_cuda_device_ids()[i];
       auto dstGpu = unique_cuda_device_ids()[j];
-      name = std::string(NAME) + "/" + std::to_string(srcGpu) + "/" +
+      std::string name = std::string(NAME) + "/" + std::to_string(srcGpu) + "/" +
              std::to_string(dstGpu);
       benchmark::RegisterBenchmark(
           name.c_str(), Comm_cudaMemcpyPeerAync_GPUToGPU, srcGpu, dstGpu)

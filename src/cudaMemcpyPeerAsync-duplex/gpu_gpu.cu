@@ -22,6 +22,7 @@ __global__ void busy_wait(clock_t *d, clock_t clock_count) {
 }
 } // namespace comm_cudaMemcpyPeerAsync_Duplex_GPUGPU
 
+
 auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPU = [](benchmark::State &state,
                                                  const int gpu0,
                                                  const int gpu1) {
@@ -153,20 +154,20 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPU = [](benchmark::State &state,
   state.counters["wait_cycles"] = cycles;
 };
 
+
 static void registerer() {
-  std::string name;
   for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
     for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
       auto gpu0 = unique_cuda_device_ids()[i];
       auto gpu1 = unique_cuda_device_ids()[j];
-      name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" +
-             std::to_string(gpu1);
+      std::string name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" +
+      std::to_string(gpu1);
       benchmark::RegisterBenchmark(
-          name.c_str(), Comm_cudaMemcpyPeerAsync_Duplex_GPUGPU, gpu0, gpu1)
-          ->SMALL_ARGS()
-          ->UseManualTime();
+        name.c_str(), Comm_cudaMemcpyPeerAsync_Duplex_GPUGPU, gpu0, gpu1)
+        ->SMALL_ARGS()
+        ->UseManualTime();
+      }
     }
   }
-}
 
 SCOPE_AFTER_INIT(registerer, NAME);

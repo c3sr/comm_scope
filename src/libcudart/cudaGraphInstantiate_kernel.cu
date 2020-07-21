@@ -8,10 +8,11 @@
 
 __global__ void Comm_cudart_cudaGraphInstantiate_kernel_kernel() {}
 
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
 auto Comm_cudart_cudaGraphInstantiate_kernel = [](benchmark::State &state,
-                                           const int numaId,
-                                           const int cudaId) {
+                                                  const int numaId,
+                                                  const int cudaId) {
   const int iters = state.range(0);
 
   numa::ScopedBind binder(numaId);
@@ -27,15 +28,17 @@ auto Comm_cudart_cudaGraphInstantiate_kernel = [](benchmark::State &state,
   cudaError_t err;
   for (auto _ : state) {
     state.PauseTiming();
-    OR_SKIP_AND_BREAK(
-        cudaStreamBeginCapture(stream
-#if __CUDACC_VER_MAJOR__ >= 10 && __CUDACC_VER_MINOR__ > 0
-		, cudaStreamCaptureModeGlobal
+    OR_SKIP_AND_BREAK(cudaStreamBeginCapture(stream
+#if __CUDACC_VER_MAJOR__ >= 11 ||                                              \
+    (__CUDACC_VER_MAJOR__ >= 10 && __CUDACC_VER_MINOR__ > 0)
+                                             ,
+                                             cudaStreamCaptureModeGlobal
 #endif
-		), "");
-        for (int i = 0; i < iters; ++i) {
-          Comm_cudart_cudaGraphInstantiate_kernel_kernel<<<1, 1, 0, stream>>>();
-        }
+                                             ),
+                      "");
+    for (int i = 0; i < iters; ++i) {
+      Comm_cudart_cudaGraphInstantiate_kernel_kernel<<<1, 1, 0, stream>>>();
+    }
     OR_SKIP_AND_BREAK(cudaStreamEndCapture(stream, &graph), "");
     state.ResumeTiming();
     err = cudaGraphInstantiate(&instance, graph, NULL, NULL, 0);
@@ -51,6 +54,9 @@ auto Comm_cudart_cudaGraphInstantiate_kernel = [](benchmark::State &state,
   state.counters["numa_id"] = numaId;
 };
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
 static void registerer() {
   for (auto cudaId : unique_cuda_device_ids()) {
     for (auto numaId : numa::ids()) {
@@ -62,5 +68,8 @@ static void registerer() {
     }
   }
 }
+#pragma GCC diagnostic pop
+
 
 SCOPE_AFTER_INIT(registerer, NAME);
+
