@@ -4,18 +4,9 @@
 #include "scope/scope.hpp"
 
 #include "args.hpp"
+#include "kernels.hu"
 
 #define NAME "Comm_ZeroCopy_GPUToHost"
-
-template <unsigned GD, unsigned BD, typename write_t>
-__global__ void gpu_write(write_t *ptr, const size_t bytes) {
-  const size_t gx = blockIdx.x * BD + threadIdx.x;
-  const size_t num_elems = bytes / sizeof(write_t);
-
-  for (size_t i = gx; i < num_elems; i += GD * BD) {
-    ptr[i] = 0;
-  }
-}
 
 auto Comm_ZeroCopy_GPUToHost = [](benchmark::State &state, const int src_numa,
                                   const int dst_cuda) {
@@ -65,7 +56,7 @@ auto Comm_ZeroCopy_GPUToHost = [](benchmark::State &state, const int src_numa,
     OR_SKIP_AND_BREAK(cudaEventRecord(start), "");
     constexpr unsigned GD = 256;
     constexpr unsigned BD = 256;
-    gpu_write<GD, BD><<<GD, BD>>>((int32_t *)dptr, bytes);
+    gpu_write<BD><<<GD, BD>>>((int32_t *)dptr, bytes);
 
     OR_SKIP_AND_BREAK(cudaEventRecord(stop), "");
     OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), "");

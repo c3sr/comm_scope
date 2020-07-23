@@ -2,6 +2,7 @@
 #include "scope/scope.hpp"
 
 #include "args.hpp"
+#include "kernels.hu"
 
 #define NAME "Comm_ZeroCopy_GPUToGPU"
 
@@ -16,31 +17,6 @@ static std::string to_string(const AccessType &a) {
   } else {
     return "_Write";
   }
-}
-
-template <typename write_t>
-__global__ void gpu_write(write_t *ptr, const size_t bytes) {
-  const size_t gx = blockIdx.x * blockDim.x + threadIdx.x;
-  const size_t num_elems = bytes / sizeof(write_t);
-
-  for (size_t i = gx; i < num_elems; i += gridDim.x * blockDim.x) {
-    ptr[i] = 0;
-  }
-}
-
-template <typename read_t>
-__global__ void gpu_read(const read_t *ptr, const size_t bytes) {
-  const size_t gx = blockIdx.x * blockDim.x + threadIdx.x;
-  const size_t num_elems = bytes / sizeof(read_t);
-
-  __shared__ int32_t s[256];
-  int32_t t;
-
-  for (size_t i = gx; i < num_elems; i += gridDim.x * blockDim.x) {
-    t += ptr[i];
-  }
-  s[threadIdx.x] = t;
-  (void)s[threadIdx.x];
 }
 
 auto Comm_ZeroCopy_GPUToGPU = [](benchmark::State &state, const int gpu0,
@@ -92,10 +68,11 @@ auto Comm_ZeroCopy_GPUToGPU = [](benchmark::State &state, const int gpu0,
     OR_SKIP_AND_BREAK(cudaEventRecord(start), "");
     if (READ == access_type) {
       // READ: gpu1 reads from gpu0 (gpu0 is src, gpu1 is dst)
-      gpu_read<int32_t><<<256, 256>>>(static_cast<int32_t *>(ptr), bytes);
+      gpu_read<256><<<256, 256>>>(static_cast<int32_t *>(ptr),
+                                       static_cast<int32_t *>(nullptr), bytes);
     } else {
       // WRITE: gpu0 writes to gpu1 (gpu0 is src, gpu1 is dst)
-      gpu_write<int32_t><<<256, 256>>>(static_cast<int32_t *>(ptr), bytes);
+      gpu_write<256><<<256, 256>>>(static_cast<int32_t *>(ptr), bytes);
     }
     OR_SKIP_AND_BREAK(cudaEventRecord(stop), "");
     OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), "");
