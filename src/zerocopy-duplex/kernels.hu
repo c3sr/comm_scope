@@ -1,0 +1,35 @@
+#pragma once
+
+/*
+The compiler will try to optimize unused reads away.
+`asm(...)` should prevent the load from being optimized out of the PTX.
+However, the JIT can still tell to get rid of it.
+The `flag` parameter prevents the JIT from removing the load, since it might be
+used at runtime. We pass `flag = false` so the store is not executed. We still
+need `asm(...)` however, to prevent the load from being lowered into the
+conditional and skipped.
+*/
+template <unsigned BD, typename read_t>
+__global__ void gpu_read(const read_t *ptr, read_t *flag, const size_t bytes) {
+  const size_t gx = blockIdx.x * BD + threadIdx.x;
+  const size_t num_elems = bytes / sizeof(read_t);
+
+  // #pragma unroll(1)
+  for (size_t i = gx; i < num_elems; i += gridDim.x * BD) {
+    read_t t;
+    do_not_optimize(t = ptr[i]);
+    if (flag) {
+      *flag = t;
+    }
+  }
+}
+
+template <unsigned BD, typename write_t>
+__global__ void gpu_write(write_t *ptr, const size_t bytes) {
+  const size_t gx = blockIdx.x * BD + threadIdx.x;
+  const size_t num_elems = bytes / sizeof(write_t);
+
+  for (size_t i = gx; i < num_elems; i += gridDim.x * BD) {
+    ptr[i] = 0;
+  }
+}
