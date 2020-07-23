@@ -12,10 +12,10 @@ constexpr int wrDimBlock = 256;
 auto GpuWrFunc = gpu_write<rdDimBlock, int32_t>;
 auto GpuRdFunc = gpu_read<rdDimBlock, int32_t>;
 
-#define NAME Comm_ZeroCopy_Duplex_GPUGPU
-#define NAME2 "Comm_ZeroCopy_Duplex_GPUGPU"
+#define NAME Comm_ZeroCopy_Duplex_HostGPU
+#define NAME2 "Comm_ZeroCopy_Duplex_HostGPU"
 
-namespace NAME {
+namespace ns_NAME {
 __global__ void busy_wait(clock_t *d, clock_t clock_count) {
   clock_t start_clock = clock64();
   clock_t clock_offset = 0;
@@ -26,10 +26,12 @@ __global__ void busy_wait(clock_t *d, clock_t clock_count) {
     *d = clock_offset;
   }
 }
-} // namespace NAME
+} // namespace ns_NAME
 
-auto Comm_ZeroCopy_HostGPU = [](benchmark::State &state, const int numa,
-                                const int cuda) {
+auto Comm_ZeroCopy_Duplex_HostGPU = [](benchmark::State &state, const int numa,
+                                       const int cuda) {
+  using namespace ns_NAME;
+
   numa::ScopedBind binder(numa);
 
   const size_t pageSize = page_size();
@@ -96,24 +98,24 @@ auto Comm_ZeroCopy_HostGPU = [](benchmark::State &state, const int numa,
   int rdDimGrid;
   int wrDimGrid;
   {
-  int maxActiveBlocks;
-  cudaOccupancyMaxActiveBlocksPerMultiprocessor( &maxActiveBlocks, 
-    GpuWrFunc, wrDimBlock, 0);
-  wrDimGrid = maxActiveBlocks * prop.multiProcessorCount;
+    int maxActiveBlocks;
+    cudaOccupancyMaxActiveBlocksPerMultiprocessor(&maxActiveBlocks, GpuWrFunc,
+                                                  wrDimBlock, 0);
+    wrDimGrid = 0.5 * maxActiveBlocks * prop.multiProcessorCount;
   }
   {
     int maxActiveBlocks;
-    cudaOccupancyMaxActiveBlocksPerMultiprocessor( &maxActiveBlocks, 
-      GpuRdFunc, rdDimBlock, 0);
-    rdDimGrid = maxActiveBlocks * prop.multiProcessorCount;
-    }
+    cudaOccupancyMaxActiveBlocksPerMultiprocessor(&maxActiveBlocks, GpuRdFunc,
+                                                  rdDimBlock, 0);
+    rdDimGrid = 0.5 * maxActiveBlocks * prop.multiProcessorCount;
+  }
 
-  clock_t cycles = 4096;
+  clock_t cycles = 16384;
   for (auto _ : state) {
   restart_iteration:
 
     // launch the busy-wait kernel
-    NAME::busy_wait<<<1, 1, 0, stream[0]>>>(nullptr, cycles);
+    busy_wait<<<1, 1, 0, stream[0]>>>(nullptr, cycles);
 
     // set up the copies
     OR_SKIP_AND_BREAK(cudaEventRecord(start[0], stream[0]),
@@ -122,8 +124,8 @@ auto Comm_ZeroCopy_HostGPU = [](benchmark::State &state, const int numa,
         (int32_t *)dptr[0], (int32_t *)nullptr, bytes); // stream 0 copy
     OR_SKIP_AND_BREAK(cudaStreamWaitEvent(stream[1], start[0], 0),
                       ""); // stream 1 wait for stream 0 to start
-    OR_SKIP_AND_BREAK(cudaEventRecord(start[1], stream[1]),
-                      ""); // stream 1 start
+    // OR_SKIP_AND_BREAK(cudaEventRecord(start[1], stream[1]),
+    //                   ""); // stream 1 start
     gpu_write<wrDimBlock><<<wrDimGrid, wrDimBlock, 0, stream[1]>>>(
         (int32_t *)dptr[1], bytes);                             // stream 1 copy
     OR_SKIP_AND_BREAK(cudaEventRecord(stop[1], stream[1]), ""); // stream 1 stop
@@ -152,9 +154,12 @@ auto Comm_ZeroCopy_HostGPU = [](benchmark::State &state, const int numa,
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes) * 2);
-  state.counters["bytes"] = bytes * 2;
+  state.counters["bytes"] = bytes;
   state.counters["numa"] = numa;
   state.counters["cuda"] = cuda;
+  state.counters["cycles"] = cycles;
+  state.counters["rd_blocks"] = wrDimGrid;
+  state.counters["wr_blocks"] = rdDimGrid;
 };
 
 static void registerer() {
@@ -164,8 +169,8 @@ static void registerer() {
 
       std::string name(NAME2);
       name += "/" + std::to_string(numa) + "/" + std::to_string(cuda);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_ZeroCopy_HostGPU, numa,
-                                   cuda)
+      benchmark::RegisterBenchmark(name.c_str(), Comm_ZeroCopy_Duplex_HostGPU,
+                                   numa, cuda)
           ->ARGS()
           ->UseManualTime();
     }
