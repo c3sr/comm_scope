@@ -5,8 +5,18 @@
 
 #define NAME "Comm_ZeroCopy_HostToGPU"
 
+enum class ShouldFlush { No, Yes };
+
+const char * to_string(ShouldFlush flush) {
+  switch (flush) {
+    case ShouldFlush::No: return "";
+    case ShouldFlush::Yes: return "_flush";
+  }
+  exit(EXIT_FAILURE);
+}
+
 auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa,
-                                  const int dst_cuda) {
+                                  const int dst_cuda, const ShouldFlush flush) {
   const size_t pageSize = page_size();
 
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
@@ -50,6 +60,10 @@ auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa,
 
   for (auto _ : state) {
 
+    if (ShouldFlush::Yes == flush) {
+      flush_all(ptr, bytes);
+    }
+
     OR_SKIP_AND_BREAK(cudaEventRecord(start), "");
     constexpr unsigned GD = 256;
     constexpr unsigned BD = 256;
@@ -70,14 +84,16 @@ auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa,
 };
 
 static void registerer() {
-  for (auto cuda_id : unique_cuda_device_ids()) {
-    for (auto numa_id : numa::ids()) {
-      std::string name = std::string(NAME) + "/" + std::to_string(numa_id) +
-                         "/" + std::to_string(cuda_id);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_ZeroCopy_HostToGPU,
-                                   numa_id, cuda_id)
-          ->ARGS()
-          ->UseManualTime();
+  for (auto flush : {ShouldFlush::No, ShouldFlush::Yes}) {
+    for (auto cuda_id : unique_cuda_device_ids()) {
+      for (auto numa_id : numa::ids()) {
+        std::string name = std::string(NAME) + to_string(flush) + "/" + std::to_string(numa_id) +
+                           "/" + std::to_string(cuda_id);
+        benchmark::RegisterBenchmark(name.c_str(), Comm_ZeroCopy_HostToGPU,
+                                     numa_id, cuda_id, flush)
+            ->ARGS()
+            ->UseManualTime();
+      }
     }
   }
 }
