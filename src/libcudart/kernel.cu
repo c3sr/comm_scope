@@ -29,7 +29,7 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu,
 
 #define LAUNCH(n)                                                              \
   case n: {                                                                    \
-    Comm_cudart_kernel_kernel<(n)><<<1, 1>>>(S<(n)>());              \
+    Comm_cudart_kernel_kernel<(n)><<<1, 1>>>(S<(n)>());                        \
     break;                                                                     \
   }
 
@@ -55,10 +55,8 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu,
     }
     }
   }
-  #undef LAUNCH
-  OR_SKIP_AND_RETURN(cudaGetLastError(),
-                     "failed to launch kernel");
-
+#undef LAUNCH
+  OR_SKIP_AND_RETURN(cudaGetLastError(), "failed to launch kernel");
 
   state.SetItemsProcessed(state.iterations());
   state.counters["gpu"] = gpu;
@@ -69,27 +67,28 @@ static void registerer() {
   std::string name;
   for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
     for (int numaId : numa::ids()) {
-      for(size_t numThreads = 1; numThreads <= numa::cpus_in_node(numaId).size(); numThreads *= 2) {
-      auto gpu = unique_cuda_device_ids()[i];
-      name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
-             std::to_string(gpu);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_cudart_kernel, gpu,
-                                   numaId)      
-          ->Arg(0)
-          ->Arg(1)
-          ->Arg(4)
-          ->Arg(8)
-          ->Arg(32)
-          ->Arg(64)
-          ->Arg(96)
-          ->Arg(128)
-          ->Arg(256)
-          ->Arg(512)
-          ->Arg(1024)
-          ->Arg(2048)
-          ->Arg(4096)
-          ->Threads(numThreads)
-          ->UseRealTime();
+      for (size_t numThreads = 1;
+           numThreads <= numa::cpus_in_node(numaId).size(); numThreads *= 2) {
+        auto gpu = unique_cuda_device_ids()[i];
+        name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
+               std::to_string(gpu);
+        benchmark::RegisterBenchmark(name.c_str(), Comm_cudart_kernel, gpu,
+                                     numaId)
+            ->Arg(0)
+            ->Arg(1)
+            ->Arg(4)
+            ->Arg(8)
+            ->Arg(32)
+            ->Arg(64)
+            ->Arg(96)
+            ->Arg(128)
+            ->Arg(256)
+            ->Arg(512)
+            ->Arg(1024)
+            ->Arg(2048)
+            ->Arg(4096)
+            ->Threads(numThreads)
+            ->UseRealTime();
       }
     }
   }
