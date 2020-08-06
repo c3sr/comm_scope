@@ -41,6 +41,24 @@ To limit the visible NUMA nodes, use the `--numa` option:
 ./comm_scope --numa 8
 ```
 
+## Inconsistent Console Reporting Suffixes
+
+Google Benchmark will format the console output in the following way, with an inconsistency.
+The `bytes` suffixes (`k`, `M`, `G`) are powers of 10 (`1e3`, `1e6`, `1e9`), while the `bytes_per_second` suffixes are powers of 2 (`2^10`, `2^20`, `2^30`).
+For example, the raw values for line 12 are `bytes=4096` and `bytes_per_second=1.33407e+09`.
+Using the `csv` reporter prints the raw values to the file: `--benchmark_out=file.csv` and `--benchmark_out_format=csv`.
+```
+----------------------------------------------------------------------------------------------------------------------------
+Benchmark                                                                  Time             CPU   Iterations UserCounters...
+----------------------------------------------------------------------------------------------------------------------------
+Comm_cudaMemcpyAsync_PinnedToGPU/0/0/log2(N):8/manual_time              2804 ns   1065385791 ns       251315 bytes=256 bytes_per_second=87.0571M/s cuda_id=0 numa_id=0
+Comm_cudaMemcpyAsync_PinnedToGPU/0/0/log2(N):9/manual_time              2806 ns   1059562408 ns       250053 bytes=512 bytes_per_second=173.985M/s cuda_id=0 numa_id=0
+Comm_cudaMemcpyAsync_PinnedToGPU/0/0/log2(N):10/manual_time             2871 ns   1055014030 ns       246220 bytes=1024 bytes_per_second=340.196M/s cuda_id=0 numa_id=0
+Comm_cudaMemcpyAsync_PinnedToGPU/0/0/log2(N):11/manual_time             3033 ns   1070865035 ns       241507 bytes=2.048k bytes_per_second=643.883M/s cuda_id=0 numa_id=0
+Comm_cudaMemcpyAsync_PinnedToGPU/0/0/log2(N):12/manual_time             3070 ns    984282144 ns       224948 bytes=4.096k bytes_per_second=1.24245G/s cuda_id=0 numa_id=0
+
+```
+
 ## OLCF Summit
 
 Get a launch node: `bsub -W 2:00 -nnodes 1 -P csc362 -Is /bin/zsh`
