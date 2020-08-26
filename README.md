@@ -14,9 +14,19 @@ Docker images are [available](https://hub.docker.com/r/c3sr/comm_scope/) on Dock
 
 ## Getting started
 
+Recursive git clone:
+```
+git clone --recursive https://github.com/c3sr/comm_scope.git
+```
+
+Or, if you cloned without recursiveness:
 ```
 <dowload or clone Comm|Scope>
 git submodule update --init --recursive
+```
+
+Build and list supported benchmarks:
+```
 mkdir build && cd build
 cmake ..
 make
@@ -26,7 +36,20 @@ make
 To choose specific benchmarks, filter by regex:
 
 ```
-./comm_scope --benchmark_list_tests=true --benchmark_filter=<regex>
+./comm_scope --benchmark_list_tests --benchmark_filter=<regex>
+```
+
+Once the desired benchmarks are selected, run them
+
+```
+./comm_scope --benchmark_filter=<regex>
+```
+
+## Advanced
+
+CSV Output (will still print on console):
+```
+./comm_scope --benchmark_out=file.csv --benchmark_out_format=csv
 ```
 
 To limit the visible GPUs, use the `--cuda` option:
@@ -41,7 +64,15 @@ To limit the visible NUMA nodes, use the `--numa` option:
 ./comm_scope --numa 8
 ```
 
-## Inconsistent Console Reporting Suffixes
+Comm|Scope will attempt to control CPU clocks. Either run with elevated permissions, or you will see:
+```
+[2020-07-15 17:58:00.763] [scope] [error] unable to disable CPU turbo: no permission. Run with higher privileges?
+[2020-07-15 17:58:00.763] [scope] [error] unable to set OS CPU governor to maximum: no permission. Run with higher privileges?
+```
+
+If you are willing to accept reduced accuracy, or are on a system where CPU clocks do not need to be controlled, you can ignore this error.
+
+## Warning: Inconsistent Console Reporting Suffixes
 
 Google Benchmark will format the console output in the following way, with an inconsistency.
 The `bytes` suffixes (`k`, `M`, `G`) are powers of 10 (`1e3`, `1e6`, `1e9`), while the `bytes_per_second` suffixes are powers of 2 (`2^10`, `2^20`, `2^30`).
