@@ -4,8 +4,6 @@
 
 CUDA- and NUMA-Aware Multi-CPU / Multi-GPU communication benchmarks.
 
-Docker images are [available](https://hub.docker.com/r/c3sr/comm_scope/) on Docker Hub.
-
 ## Prerequisites
 
 * CMake 3.17+
