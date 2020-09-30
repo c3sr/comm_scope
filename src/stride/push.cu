@@ -4,25 +4,21 @@
 
 #include "args.hpp"
 
-#define NAME "Comm_stride_pull"
+#define NAME "Comm_stride_push"
 
-typedef int read_t;
+typedef int write_t;
 
-static __global__ void Comm_stride_pull_kernel(read_t *__restrict__ src,
+static __global__ void Comm_stride_push_kernel(write_t *dst,
                                                const int n, // number of reads
-                                               const int stride, read_t *flag) {
+                                               const int stride) {
 
   for (int i = blockDim.x * blockIdx.x + threadIdx.x; i < n;
        i += gridDim.x * blockDim.x) {
-    read_t t;
-    do_not_optimize(t = src[i * stride]);
-    if (flag) {
-      *flag = t;
-    }
+    dst[i * stride] = i;
   }
 }
 
-auto Comm_stride_pull = [](benchmark::State &state, const int gpu0,
+auto Comm_stride_push = [](benchmark::State &state, const int gpu0,
                            const int gpu1) {
   const int stride = state.range(0);
 
@@ -40,31 +36,20 @@ auto Comm_stride_pull = [](benchmark::State &state, const int gpu0,
   OR_SKIP_AND_RETURN(cuda_reset_device(gpu1),
                      NAME " failed to reset CUDA device");
 
-  // create stream on dst gpu (pull)
-  OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to create stream");
-  cudaStream_t stream = nullptr;
-  OR_SKIP_AND_RETURN(cudaStreamCreate(&stream), NAME "failed to create stream");
-
-  // Start and stop events on dst gpu (pull)
-  cudaEvent_t start = nullptr;
-  cudaEvent_t stop = nullptr;
-  OR_SKIP_AND_RETURN(cudaEventCreate(&start), NAME " failed to create event");
-  OR_SKIP_AND_RETURN(cudaEventCreate(&stop), NAME " failed to create event");
-
   // fixed number of loads regardless of stride
-  read_t *src = nullptr;
+  write_t *dst = nullptr;
   const size_t bytes = 1024ull * 1024ull * 1024ull * 2;
-  const size_t size = bytes / sizeof(read_t);
+  const size_t size = bytes / sizeof(write_t);
   const int dimGrid = 512;
   const int dimBlock = 512;
   const int n = size / stride; // number of reads
 
   // allocate on gpu0 and enable peer access
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to set device");
-  OR_SKIP_AND_RETURN(cudaMalloc(&src, bytes),
+  OR_SKIP_AND_RETURN(cudaMalloc(&dst, bytes),
                      NAME " failed to perform cudaMalloc");
-  OR_SKIP_AND_RETURN(cudaMemset(src, 0, bytes),
-                     NAME " failed to perform src cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset(dst, 0, bytes),
+                     NAME " failed to perform dst cudaMemset");
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0);
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
@@ -72,8 +57,18 @@ auto Comm_stride_pull = [](benchmark::State &state, const int gpu0,
     }
   }
 
-  // enable peer access from gpu1
+  // create stream on src gpu (push)
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to set device");
+  cudaStream_t stream = nullptr;
+  OR_SKIP_AND_RETURN(cudaStreamCreate(&stream), NAME "failed to create stream");
+
+  // Start and stop events on dst gpu (push)
+  cudaEvent_t start = nullptr;
+  cudaEvent_t stop = nullptr;
+  OR_SKIP_AND_RETURN(cudaEventCreate(&start), NAME " failed to create event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&stop), NAME " failed to create event");
+
+  // enable peer access from gpu1
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu0, 0);
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
@@ -81,16 +76,15 @@ auto Comm_stride_pull = [](benchmark::State &state, const int gpu0,
     }
   }
 
-  // run pull kernel on dst device
-  OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME " unable to set pull device");
+  // run push kernel on src device
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME " unable to set push device");
 
   for (auto _ : state) {
     // Start copy
     OR_SKIP_AND_BREAK(cudaEventRecord(start, stream),
                       NAME " failed to record start event");
 
-    Comm_stride_pull_kernel<<<dimGrid, dimBlock, 0, stream>>>(src, n, stride,
-                                                              nullptr);
+    Comm_stride_push_kernel<<<dimGrid, dimBlock, 0, stream>>>(dst, n, stride);
     OR_SKIP_AND_BREAK(cudaEventRecord(stop, stream),
                       NAME " failed to record stop event");
 
@@ -105,19 +99,19 @@ auto Comm_stride_pull = [](benchmark::State &state, const int gpu0,
     state.SetIterationTime(millis / 1000);
   }
 
-  state.SetBytesProcessed(int64_t(state.iterations()) * n * sizeof(read_t));
-  state.counters["ld-bytes"] = n * sizeof(read_t);
-  state.counters["ld-count"] = n;
-  state.counters["ld-size"] = sizeof(read_t);
+  state.SetBytesProcessed(int64_t(state.iterations()) * n * sizeof(write_t));
+  state.counters["st-bytes"] = n * sizeof(write_t);
+  state.counters["st-count"] = n;
+  state.counters["st-size"] = sizeof(write_t);
   state.counters["gpu0"] = gpu0;
   state.counters["gpu1"] = gpu1;
   state.counters["alloc"] = bytes;
-  state.counters["ld-stride"] = stride * sizeof(read_t);
+  state.counters["st-stride"] = stride * sizeof(write_t);
 
   OR_SKIP_AND_RETURN(cudaEventDestroy(start), "cudaEventDestroy");
   OR_SKIP_AND_RETURN(cudaEventDestroy(stop), "cudaEventDestroy");
   OR_SKIP_AND_RETURN(cudaStreamDestroy(stream), "cudaStreamDestroy");
-  OR_SKIP_AND_RETURN(cudaFree(src), "cudaFree");
+  OR_SKIP_AND_RETURN(cudaFree(dst), "cudaFree");
 
 #if SCOPE_USE_NVTX == 1
   nvtxRangePop();
@@ -136,7 +130,7 @@ static void registerer() {
         if ((ok1 && ok2) || i == j) {
           name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" +
                  std::to_string(gpu1);
-          benchmark::RegisterBenchmark(name.c_str(), Comm_stride_pull, gpu0,
+          benchmark::RegisterBenchmark(name.c_str(), Comm_stride_push, gpu0,
                                        gpu1)
               ->STRIDE_ARGS()
               ->UseManualTime();
