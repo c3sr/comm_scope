@@ -44,21 +44,10 @@ auto Comm_stride_push = [](benchmark::State &state, const int gpu0,
   const int dimBlock = 512;
   const int n = size / stride; // number of reads
 
-  // allocate on gpu0 and enable peer access
+  // gpu0 resources and  peer access
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to set device");
-  OR_SKIP_AND_RETURN(cudaMalloc(&dst, bytes),
-                     NAME " failed to perform cudaMalloc");
-  OR_SKIP_AND_RETURN(cudaMemset(dst, 0, bytes),
-                     NAME " failed to perform dst cudaMemset");
-  if (gpu0 != gpu1) {
-    cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0);
-    if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
-      state.SkipWithError(NAME " failed to ensure peer access");
-    }
-  }
 
   // create stream on src gpu (push)
-  OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to set device");
   cudaStream_t stream = nullptr;
   OR_SKIP_AND_RETURN(cudaStreamCreate(&stream), NAME "failed to create stream");
 
@@ -68,7 +57,21 @@ auto Comm_stride_push = [](benchmark::State &state, const int gpu0,
   OR_SKIP_AND_RETURN(cudaEventCreate(&start), NAME " failed to create event");
   OR_SKIP_AND_RETURN(cudaEventCreate(&stop), NAME " failed to create event");
 
+  if (gpu0 != gpu1) {
+    cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0);
+    if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
+      state.SkipWithError(NAME " failed to ensure peer access");
+    }
+  }
+
+
+
   // enable peer access from gpu1
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaMalloc(&dst, bytes),
+                     NAME " failed to perform cudaMalloc");
+  OR_SKIP_AND_RETURN(cudaMemset(dst, 0, bytes),
+                     NAME " failed to perform dst cudaMemset");
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu0, 0);
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
