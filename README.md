@@ -152,7 +152,7 @@ Any work on the underlying `cwpearson/libscope` library will probably benefit fr
 
 ```
 cd thirdparty/libscope
-git set remote-url origin git@github.com:cwpearson/libscope.git
+git remote set-url origin git@github.com:cwpearson/libscope.git
 ```
 
 ## Contributors
