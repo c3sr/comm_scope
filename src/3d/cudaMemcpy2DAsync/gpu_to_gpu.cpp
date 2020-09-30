@@ -120,7 +120,7 @@ static void registerer() {
         if ((ok1 && ok2) || i == j) {
           name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" + std::to_string(gpu1);
           benchmark::RegisterBenchmark(name.c_str(), Comm_3d_cudaMemcpy2DAsync_GPUToGPU, gpu0, gpu1)
-              ->TINY_ARGS()
+              ->IC_ARGS()
               ->UseManualTime();
         }
       }

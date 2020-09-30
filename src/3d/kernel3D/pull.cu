@@ -202,7 +202,7 @@ static void registerer() {
           !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok2, gpu1, gpu0))) {
         if ((ok1 && ok2) || i == j) {
           name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" + std::to_string(gpu1);
-          benchmark::RegisterBenchmark(name.c_str(), Comm_3d_kernel3D_pull, gpu0, gpu1)->TINY_ARGS()->UseManualTime();
+          benchmark::RegisterBenchmark(name.c_str(), Comm_3d_kernel3D_pull, gpu0, gpu1)->IC_ARGS()->UseManualTime();
         }
       }
     }

@@ -9,7 +9,7 @@
 static cudaStream_t gStream;
 static cudaMemcpy3DPeerParms gParams;
 
-auto Comm_cudart_cudaMemcpy3DPeerAsync = [&](benchmark::State &state,
+auto Comm_cudart_cudaMemcpy3DPeerAsync = [](benchmark::State &state,
                                              const int gpu0, const int gpu1,
                                              cudaStream_t &stream,
                                              cudaMemcpy3DPeerParms &params) {

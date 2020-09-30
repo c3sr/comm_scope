@@ -109,7 +109,7 @@ for (auto cudaId : unique_cuda_device_ids()) {
 
           name = std::string(NAME) + "/" + std::to_string(numaId) + "/" + std::to_string(cudaId);
           benchmark::RegisterBenchmark(name.c_str(), Comm_3d_cudaMemcpy2DAsync_PinnedToGPU, numaId, cudaId)
-              ->TINY_ARGS()
+              ->IC_ARGS()
               ->UseManualTime();
 
     }

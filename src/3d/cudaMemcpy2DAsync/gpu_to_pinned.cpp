@@ -117,7 +117,7 @@ static void registerer() {
              std::to_string(cudaId);
       benchmark::RegisterBenchmark(
           name.c_str(), Comm_3d_cudaMemcpy2DAsync_GPUToPinned, numaId, cudaId)
-          ->TINY_ARGS()
+          ->IC_ARGS()
           ->UseManualTime();
     }
   }

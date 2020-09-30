@@ -307,7 +307,7 @@ static void registerer() {
                  std::to_string(gpu1);
           benchmark::RegisterBenchmark(
               name.c_str(), Comm_3d_pack_cudaMemcpyPeer_unpack, gpu0, gpu1)
-              ->TINY_ARGS()
+              ->IC_ARGS()
               ->UseManualTime();
         }
       }
