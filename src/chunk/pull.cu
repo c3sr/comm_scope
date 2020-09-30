@@ -8,21 +8,19 @@
 
 typedef int read_t;
 
+/* chunkFill should be lte 32
+*/
 static __global__ void Comm_chunk_pull_kernel(read_t *__restrict__ src,
                                               const int chunkSize,
                                               const int chunkFill,
                                               const int n, // number of chunks
-                                              read_t *flag) {
-
-  // use one warp for each chunk
-  assert(chunkFill <= 32);
-
+                                              read_t * __restrict__ flag) {
   const int li = threadIdx.x % 32; // lane index
   const int wi = threadIdx.x / 32; // warp index
   const int bd = blockDim.x / 32;  // dimension of block in warps
 
   // assign one warp to each chunk
-  for (int i = bd * wi + li; i < n; i += gridDim.x * bd) {
+  for (int i = bd *blockIdx.x + wi; i < n; i += gridDim.x * bd) {
     if (li < chunkFill) {
       read_t t;
       do_not_optimize(t = src[i * chunkSize + li]);
@@ -40,7 +38,7 @@ auto Comm_chunk_pull = [](benchmark::State &state, const int gpu0,
   {
     std::stringstream name;
     name << NAME << "/" << gpu0 << "/" << gpu1 << "/" << state.range(0) << "/"
-         << state.range(1) << "/" << state.range(2);
+         << state.range(1);
     nvtxRangePush(name.str().c_str());
   }
 #endif
@@ -71,7 +69,9 @@ auto Comm_chunk_pull = [](benchmark::State &state, const int gpu0,
   const size_t size = bytes / sizeof(read_t); // number of read_t
   const int n = size / chunkSize;             // number of chunks in allocation
   const int dimBlock = 512;
-  const int dimGrid = (n + (dimBlock / 32) - 1) / (dimBlock / 32);
+  int dimGrid = (n + (dimBlock / 32) - 1) / (dimBlock / 32);
+  dimGrid = min(dimGrid, 1024);
+
 
   // allocate on gpu0 and enable peer access
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to set device");
@@ -126,10 +126,10 @@ auto Comm_chunk_pull = [](benchmark::State &state, const int gpu0,
   state.counters["ld-size"] = sizeof(read_t);
   state.counters["gpu0"] = gpu0;
   state.counters["gpu1"] = gpu1;
-  state.counters["alloc"] = bytes;
   state.counters["chunkSize"] = chunkSize;
   state.counters["chunkFill"] = chunkFill;
   state.counters["chunkCont"] = n;
+  state.counters["dimgrid"] = dimGrid;
 
   OR_SKIP_AND_RETURN(cudaEventDestroy(start), "cudaEventDestroy");
   OR_SKIP_AND_RETURN(cudaEventDestroy(stop), "cudaEventDestroy");

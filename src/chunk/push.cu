@@ -12,8 +12,7 @@ static __global__ void Comm_chunk_push_kernel(write_t *__restrict__ dst,
                                               const int chunkSize,
                                               const int chunkFill,
                                               const int n // number of chunks
-) {
-
+                                              ) {
   // use one warp for each chunk
   assert(chunkFill <= 32);
 
@@ -22,9 +21,9 @@ static __global__ void Comm_chunk_push_kernel(write_t *__restrict__ dst,
   const int bd = blockDim.x / 32;  // dimension of block in warps
 
   // assign one warp to each chunk
-  for (int i = bd * wi + li; i < n; i += gridDim.x * bd) {
+  for (int i = bd *blockIdx.x + wi; i < n; i += gridDim.x * bd) {
     if (li < chunkFill) {
-      dst[i * chunkSize + li] = i * chunkSize + li;
+      dst[i * chunkSize + li] = i;
     }
   }
 }
@@ -36,7 +35,7 @@ auto Comm_chunk_push = [](benchmark::State &state, const int gpu0,
   {
     std::stringstream name;
     name << NAME << "/" << gpu0 << "/" << gpu1 << "/" << state.range(0) << "/"
-         << state.range(1) << "/" << state.range(2);
+         << state.range(1);
     nvtxRangePush(name.str().c_str());
   }
 #endif
