@@ -1,3 +1,4 @@
+add_subdirectory(chunk)
 add_subdirectory(cudaMemcpyAsync)
 add_subdirectory(cudaMemcpyAsync-duplex)
 add_subdirectory(cudaMemcpyPeerAsync)
