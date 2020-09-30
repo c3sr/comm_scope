@@ -9,6 +9,7 @@ add_subdirectory(libc)
 add_subdirectory(libcudart)
 add_subdirectory(prefetch)
 add_subdirectory(prefetch-duplex)
+add_subdirectory(stride)
 add_subdirectory(zerocopy)
 add_subdirectory(zerocopy-duplex)
 
