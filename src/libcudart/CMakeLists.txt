@@ -8,6 +8,7 @@ PARENT_SCOPE)
 set(comm_CUDA_SOURCES ${comm_CUDA_SOURCES}
   ${CMAKE_CURRENT_LIST_DIR}/cudaGraphInstantiate_cudaMemcpyAsync.cu
   ${CMAKE_CURRENT_LIST_DIR}/cudaGraphInstantiate_kernel.cu
+  ${CMAKE_CURRENT_LIST_DIR}/cudaGraphLaunch_cudaMemcpy3DAsync.cu
   ${CMAKE_CURRENT_LIST_DIR}/cudaGraphLaunch_cudaMemcpyAsync.cu
   ${CMAKE_CURRENT_LIST_DIR}/cudaGraphLaunch_kernel.cu
   ${CMAKE_CURRENT_LIST_DIR}/kernel.cu
