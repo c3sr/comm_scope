@@ -39,9 +39,9 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToGPU = [](benchmark::State &state, const int 
 
   // properties of the allocation
   cudaExtent allocExt;
-  allocExt.width  = 512; // how many bytes in a row
-  allocExt.height = 512; // how many rows in a plane
-  allocExt.depth  = 512;
+  allocExt.width  = 768*4; // how many bytes in a row
+  allocExt.height = 768; // how many rows in a plane
+  allocExt.depth  = 768;
 
   cudaPitchedPtr src, dst;
 
@@ -120,7 +120,7 @@ static void registerer() {
         if ((ok1 && ok2) || i == j) {
           name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" + std::to_string(gpu1);
           benchmark::RegisterBenchmark(name.c_str(), Comm_3d_cudaMemcpy2DAsync_GPUToGPU, gpu0, gpu1)
-              ->IC_ARGS()
+              ->ASTAROTH_ARGS()
               ->UseManualTime();
         }
       }

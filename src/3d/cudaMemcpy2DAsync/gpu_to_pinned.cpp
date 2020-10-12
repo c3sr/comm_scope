@@ -42,9 +42,9 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToPinned = [](benchmark::State &state,
 
   // properties of the allocation
   cudaExtent allocExt;
-  allocExt.width = 512;  // how many bytes in a row
-  allocExt.height = 512; // how many rows in a plane
-  allocExt.depth = 512;
+  allocExt.width  = 768*4;  // how many bytes in a row
+  allocExt.height = 768; // how many rows in a plane
+  allocExt.depth  = 768;
 
   cudaPitchedPtr src, dst;
 
@@ -117,7 +117,7 @@ static void registerer() {
              std::to_string(cudaId);
       benchmark::RegisterBenchmark(
           name.c_str(), Comm_3d_cudaMemcpy2DAsync_GPUToPinned, numaId, cudaId)
-          ->IC_ARGS()
+          ->ASTAROTH_ARGS()
           ->UseManualTime();
     }
   }
