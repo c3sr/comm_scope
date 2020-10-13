@@ -19,11 +19,10 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu,
 
   if (0 == state.thread_index) {
     OR_SKIP_AND_RETURN(cuda_reset_device(gpu), "failed to reset CUDA device");
-    OR_SKIP_AND_RETURN(cudaSetDevice(gpu), "");
   }
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu), "failed to reset CUDA device");
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu), "");
+  OR_SKIP_AND_RETURN(cudaFree(0), "failed to init");
 
   const size_t nArgs = state.range(0);
 
