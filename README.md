@@ -126,6 +126,10 @@ This somtimes happens on network file systems. You can retry, or do the build on
 A different version of GCC may be in the CMake cache.
 Try running `cmake -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc`, or deleting your build directory and restarting.
 
+** I get `a PTX JIT compilation failed` **
+
+set `CUDAFLAGS` to be the appropriate `-arch=sm_xx` for your system. e.g. `export CUDAFLAGS=-arch=sm_80` for ThetaGPU.
+
 ## Bumping the Version
 
 Update the changelog and commit the changes.
