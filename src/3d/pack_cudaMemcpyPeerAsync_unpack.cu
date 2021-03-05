@@ -132,9 +132,9 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
   OR_SKIP_AND_RETURN(cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
 
   // create stream on src gpu for pack + copy
-  OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to set device");
+  OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME " failed to set device");
   cudaStream_t srcStream = nullptr;
-  OR_SKIP_AND_RETURN(cudaStreamCreate(&srcStream), NAME "failed to create source stream");
+  OR_SKIP_AND_RETURN(cudaStreamCreate(&srcStream), NAME " failed to create source stream");
 
   // create a stream on the dst gpu for unpack
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to set device");
