@@ -31,6 +31,8 @@ add_subdirectory(thirdparty/libscope)
 add_subdirectory(src)
 add_executable(comm_scope ${comm_SOURCES} ${comm_CUDA_SOURCES})
 
+set_target_properties(comm_scope PROPERTIES ENABLE_EXPORTS ON) # better back trace
+
 target_compile_options(comm_scope PRIVATE
 $<$<COMPILE_LANGUAGE:CXX>:
     -Wall; 

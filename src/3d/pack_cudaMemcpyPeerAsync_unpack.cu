@@ -8,7 +8,8 @@
 
 __global__ void Comm_3d_pack_cudaMemcpyPeer_unpack_pack_kernel(
     void *__restrict__ dst, const void *__restrict__ src,
-    const cudaExtent allocExtent, const cudaExtent copyExtent,
+    const cudaExtent allocExtent, // in elements
+    const cudaExtent copyExtent, // in elements
     const size_t elemSize) {
 
   const unsigned int tz = blockDim.z * blockIdx.z + threadIdx.z;
@@ -166,9 +167,9 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
 
   // properties of the allocation
   cudaExtent allocExt;
-  allocExt.width = 512;  // how many bytes in a row
-  allocExt.height = 512; // how many rows in a plane
-  allocExt.depth = 512;
+  allocExt.width = 768 * 4;  // how many bytes in a row
+  allocExt.height = 768; // how many rows in a plane
+  allocExt.depth = 768;
 
   // 3D regions
   cudaPitchedPtr src, dst;
