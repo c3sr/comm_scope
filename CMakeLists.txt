@@ -4,7 +4,7 @@ option(USE_OpenMP "Use OpenMP for some benchmarks" ON)
 
 # scope requires 3.17
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
-project(Comm|Scope LANGUAGES CXX CUDA VERSION 0.11.2)
+project(Comm|Scope LANGUAGES CXX VERSION 0.11.2)
 
 # Set a default build type if none was specified
 set(default_build_type "Release")
@@ -20,16 +20,9 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# configure scope to match
-# FORCE to override variable if it's already cached
-set(SCOPE_USE_CUDA ON CACHE BOOL "use CUDA" FORCE)
-set(SCOPE_USE_NUMA ${USE_NUMA} CACHE BOOL "text" FORCE)
-set(SCOPE_USE_OPENMP ${USE_OPENMP} CACHE BOOL "" FORCE)
-set(SCOPE_USE_NVTX ${USE_NVTX} CACHE BOOL "" FORCE)
-
 add_subdirectory(thirdparty/libscope)
 add_subdirectory(src)
-add_executable(comm_scope ${comm_SOURCES} ${comm_CUDA_SOURCES})
+add_executable(comm_scope ${comm_SOURCES} ${comm_CUDA_SOURCES} src/main.cpp)
 
 set_target_properties(comm_scope PROPERTIES ENABLE_EXPORTS ON) # better back trace
 
