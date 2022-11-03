@@ -1,12 +1,12 @@
 #!/bin/bash
-#BSUB -W 2:00
+#BSUB -W 1:00
 #BSUB -nnodes 1
 #BSUB -P csc362
 #BSUB -J 3d_GPUGPU
 
 module reset
-module load gcc/5.4.0
-module load cuda
+module load gcc
+module load cuda/11.0.3
 
 set -eou pipefail
 

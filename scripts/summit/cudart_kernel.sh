@@ -6,8 +6,8 @@
 
 module reset
 module load gcc
-module load cuda
-module load nsight-systems/2020.3.1.71
+module load cuda/11.0.3
+#module load nsight-systems/2020.3.1.71
 
 set -eou pipefail
 
@@ -19,7 +19,7 @@ date
 # -g (gpus per rs)
 # -a (MPI tasks per rs)
 # -c (cores per rs)
-jsrun -n1 -a1 -g6 -c42 -b rs js_task_info 
+jsrun -n1 -a1 -g6 -c42 -b rs \
 ../../build/comm_scope \
 --benchmark_out_format=csv \
 --benchmark_out=$SCRATCH/cudart_kernel.csv \

@@ -1,8 +1,8 @@
 #!/bin/bash
-#BSUB -W 2:00
+#BSUB -W 1:00
 #BSUB -nnodes 1
 #BSUB -P csc362
-#BSUB -J cudart
+#BSUB -J chunk
 
 module reset
 module load gcc
@@ -20,9 +20,8 @@ date
 # -c (cores per rs)
 jsrun -n1 -a1 -g6 -c42 -b rs js_task_info ../../build/comm_scope \
 --benchmark_out_format=csv \
---benchmark_out=$SCRATCH/cudart.csv \
---benchmark_filter="cudart" \
---numa 0 \
+--benchmark_out=$SCRATCH/chunk.csv \
+--benchmark_filter="chunk.*/0/(0|3)/" \
 --cuda 0 --cuda 3
 
 date
