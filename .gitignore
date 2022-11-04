@@ -1,1 +1,4 @@
 Pipfile
+build-*
+scripts/crusher/*.out
+scripts/crusher/*.csv
