@@ -70,6 +70,13 @@ Comm|Scope will attempt to control CPU clocks. Either run with elevated permissi
 
 If you are willing to accept reduced accuracy, or are on a system where CPU clocks do not need to be controlled, you can ignore this error.
 
+You can control the log verbosity with the following environment variables:
+* `SPDLOG_LEVEL=trace`
+* `SPDLOG_LEVEL=debug`
+* `SPDLOG_LEVEL=info`
+* `SPDLOG_LEVEL=warning`
+* `SPDLOG_LEVEL=critical`
+
 ## Warning: Inconsistent Console Reporting Suffixes
 
 Google Benchmark will format the console output in the following way, with an inconsistency.
