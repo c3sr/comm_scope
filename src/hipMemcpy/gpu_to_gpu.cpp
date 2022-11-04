@@ -66,15 +66,15 @@ auto Comm_hipMemcpy_GPUToGPU = [](benchmark::State &state, const int hipId0, con
 };
 
 static void registerer() {
+  LOG(trace, NAME " registerer...");
+
   std::string name;
 
-  std::vector<MemorySpace> spaces = scope::system::hip_memory_spaces();
-  std::vector<MemorySpace> deviceSpaces;
+  std::vector<MemorySpace> spaces = scope::system::memory_spaces(MemorySpace::Kind::hip_device);
+  LOG(trace, "found {} hip_device spaces", spaces.size());
 
-  std::copy_if(spaces.begin(), spaces.end(), std::back_inserter(deviceSpaces), [](const MemorySpace &ms){return MemorySpace::Kind::hip_device == ms.kind();} );
-
-  for (const MemorySpace &ms0 : deviceSpaces) {
-    for (const MemorySpace &ms1 : deviceSpaces) {
+  for (const MemorySpace &ms0 : spaces) {
+    for (const MemorySpace &ms1 : spaces) {
       const int d0 = ms0.device_id();
       const int d1 = ms1.device_id();
       name = std::string(NAME) + "/" + std::to_string(d0) + "/" + std::to_string(d1);
