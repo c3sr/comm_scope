@@ -1,6 +1,4 @@
-option(USE_NUMA "Compile with support for libnuma" ON)
-option(USE_NVTX "Add NVTX ranges to some benchmarks" ON)
-option(USE_OpenMP "Use OpenMP for some benchmarks" ON)
+option(SCOPE_USE_NUMA "Compile with support for libnuma" ON)
 
 # scope requires 3.17
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
