@@ -8,6 +8,7 @@
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH -c 64
+#SBATCH -G 4
 
 set -eou pipefail
 
