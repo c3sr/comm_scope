@@ -3,7 +3,7 @@
 #SBATCH -A CSC465
 #SBATCH -J hipMemcpy_GPUToGPU
 #SBATCH -o %x-%j.out
-#SBATCH -t 00:30:00
+#SBATCH -t 02:00:00
 #SBATCH -p batch
 #SBATCH -N 1
 #SBATCH -n 1

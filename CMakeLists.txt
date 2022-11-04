@@ -44,7 +44,16 @@ $<$<COMPILE_LANGUAGE:CXX>:
     -fmax-errors=1;
     -Wfatal-errors;
 >
+)
+
+if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  target_compile_options(comm_scope PRIVATE
+  $<$<COMPILE_LANGUAGE:CXX>:
+      -fmax-errors=1;
+  >
   )
+endif()
+
 
 # causes lots of warnings in CUDA includes
 # -Xcompiler=-Wundef;

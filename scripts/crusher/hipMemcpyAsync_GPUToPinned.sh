@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -A CSC465
-#SBATCH -J hipMemcpyAsync_PinnedToGPU
+#SBATCH -J hipMemcpyAsync_GPUToPinned
 #SBATCH -o %x-%j.out
 #SBATCH -t 02:00:00
 #SBATCH -p batch
@@ -18,6 +18,6 @@ ROOT="/ccs/home/cpearson/repos/comm_scope"
 
 srun -n 1 -G 4 -c 64 \
 $ROOT/build-crusher/comm_scope \
---benchmark_filter=hipMemcpyAsync_PinnedToGPU \
---benchmark_out="$ROOT"/scripts/crusher/hipMemcpyAsync_PinnedToGPU.csv \
+--benchmark_filter=hipMemcpyAsync_GPUToPinned \
+--benchmark_out="$ROOT"/scripts/crusher/hipMemcpyAsync_GPUToPinned.csv \
 --benchmark_out_format=csv
