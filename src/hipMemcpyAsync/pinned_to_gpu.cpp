@@ -47,6 +47,8 @@ auto Comm_hipMemcpyAsync_PinnedToGPU = [](benchmark::State &state, const int num
   hipEvent_t start, stop;
   PRINT_IF_ERROR(hipEventCreate(&start));
   PRINT_IF_ERROR(hipEventCreate(&stop));
+  defer(hipEventDestroy(start));
+  defer(hipEventDestroy(stop));
 
   for (auto _ : state) {
     std::memset(src, 0, bytes);

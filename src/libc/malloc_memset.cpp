@@ -2,9 +2,9 @@
 
 #include "args.hpp"
 
-#define NAME "Comm_UM_Malloc_Memset"
+#define NAME "Comm_libc_malloc_memset"
 
-auto Comm_UM_Malloc_Memset = [](benchmark::State &state, const int numa_id) {
+auto Comm_libc_malloc_memset = [](benchmark::State &state, const int numa_id) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   numa::ScopedBind binder(numa_id);
@@ -37,7 +37,7 @@ auto Comm_UM_Malloc_Memset = [](benchmark::State &state, const int numa_id) {
 static void registerer() {
   for (auto numa_id : numa::ids()) {
     std::string name = std::string(NAME) + "/" + std::to_string(numa_id);
-    benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Malloc_Memset, numa_id)
+    benchmark::RegisterBenchmark(name.c_str(), Comm_libc_malloc_memset, numa_id)
         ->BYTE_ARGS()
         ->UseManualTime();
   }
