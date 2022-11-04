@@ -26,32 +26,29 @@ auto Comm_hipMemcpy_GPUToGPU = [](benchmark::State &state, const int hipId0, con
     return;
   }
   defer(hipFree(src));
+  // zero src
+  if (PRINT_IF_ERROR(hipMemset(src, 0, bytes))) {
+    state.SkipWithError(NAME " failed to perform src hipMemset");
+    return;
+  }
 
-  // Allocate device
-  if (PRINT_IF_ERROR(hipSetDevice(hipId0))) {
+  // Allocate dst
+  if (PRINT_IF_ERROR(hipSetDevice(hipId1))) {
     state.SkipWithError(NAME " failed to set CUDA device");
     return;
   }
-  if (PRINT_IF_ERROR(hipMalloc(&src, bytes))) {
-    state.SkipWithError(NAME " failed to perform cudaMalloc");
+  if (PRINT_IF_ERROR(hipMalloc(&dst, bytes))) {
+    state.SkipWithError(NAME " failed to perform dst cudaMalloc");
     return;
   }
   defer(hipFree(dst));
-
-  // zero src
-  if (PRINT_IF_ERROR(hipMemset(src, 0, bytes))) {
-    state.SkipWithError(NAME " failed to perform hipMemset");
-    return;
-  }
-
   // zero dst
   if (PRINT_IF_ERROR(hipMemset(dst, 0, bytes))) {
-    state.SkipWithError(NAME " failed to perform hipMemset");
+    state.SkipWithError(NAME " failed to perform dst hipMemset");
     return;
   }
 
   for (auto _ : state) {
-    std::memset(dst, 0, bytes);
     auto start = scope::clock::now();
     hipError_t err = hipMemcpy(dst, src, bytes, hipMemcpyDeviceToDevice);
     double elapsed = scope::duration(scope::clock::now() - start).count();
@@ -72,9 +69,12 @@ static void registerer() {
   std::string name;
 
   std::vector<MemorySpace> spaces = scope::system::hip_memory_spaces();
+  std::vector<MemorySpace> deviceSpaces;
 
-  for (const MemorySpace &ms0 : spaces) {
-    for (const MemorySpace &ms1 : spaces) {
+  std::copy_if(spaces.begin(), spaces.end(), std::back_inserter(deviceSpaces), [](const MemorySpace &ms){return MemorySpace::Kind::hip_device == ms.kind();} );
+
+  for (const MemorySpace &ms0 : deviceSpaces) {
+    for (const MemorySpace &ms1 : deviceSpaces) {
       const int d0 = ms0.device_id();
       const int d1 = ms1.device_id();
       name = std::string(NAME) + "/" + std::to_string(d0) + "/" + std::to_string(d1);
