@@ -10,7 +10,7 @@ auto Comm_hipManaged_GPUToGPUWriteDst = [](benchmark::State &state, const int sr
 
 
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
-  Data data = setup<Kind::GPUToGPU>(state, NAME, bytes, src_gpu, dst_gpu);
+  UnaryData data = setup<Kind::GPUToGPU>(state, NAME, bytes, src_gpu, dst_gpu);
   defer(hipFree(data.ptr));
   defer(hipEventDestroy(data.start));
   defer(hipEventDestroy(data.stop));

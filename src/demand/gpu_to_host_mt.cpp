@@ -10,7 +10,7 @@ auto Comm_hipManaged_GPUToHostMt = [](benchmark::State &state, const int src_gpu
 
 
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
-  Data data = setup<Kind::GPUToHost>(state, NAME, bytes, src_gpu, dst_numa);
+  UnaryData data = setup<Kind::GPUToHost>(state, NAME, bytes, src_gpu, dst_numa);
   defer(hipFree(data.ptr));
   defer(hipEventDestroy(data.start));
   defer(hipEventDestroy(data.stop));
@@ -72,11 +72,6 @@ static void registerer() {
 
   std::vector<MemorySpace> hipSpaces = scope::system::memory_spaces(MemorySpace::Kind::hip_device);
   std::vector<MemorySpace> numaSpaces = scope::system::memory_spaces(MemorySpace::Kind::numa);
-
-  std::cerr << numaSpaces.size() << "\n";
-  for (auto &ms : numaSpaces) {
-    std::cerr << ms << "\n";
-  }
 
   for (auto num_threads : {1, 2, 4, 6, 8, 10}) {
     for (const MemorySpace &ns : numaSpaces) {

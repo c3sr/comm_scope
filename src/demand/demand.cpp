@@ -5,13 +5,13 @@
 /*extern*/ volatile bool ready = false;
 
 template <>
-Data setup<Kind::GPUToGPU>(benchmark::State &state,
+UnaryData setup<Kind::GPUToGPU>(benchmark::State &state,
                   const std::string &name,
                   const size_t bytes,
                   const int src_id,
                   const int dst_id) {
 
-  Data data;
+  UnaryData data;
   data.error = false;
 
   data.pageSize = page_size();
@@ -63,13 +63,13 @@ Data setup<Kind::GPUToGPU>(benchmark::State &state,
 }
 
 template <>
-Data setup<Kind::GPUToHost>(benchmark::State &state,
+UnaryData setup<Kind::GPUToHost>(benchmark::State &state,
                   const std::string &name,
                   const size_t bytes,
                   const int src_id,
                   const int /*dst_id*/) {
 
-  Data data;
+  UnaryData data;
   data.ptr = nullptr;
   data.error = false;
   data.pageSize = page_size();
@@ -122,13 +122,13 @@ Data setup<Kind::GPUToHost>(benchmark::State &state,
 }
 
 template <>
-Data setup<Kind::HostToGPU>(benchmark::State &state,
+UnaryData setup<Kind::HostToGPU>(benchmark::State &state,
                   const std::string &name,
                   const size_t bytes,
                   const int /*src_id*/,
                   const int dst_id) {
 
-  Data data;
+  UnaryData data;
   data.error = false;
 
   data.pageSize = page_size();

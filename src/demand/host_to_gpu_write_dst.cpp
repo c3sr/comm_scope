@@ -10,7 +10,7 @@ auto Comm_hipManaged_HostToGPUWriteDst = [](benchmark::State &state, const int s
 
 
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
-  Data data = setup<Kind::HostToGPU>(state, NAME, bytes, src_numa, dst_gpu);
+  UnaryData data = setup<Kind::HostToGPU>(state, NAME, bytes, src_numa, dst_gpu);
   defer(hipFree(data.ptr));
   defer(hipEventDestroy(data.start));
   defer(hipEventDestroy(data.stop));
