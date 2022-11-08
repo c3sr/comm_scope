@@ -31,11 +31,11 @@ When host allocations are required, they are created in the following way
 numa_bind(numa_id);
 
 // For pinned
-ptr = aligned_alloc(bytes, page_size);
+ptr = aligned_alloc(page_size, bytes);
 cudaHostRegister(ptr, bytes, cudaHostRegisterPortable);
 
 // For pageable
-ptr = aligned_alloc(bytes, page_size)
+ptr = aligned_alloc(page_size, bytes)
 
 // For Write-Combined
 cudaHostAlloc(&ptr, bytes, cudaHostAllocWriteCombined);

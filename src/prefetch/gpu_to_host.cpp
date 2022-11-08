@@ -83,14 +83,14 @@ static void registerer() {
 
   std::vector<MemorySpace> numaSpaces = scope::system::memory_spaces(MemorySpace::Kind::numa);
 
-  for (auto hip_id : scope::system::hip_device_ids()) {
+  for (auto hip : scope::system::hip_devices()) {
     for (auto ns : numaSpaces) {
       const int numa_id = ns.numa_id();
       if (numa::can_execute_in_node(numa_id)) {
         std::string name = std::string(NAME) + "/" + std::to_string(numa_id) +
-                          "/" + std::to_string(hip_id);
+                          "/" + std::to_string(hip.device_id());
         benchmark::RegisterBenchmark(name.c_str(), Comm_hipManaged_Prefetch_GPUToHost,
-                                    numa_id, hip_id)
+                                    numa_id, hip.device_id())
             ->SMALL_ARGS()
             ->UseManualTime();
       }

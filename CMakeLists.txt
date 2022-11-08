@@ -39,7 +39,6 @@ $<$<COMPILE_LANGUAGE:CXX>:
     -Wfloat-equal;
     -Wundef;
     -Wvla;
-    -fmax-errors=1;
     -Wfatal-errors;
 >
 )

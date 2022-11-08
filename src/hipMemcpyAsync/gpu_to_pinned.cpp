@@ -15,13 +15,12 @@ auto Comm_hipMemcpyAsync_GPUToPinned = [](benchmark::State &state, const int num
   }
 
   char *src = nullptr;
-  void *dst = aligned_alloc(page_size(), bytes);
-  if (PRINT_IF_ERROR(hipHostRegister(dst, bytes, hipHostRegisterPortable))) {
+  void *dst = nullptr;
+  if (PRINT_IF_ERROR(hipHostMalloc(&dst, bytes, 0))) {
     state.SkipWithError(NAME " failed to register allocations");
     return;
   }
-  defer(hipHostUnregister(dst));
-  defer(free(dst));
+  defer(hipHostFree(dst));
   std::memset(dst, 0, bytes);
 
   if (PRINT_IF_ERROR(hipSetDevice(hipId))) {

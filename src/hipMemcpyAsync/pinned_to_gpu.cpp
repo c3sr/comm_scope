@@ -18,20 +18,14 @@ auto Comm_hipMemcpyAsync_PinnedToGPU = [](benchmark::State &state, const int num
     return;
   }
 
-  void *src = aligned_alloc(page_size(), bytes);
+  void *src = nullptr;
   void *dst = nullptr;
 
-  if (!src) {
-    state.SkipWithError(NAME " failed to aligned_alloc");
+  if (PRINT_IF_ERROR(hipHostMalloc(&src, bytes, 0))) {
+    state.SkipWithError(NAME " failed to hipHostMalloc");
     return;
   }
-  std::memset(src, 0, bytes);
-  if (PRINT_IF_ERROR(hipHostRegister(src, bytes, hipHostRegisterPortable))) {
-    state.SkipWithError(NAME " failed to hipHostRegister");
-    return;
-  }
-  defer(hipHostUnregister(src));
-  defer(free(src));
+  defer(hipHostFree(src));
 
   if (PRINT_IF_ERROR(hipMalloc(&dst, bytes))) {
     state.SkipWithError(NAME " failed to perform hipMalloc");

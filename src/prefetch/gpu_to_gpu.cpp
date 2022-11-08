@@ -80,10 +80,13 @@ auto Comm_hipManaged_Prefetch_GPUToGPU = [](benchmark::State &state, const int s
 };
 
 static void registerer() {
-  for (size_t i = 0; i <  scope::system::hip_device_ids().size(); ++i) {
-    for (size_t j = i + 1; j < scope::system::hip_device_ids().size(); ++j) {
-      auto src_gpu = scope::system::hip_device_ids()[i];
-      auto dst_gpu = scope::system::hip_device_ids()[j];
+
+  std::vector<Device> hips = scope::system::hip_devices();
+
+  for (size_t i = 0; i <  hips.size(); ++i) {
+    for (size_t j = i + 1; j < hips.size(); ++j) {
+      auto src_gpu = hips[i].device_id();
+      auto dst_gpu = hips[j].device_id();
       std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) + "/" + std::to_string(dst_gpu);
       benchmark::RegisterBenchmark(name.c_str(), Comm_hipManaged_Prefetch_GPUToGPU, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
     }
