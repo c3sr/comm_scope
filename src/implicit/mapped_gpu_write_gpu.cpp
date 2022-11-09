@@ -9,10 +9,8 @@
 
 constexpr int CACHE_LINE_SIZE = 64;
 
-auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state, 
-                                        const int wr_gpu,
-                                        const int own_gpu) {
-
+auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
+                                        const int wr_gpu, const int own_gpu) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   char *ptr = nullptr;
@@ -97,7 +95,8 @@ auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
 
 static void registerer() {
 
-  std::vector<MemorySpace> hipSpaces = scope::system::memory_spaces(MemorySpace::Kind::hip_device);
+  std::vector<MemorySpace> hipSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::hip_device);
 
   for (size_t i = 0; i < hipSpaces.size(); ++i) {
     for (size_t j = i + 1; j < hipSpaces.size(); ++j) {
@@ -114,5 +113,3 @@ static void registerer() {
 }
 
 SCOPE_AFTER_INIT(registerer, NAME);
-
-
