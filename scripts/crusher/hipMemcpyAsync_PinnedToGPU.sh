@@ -18,6 +18,6 @@ ROOT="/ccs/home/cpearson/repos/comm_scope"
 
 srun -n 1 -G 4 -c 64 \
 $ROOT/build-crusher/comm_scope \
---benchmark_filter=hipMemcpyAsync_PinnedToGPU \
+--benchmark_filter=hipMemcpyAsync_PinnedToGPU/ \
 --benchmark_out="$ROOT"/scripts/crusher/hipMemcpyAsync_PinnedToGPU.csv \
 --benchmark_out_format=csv
