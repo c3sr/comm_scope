@@ -26,7 +26,7 @@ auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
     return;
   }
 
-  if (PRINT_IF_ERROR(hipSetDevice(wr_gpu))) {
+  if (PRINT_IF_ERROR(hipSetDevice(own_gpu))) {
     state.SkipWithError(NAME " failed to set hip dst device");
     return;
   }
