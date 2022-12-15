@@ -18,6 +18,6 @@ ROOT="/ccs/home/cpearson/repos/comm_scope"
 
 srun -n 1 -G 8 -c 64 \
 $ROOT/build-crusher/comm_scope \
---benchmark_filter=hipManaged_Prefetch_HostToGPU \
+--benchmark_filter=hipManaged_Prefetch_HostToGPU/0 \
 --benchmark_out="$ROOT"/scripts/crusher/hipManaged_Prefetch_HostToGPU.csv \
 --benchmark_out_format=csv
