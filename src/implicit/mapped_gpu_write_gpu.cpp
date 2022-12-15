@@ -1,5 +1,4 @@
 #include "args.hpp"
-#include "implicit.hpp"
 
 #include "scope/scope.hpp"
 

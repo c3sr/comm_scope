@@ -1,5 +1,4 @@
 #include "args.hpp"
-#include "implicit.hpp"
 
 #include "scope/scope.hpp"
 
@@ -102,8 +101,8 @@ static void registerer() {
           if (flush) {
             name += "_flush";
           }
-          name += "/" + std::to_string(hip.device_id()) + "/" +
-                  std::to_string(numa.numa_id());
+          name += "/" + std::to_string(numa.numa_id()) + "/" +
+                  std::to_string(hip.device_id());
           benchmark::RegisterBenchmark(
               name.c_str(), Comm_implicit_mapped_GPUWrHost, hip, numa, flush)
               ->SMALL_ARGS()

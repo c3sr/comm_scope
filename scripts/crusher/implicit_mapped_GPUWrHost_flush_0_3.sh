@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -A CSC465_crusher
-#SBATCH -J hipManaged_Prefetch_GPUToGPU
+#SBATCH -J implicit_mapped_GPUWrHost_flush_0_3
 #SBATCH -o %x-%j.out
 #SBATCH -t 02:00:00
 #SBATCH -p batch
@@ -18,6 +18,6 @@ ROOT="/ccs/home/cpearson/repos/comm_scope"
 
 srun -n 1 -G 8 -c 64 \
 $ROOT/build-crusher/comm_scope \
---benchmark_filter=hipManaged_Prefetch_GPUToGPU/0/ \
---benchmark_out="$ROOT"/scripts/crusher/hipManaged_Prefetch_GPUToGPU.csv \
+--benchmark_filter=implicit_mapped_GPUWrHost_flush/0/3 \
+--benchmark_out="$ROOT"/scripts/crusher/implicit_mapped_GPUWrHost_flush_0_3.csv \
 --benchmark_out_format=csv
