@@ -27,22 +27,35 @@ auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
   }
 
   if (PRINT_IF_ERROR(hipSetDevice(wr_gpu))) {
-    state.SkipWithError(NAME " failed to set hip dst device");
+    state.SkipWithError(NAME " failed to set hip wr_gpu device");
     return;
   }
+
+  // need to create events on device that will execute kernel?
+  if (PRINT_IF_ERROR(hipEventCreate(&start))) {
+    state.SkipWithError(NAME " failed to create start event");
+    return;
+  }
+  defer(hipEventDestroy(start));
+  if (PRINT_IF_ERROR(hipEventCreate(&stop))) {
+    state.SkipWithError(NAME " failed to create stop event");
+    return;
+  }
+  defer(hipEventDestroy(stop));
 
   // TODO: cleanup
   {
     hipError_t err = hipDeviceEnablePeerAccess(own_gpu, 0);
     if (hipErrorPeerAccessAlreadyEnabled != err) {
-      PRINT_IF_ERROR(err);
-      state.SkipWithError(NAME " wr_gpu enable peer access to own_gpu");
-      return;
+      if (PRINT_IF_ERROR(err)) {
+        state.SkipWithError(NAME " wr_gpu enable peer access to own_gpu");
+        return;
+      }
     }
   }
 
   if (PRINT_IF_ERROR(hipSetDevice(own_gpu))) {
-    state.SkipWithError(NAME " failed to set hip dst device");
+    state.SkipWithError(NAME " failed to set hip own_gpu device");
     return;
   }
 
@@ -50,9 +63,10 @@ auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
   {
     hipError_t err = hipDeviceEnablePeerAccess(wr_gpu, 0);
     if (hipErrorPeerAccessAlreadyEnabled != err) {
-      PRINT_IF_ERROR(err);
-      state.SkipWithError(NAME " own_gpu enable peer access to wr_gpu");
-      return;
+      if (PRINT_IF_ERROR(err)) {
+        state.SkipWithError(NAME " own_gpu enable peer access to wr_gpu");
+        return;
+      }
     }
   }
 
@@ -67,17 +81,7 @@ auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
     return;
   }
 
-  if (PRINT_IF_ERROR(hipEventCreate(&start))) {
-    state.SkipWithError(NAME " failed to create start event");
-    return;
-  }
-  defer(hipEventDestroy(start));
 
-  if (PRINT_IF_ERROR(hipEventCreate(&stop))) {
-    state.SkipWithError(NAME " failed to create stop event");
-    return;
-  }
-  defer(hipEventDestroy(stop));
 
   for (auto _ : state) {
 
@@ -96,9 +100,17 @@ auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
       return;
     }
 
-    hipEventRecord(start);
+    hipError_t e1 = hipEventRecord(start);
     gpu_write<<<2048, 256>>>(ptr, bytes, CACHE_LINE_SIZE);
-    hipEventRecord(stop);
+    hipError_t e2 = hipEventRecord(stop);
+    if (PRINT_IF_ERROR(e1)) {
+      state.SkipWithError(NAME " failed to record start event");
+      return;
+    }
+    if (PRINT_IF_ERROR(e2)) {
+      state.SkipWithError(NAME " failed to record stop event");
+      return;
+    }
     if (PRINT_IF_ERROR(hipEventSynchronize(stop))) {
       state.SkipWithError(NAME " failed to do kernels");
       return;
