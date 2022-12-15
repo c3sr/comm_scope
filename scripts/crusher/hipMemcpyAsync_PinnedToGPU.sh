@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -A CSC465
+#SBATCH -A CSC465_crusher
 #SBATCH -J hipMemcpyAsync_PinnedToGPU
 #SBATCH -o %x-%j.out
 #SBATCH -t 02:00:00

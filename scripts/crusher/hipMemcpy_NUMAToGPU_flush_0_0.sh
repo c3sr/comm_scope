@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -A CSC465
+#SBATCH -A CSC465_crusher
 #SBATCH -J hipMemcpy_NUMAToGPU_flush_0_0
 #SBATCH -o %x-%j.out
 #SBATCH -t 02:00:00

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -A CSC465
+#SBATCH -A CSC465_crusher
 #SBATCH -J implicit_mapped_GPUWrHost_flush
 #SBATCH -o %x-%j.out
 #SBATCH -t 02:00:00
