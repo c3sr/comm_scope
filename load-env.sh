@@ -7,7 +7,7 @@ if [[ ${LMOD_SYSTEM_NAME} =~ crusher ]]; then
     echo "LMOD_SYSTEM_NAME matched crusher"
     echo_and_do module load cmake
     echo_and_do module load rocm/5.4.0
-elif [[ $(hostname) =~ caraway ]]; then
+elif [[ ${HOSTNAME} =~ caraway ]]; then
     echo "LMOD_SYSTEM_NAME matched caraway"
     echo_and_do module load cmake
     echo_and_do module load rocm/5.2.0

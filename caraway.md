@@ -1,7 +1,7 @@
 ## Sandia Caraway
 
 ```
-salloc 
+salloc -p MI250
 ```
 
 ```
