@@ -26,9 +26,34 @@ auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
     return;
   }
 
+  if (PRINT_IF_ERROR(hipSetDevice(wr_gpu))) {
+    state.SkipWithError(NAME " failed to set hip dst device");
+    return;
+  }
+
+  // TODO: cleanup
+  {
+    hipError_t err = hipDeviceEnablePeerAccess(own_gpu, 0);
+    if (hipErrorPeerAccessAlreadyEnabled != err) {
+      PRINT_IF_ERROR(err);
+      state.SkipWithError(NAME " wr_gpu enable peer access to own_gpu");
+      return;
+    }
+  }
+
   if (PRINT_IF_ERROR(hipSetDevice(own_gpu))) {
     state.SkipWithError(NAME " failed to set hip dst device");
     return;
+  }
+
+  // TODO: cleanup
+  {
+    hipError_t err = hipDeviceEnablePeerAccess(wr_gpu, 0);
+    if (hipErrorPeerAccessAlreadyEnabled != err) {
+      PRINT_IF_ERROR(err);
+      state.SkipWithError(NAME " own_gpu enable peer access to wr_gpu");
+      return;
+    }
   }
 
   if (PRINT_IF_ERROR(hipMalloc(&ptr, bytes))) {
@@ -102,12 +127,17 @@ static void registerer() {
     for (size_t j = i + 1; j < hipSpaces.size(); ++j) {
       int wr_gpu = hipSpaces[i].device_id();
       int own_gpu = hipSpaces[j].device_id();
-      std::string name = std::string(NAME) + "/" + std::to_string(wr_gpu) +
-                         "/" + std::to_string(own_gpu);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_implicit_mapped_GPUWrGPU,
-                                   wr_gpu, own_gpu)
-          ->SMALL_ARGS()
-          ->UseManualTime();
+
+      int can = 0;
+      HIP_RUNTIME(hipDeviceCanAccessPeer(&can, wr_gpu, own_gpu));
+      if (can) {
+        std::string name = std::string(NAME) + "/" + std::to_string(wr_gpu) +
+                          "/" + std::to_string(own_gpu);
+        benchmark::RegisterBenchmark(name.c_str(), Comm_implicit_mapped_GPUWrGPU,
+                                    wr_gpu, own_gpu)
+            ->SMALL_ARGS()
+            ->UseManualTime();
+      }
     }
   }
 }
