@@ -6,8 +6,6 @@
 
 #define NAME "Comm_implicit_mapped_GPUWrHost"
 
-constexpr int CACHE_LINE_SIZE = 64;
-
 auto Comm_implicit_mapped_GPUWrHost =
     [](benchmark::State &state, const Device &wr_gpu,
        const MemorySpace &own_numa, bool flush) {
@@ -71,7 +69,7 @@ auto Comm_implicit_mapped_GPUWrHost =
           flush_all(ptr, bytes);
 
         hipEventRecord(start);
-        gpu_write<<<2048, 256>>>((char *)dptr, bytes, CACHE_LINE_SIZE);
+        gpu_write<uint64_t><<<2048, 256>>>(dptr, bytes);
         hipEventRecord(stop);
         if (PRINT_IF_ERROR(hipEventSynchronize(stop))) {
           state.SkipWithError(NAME " failed to do kernels");

@@ -6,8 +6,6 @@
 
 #define NAME "Comm_implicit_mapped_GPUWrGPU"
 
-constexpr int CACHE_LINE_SIZE = 64;
-
 auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
                                         const int wr_gpu, const int own_gpu) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
@@ -100,7 +98,7 @@ auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
     }
 
     hipError_t e1 = hipEventRecord(start);
-    gpu_write<<<2048, 256>>>(ptr, bytes, CACHE_LINE_SIZE);
+    gpu_write<uint64_t><<<2048, 256>>>(ptr, bytes);
     hipError_t e2 = hipEventRecord(stop);
     if (PRINT_IF_ERROR(e1)) {
       state.SkipWithError(NAME " failed to record start event");
@@ -135,7 +133,7 @@ static void registerer() {
       scope::system::memory_spaces(MemorySpace::Kind::hip_device);
 
   for (size_t i = 0; i < hipSpaces.size(); ++i) {
-    for (size_t j = i + 1; j < hipSpaces.size(); ++j) {
+    for (size_t j = i; j < hipSpaces.size(); ++j) {
       int wr_gpu = hipSpaces[i].device_id();
       int own_gpu = hipSpaces[j].device_id();
 

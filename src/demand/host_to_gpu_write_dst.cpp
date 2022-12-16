@@ -3,8 +3,6 @@
 
 #define NAME "Comm_hipManaged_HostToGPUWriteDst"
 
-constexpr int CACHE_LINE_SIZE = 64;
-
 auto Comm_hipManaged_HostToGPUWriteDst = [](benchmark::State &state, const int src_numa,
                                   const int dst_gpu) {
 
@@ -27,7 +25,7 @@ auto Comm_hipManaged_HostToGPUWriteDst = [](benchmark::State &state, const int s
     }
 
     hipEventRecord(data.start);
-    gpu_write<<<2048, 256>>>(data.ptr, bytes, CACHE_LINE_SIZE);
+    gpu_write<uint64_t><<<2048, 256>>>(data.ptr, bytes);
     hipEventRecord(data.stop);
     if (PRINT_IF_ERROR(hipEventSynchronize(data.stop))) {
       state.SkipWithError(NAME " failed to do kernels");

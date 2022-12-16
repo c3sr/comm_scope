@@ -1,11 +1,9 @@
 #include "args.hpp"
 #include "demand.hpp"
 
-#define NAME "Comm_hipManaged_GPUToGPUWriteDst"
+#define NAME "Comm_hipManaged_GPUWrGPU"
 
-constexpr int CACHE_LINE_SIZE = 64;
-
-auto Comm_hipManaged_GPUToGPUWriteDst = [](benchmark::State &state, const int src_gpu,
+auto Comm_hipManaged_GPUWrGPU = [](benchmark::State &state, const int src_gpu,
                                   const int dst_gpu) {
 
 
@@ -27,7 +25,7 @@ auto Comm_hipManaged_GPUToGPUWriteDst = [](benchmark::State &state, const int sr
     }
 
     hipEventRecord(data.start);
-    gpu_write<<<2048, 256>>>(data.ptr, bytes, CACHE_LINE_SIZE);
+    gpu_write<uint64_t><<<2048, 256>>>(data.ptr, bytes);
     hipEventRecord(data.stop);
     if (PRINT_IF_ERROR(hipEventSynchronize(data.stop))) {
       state.SkipWithError(NAME " failed to do kernels");
@@ -58,7 +56,7 @@ static void registerer() {
       int dst_gpu = hips[j].device_id();
       std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) +
                          "/" + std::to_string(dst_gpu);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_hipManaged_GPUToGPUWriteDst,
+      benchmark::RegisterBenchmark(name.c_str(), Comm_hipManaged_GPUWrGPU,
                                    src_gpu, dst_gpu)
           ->SMALL_ARGS()
           ->UseManualTime();
