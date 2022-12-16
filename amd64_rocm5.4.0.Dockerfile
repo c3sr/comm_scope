@@ -14,6 +14,7 @@ WORKDIR /opt/comm_scope
 RUN mkdir -p build \
   && cd build \
   && cmake .. \
+    -DCMAKE_CXX_COMPILER=hipcc \
     -DSCOPE_USE_NUMA=ON \
     -DSCOPE_USE_HIP=ON \
     -DSCOPE_USE_NVTX=OFF \

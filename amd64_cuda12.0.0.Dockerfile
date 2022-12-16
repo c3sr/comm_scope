@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --no-install-su
 COPY . /opt/comm_scope
 WORKDIR /opt/comm_scope
 
-# Rebuild binary
+# Build
 RUN mkdir -p build \
   && cd build \
   && cmake .. \
