@@ -15,4 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build . --file amd6_cuda11.5.1_Dockerfile --tag my-image-name:$(date +%s)
+      run: docker build . --file amd64_cuda11.5.1.Dockerfile --tag my-image-name:$(date +%s)
