@@ -41,7 +41,7 @@ auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
   defer(hipEventDestroy(stop));
 
   // TODO: cleanup
-  {
+  if (wr_gpu != own_gpu) {
     hipError_t err = hipDeviceEnablePeerAccess(own_gpu, 0);
     if (hipErrorPeerAccessAlreadyEnabled != err) {
       if (PRINT_IF_ERROR(err)) {
@@ -57,7 +57,7 @@ auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
   }
 
   // TODO: cleanup
-  {
+  if (wr_gpu != own_gpu) {
     hipError_t err = hipDeviceEnablePeerAccess(wr_gpu, 0);
     if (hipErrorPeerAccessAlreadyEnabled != err) {
       if (PRINT_IF_ERROR(err)) {
@@ -73,21 +73,18 @@ auto Comm_implicit_mapped_GPUWrGPU = [](benchmark::State &state,
   }
   defer(hipFree(ptr));
 
-  if (PRINT_IF_ERROR(hipMemset(ptr, 0, bytes))) {
+  if (PRINT_IF_ERROR(hipMemset(ptr, 1, bytes))) {
     state.SkipWithError(NAME " failed to perform hipMemset");
     return;
   }
 
-
-
   for (auto _ : state) {
-
     if (PRINT_IF_ERROR(hipSetDevice(own_gpu))) {
       state.SkipWithError(NAME " failed to set hip dst device");
       return;
     }
 
-    if (PRINT_IF_ERROR(hipMemset(ptr, 0, bytes))) {
+    if (PRINT_IF_ERROR(hipMemset(ptr, 1, bytes))) {
       state.SkipWithError(NAME " failed to perform hipMemset");
       return;
     }
@@ -137,8 +134,12 @@ static void registerer() {
       int wr_gpu = hipSpaces[i].device_id();
       int own_gpu = hipSpaces[j].device_id();
 
-      int can = 0;
-      HIP_RUNTIME(hipDeviceCanAccessPeer(&can, wr_gpu, own_gpu));
+      int can;
+      if (i == j) {
+        can = true; // can access self
+      } else {
+        HIP_RUNTIME(hipDeviceCanAccessPeer(&can, wr_gpu, own_gpu));
+      }
       if (can) {
         std::string name = std::string(NAME) + "/" + std::to_string(wr_gpu) +
                           "/" + std::to_string(own_gpu);

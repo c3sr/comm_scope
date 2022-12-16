@@ -33,7 +33,7 @@ auto Comm_hipMemcpyAsync_PinnedToGPU = [](benchmark::State &state, const int num
   }
   defer(hipFree(dst));
 
-  if (PRINT_IF_ERROR(hipMemset(dst, 0, bytes))) {
+  if (PRINT_IF_ERROR(hipMemset(dst, 1, bytes))) {
     state.SkipWithError(NAME " failed to perform hipMemset");
     return;
   }

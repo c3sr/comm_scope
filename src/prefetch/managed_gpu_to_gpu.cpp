@@ -1,9 +1,9 @@
 #include "scope/scope.hpp"
 #include "args.hpp"
 
-#define NAME "Comm_hipManaged_Prefetch_GPUToGPU"
+#define NAME "Comm_prefetech_managed_GPUToGPU"
 
-auto Comm_hipManaged_Prefetch_GPUToGPU = [](benchmark::State &state, const int src_gpu, const int dst_gpu) {
+auto Comm_prefetech_managed_GPUToGPU = [](benchmark::State &state, const int src_gpu, const int dst_gpu) {
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
@@ -84,11 +84,11 @@ static void registerer() {
   std::vector<Device> hips = scope::system::hip_devices();
 
   for (size_t i = 0; i <  hips.size(); ++i) {
-    for (size_t j = i + 1; j < hips.size(); ++j) {
+    for (size_t j = i; j < hips.size(); ++j) {
       auto src_gpu = hips[i].device_id();
       auto dst_gpu = hips[j].device_id();
       std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) + "/" + std::to_string(dst_gpu);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_hipManaged_Prefetch_GPUToGPU, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
+      benchmark::RegisterBenchmark(name.c_str(), Comm_prefetech_managed_GPUToGPU, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
     }
   }
 }

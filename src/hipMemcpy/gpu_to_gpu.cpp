@@ -27,7 +27,7 @@ auto Comm_hipMemcpy_GPUToGPU = [](benchmark::State &state, const int hipId0, con
   }
   defer(hipFree(src));
   // zero src
-  if (PRINT_IF_ERROR(hipMemset(src, 0, bytes))) {
+  if (PRINT_IF_ERROR(hipMemset(src, 1, bytes))) {
     state.SkipWithError(NAME " failed to perform src hipMemset");
     return;
   }
@@ -43,7 +43,7 @@ auto Comm_hipMemcpy_GPUToGPU = [](benchmark::State &state, const int hipId0, con
   }
   defer(hipFree(dst));
   // zero dst
-  if (PRINT_IF_ERROR(hipMemset(dst, 0, bytes))) {
+  if (PRINT_IF_ERROR(hipMemset(dst, 1, bytes))) {
     state.SkipWithError(NAME " failed to perform dst hipMemset");
     return;
   }

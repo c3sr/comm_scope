@@ -33,7 +33,7 @@ auto Comm_hipMemcpyAsync_GPUToPinned = [](benchmark::State &state, const int num
     return;
   }
   defer(hipFree(src));
-  if (PRINT_IF_ERROR(hipMemset(src, 0, bytes))) {
+  if (PRINT_IF_ERROR(hipMemset(src, 1, bytes))) {
     state.SkipWithError(NAME " failed to perform hipMemset");
     return;
   }

@@ -31,7 +31,7 @@ auto Comm_hipMemcpyAsync_GPUToGPU = [](benchmark::State &state, const int srcId,
     return;
   }
   defer(hipFree(src));
-  if (PRINT_IF_ERROR(hipMemset(src, 0, bytes))) {
+  if (PRINT_IF_ERROR(hipMemset(src, 1, bytes))) {
     state.SkipWithError(NAME " failed to perform hipMemset");
     return;
   }
@@ -45,7 +45,7 @@ auto Comm_hipMemcpyAsync_GPUToGPU = [](benchmark::State &state, const int srcId,
     return;
   }
   defer(hipFree(dst));
-  if (PRINT_IF_ERROR(hipMemset(dst, 0, bytes))) {
+  if (PRINT_IF_ERROR(hipMemset(dst, 1, bytes))) {
     state.SkipWithError(NAME " failed to perform hipMemset");
     return;
   }
@@ -58,9 +58,9 @@ auto Comm_hipMemcpyAsync_GPUToGPU = [](benchmark::State &state, const int srcId,
 
   for (auto _ : state) {
     hipSetDevice(srcId);
-    hipMemset(src, 0, bytes);
+    hipMemset(src, 1, bytes);
     hipSetDevice(dstId);
-    hipMemset(dst, 0, bytes);
+    hipMemset(dst, 1, bytes);
     hipDeviceSynchronize();
     if (PRINT_IF_ERROR(hipGetLastError())) {
       state.SkipWithError(NAME " failed to reset benchmark state");
