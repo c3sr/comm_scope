@@ -6,6 +6,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends --no-install-su
     cmake \
     && rm -rf /var/lib/apt/lists/*
 
+# Add source
+COPY . /opt/comm_scope
+WORKDIR /opt/comm_scope
+
 # Rebuild binary
 RUN mkdir -p build \
   && cd build \
