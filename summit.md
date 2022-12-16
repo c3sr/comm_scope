@@ -1,0 +1,8 @@
+# OLCF Summit
+
+```
+cmake .. \
+-DCMAKE_CUDA_ARCHITECTURES=70 \
+-DSCOPE_USE_CUDA=ON \
+-DSCOPE_USE_NVTX=ON
+```
