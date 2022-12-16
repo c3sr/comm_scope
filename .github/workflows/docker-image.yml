@@ -11,17 +11,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with: 
+        submodules: recursive
     - name: Build the Docker image
       run: docker build . --file amd64_cuda11.5.1.Dockerfile --tag c3sr/comm_scope:$(date +%s)
   build-amd64_cuda12-0-0:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with: 
+        submodules: recursive
     - name: Build the Docker image
       run: docker build . --file amd64_cuda12.0.0.Dockerfile --tag c3sr/comm_scope:$(date +%s)
   build-amd64_rocm5-4-0:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with: 
+        submodules: recursive
     - name: Build the Docker image
       run: docker build . --file amd64_rocm5.4.0.Dockerfile --tag c3sr/comm_scope:$(date +%s)
