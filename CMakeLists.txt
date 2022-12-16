@@ -4,6 +4,17 @@ option(SCOPE_USE_NUMA "Compile with support for libnuma" ON)
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 project(Comm|Scope LANGUAGES CXX VERSION 0.11.2)
 
+# enable CUDA if desired and available
+include(CheckLanguage)
+if(SCOPE_USE_CUDA)
+  check_language(CUDA)
+  if(CMAKE_CUDA_COMPILER)
+    enable_language(CUDA)
+  else()
+    message(ERROR "No CUDA support")
+  endif()
+endif()
+
 # Set a default build type if none was specified
 set(default_build_type "Release")
  
