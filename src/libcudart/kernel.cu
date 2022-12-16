@@ -17,7 +17,7 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu,
                              const int numaId) {
   numa::ScopedBind binder(numaId);
 
-  if (0 == state.thread_index) {
+  if (0 == state.thread_index()) {
     OR_SKIP_AND_RETURN(cuda_reset_device(gpu), "failed to reset CUDA device");
   }
 

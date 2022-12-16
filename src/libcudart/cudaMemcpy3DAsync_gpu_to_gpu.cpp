@@ -13,7 +13,7 @@ auto Comm_cudart_cudaMemcpy3DAsync = [](benchmark::State &state, const int gpu0,
                                         const int gpu1, cudaStream_t &stream,
                                         cudaMemcpy3DParms &params) {
   // have thread 0 set up shared structures
-  if (0 == state.thread_index) {
+  if (0 == state.thread_index()) {
 
     OR_SKIP_AND_RETURN(cuda_reset_device(gpu0),
                        NAME " failed to reset CUDA device");
@@ -87,7 +87,7 @@ auto Comm_cudart_cudaMemcpy3DAsync = [](benchmark::State &state, const int gpu0,
   state.counters["gpu0"] = gpu0;
   state.counters["gpu1"] = gpu1;
 
-  if (0 == state.thread_index) {
+  if (0 == state.thread_index()) {
     OR_SKIP_AND_RETURN(cudaStreamDestroy(stream), "cudaStreamDestroy");
     OR_SKIP_AND_RETURN(cudaFree(params.srcPtr.ptr), NAME "failed to cudaFree");
     OR_SKIP_AND_RETURN(cudaFree(params.dstPtr.ptr), NAME "failed to cudaFree");
