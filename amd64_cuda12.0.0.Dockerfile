@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends --no-install-su
 # get a recent cmake
 RUN mkdir -p /opt
 WORKDIR /opt
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.25.1/cmake-3.25.1-linux-x86_64.tar.gz
-RUN tar -xvf cmake-3.25.1-linux-x86_64.tar.gz
+RUN wget -q https://github.com/Kitware/CMake/releases/download/v3.25.1/cmake-3.25.1-linux-x86_64.tar.gz
+RUN tar -xf cmake-3.25.1-linux-x86_64.tar.gz
 
 # Add source
 COPY . /opt/comm_scope
