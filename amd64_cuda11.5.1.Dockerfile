@@ -14,6 +14,7 @@ WORKDIR /opt/comm_scope
 RUN mkdir -p build \
   && cd build \
   && cmake .. \
+    -DCMAKE_CUDA_ARCHITECTURES=70 \
     -DSCOPE_USE_NUMA=ON \
     -DSCOPE_USE_CUDA=ON \
     -DSCOPE_USE_NVTX=ON \
