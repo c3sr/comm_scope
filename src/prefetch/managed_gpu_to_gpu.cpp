@@ -1,9 +1,9 @@
 #include "scope/scope.hpp"
 #include "args.hpp"
 
-#define NAME "Comm_prefetech_managed_GPUToGPU"
+#define NAME "Comm_prefetch_managed_GPUToGPU"
 
-auto Comm_prefetech_managed_GPUToGPU = [](benchmark::State &state, const int src_gpu, const int dst_gpu) {
+auto Comm_prefetch_managed_GPUToGPU = [](benchmark::State &state, const int src_gpu, const int dst_gpu) {
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
@@ -88,10 +88,9 @@ static void registerer() {
       auto src_gpu = hips[i].device_id();
       auto dst_gpu = hips[j].device_id();
       std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) + "/" + std::to_string(dst_gpu);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_prefetech_managed_GPUToGPU, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
+      benchmark::RegisterBenchmark(name.c_str(), Comm_prefetch_managed_GPUToGPU, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
     }
   }
 }
 
 SCOPE_AFTER_INIT(registerer, NAME);
-

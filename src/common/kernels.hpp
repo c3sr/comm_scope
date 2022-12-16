@@ -3,14 +3,22 @@
 #include "scope/do_not_optimize.hpp"
 #include "scope/clobber.hpp"
 
-/* use one thread from each warp to write a 0 to each stride
-*/
+
 template <typename write_t>
 __global__ void gpu_write(void *ptr, const size_t bytes) {
   const size_t gx = blockIdx.x * blockDim.x + threadIdx.x;
   const size_t num_elems = bytes / sizeof(write_t);
 
-  // #pragma unroll(1)
+  for (size_t i = gx; i < num_elems; i += gridDim.x * blockDim.x) {
+    reinterpret_cast<write_t*>(ptr)[i] = i;
+  }
+}
+
+template <typename write_t>
+__global__ void gpu_write_zero(void *ptr, const size_t bytes) {
+  const size_t gx = blockIdx.x * blockDim.x + threadIdx.x;
+  const size_t num_elems = bytes / sizeof(write_t);
+
   for (size_t i = gx; i < num_elems; i += gridDim.x * blockDim.x) {
     reinterpret_cast<write_t*>(ptr)[i] = 0;
   }
