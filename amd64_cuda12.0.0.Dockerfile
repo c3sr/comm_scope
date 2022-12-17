@@ -1,6 +1,7 @@
 FROM nvidia/cuda:12.0.0-devel-ubuntu22.04
 
 # Install NUMA
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests \
     libnuma-dev \
     wget \

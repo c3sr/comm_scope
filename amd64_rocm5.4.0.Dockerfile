@@ -1,6 +1,7 @@
 FROM rocm/dev-ubuntu-22.04:5.4-complete
 
 # Install NUMA
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests \
     libnuma-dev \
     cmake \
