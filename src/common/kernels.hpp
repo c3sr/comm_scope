@@ -5,12 +5,12 @@
 
 
 template <typename write_t>
-__global__ void gpu_write(void *ptr, const size_t bytes) {
+__global__ void gpu_write(void *ptr, const size_t bytes, const int off = 0) {
   const size_t gx = blockIdx.x * blockDim.x + threadIdx.x;
   const size_t num_elems = bytes / sizeof(write_t);
 
   for (size_t i = gx; i < num_elems; i += gridDim.x * blockDim.x) {
-    reinterpret_cast<write_t*>(ptr)[i] = i;
+    reinterpret_cast<write_t*>(ptr)[i] = i + off;
   }
 }
 
