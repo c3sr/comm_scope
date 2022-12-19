@@ -24,7 +24,7 @@ auto Comm_implicit_managed_GPUWrGPU = [](benchmark::State &state, const int src_
       return;
   }
 
-  if (PRINT_IF_ERROR(hipSetDevice(src_gpu))) {
+  if (PRINT_IF_ERROR(hipSetDevice(dst_gpu))) {
       state.SkipWithError(NAME " failed to set hip src device");
       return;
   }
@@ -60,6 +60,7 @@ auto Comm_implicit_managed_GPUWrGPU = [](benchmark::State &state, const int src_
       state.SkipWithError(NAME "failed to sync");
       return; 
     }
+
 
     hipEventRecord(start);
     gpu_write<uint64_t><<<2048, 256>>>(ptr, bytes);
