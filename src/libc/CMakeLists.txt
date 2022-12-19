@@ -1,6 +1,7 @@
 set(comm_SOURCES ${comm_SOURCES}
 ${CMAKE_CURRENT_LIST_DIR}/malloc_memset.cpp
 ${CMAKE_CURRENT_LIST_DIR}/malloc.cpp
+${CMAKE_CURRENT_LIST_DIR}/memcpy.cpp
 PARENT_SCOPE)
 
 set(comm_CUDA_SOURCES ${comm_CUDA_SOURCES}
