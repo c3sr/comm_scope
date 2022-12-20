@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -A CSC465_crusher
-#SBATCH -J libc_memcpy
+#SBATCH -J hipMemcpyAsync_GPUToPageable
 #SBATCH -o %x-%j.out
 #SBATCH -t 02:00:00
 #SBATCH -p batch
@@ -18,6 +18,6 @@ ROOT="/ccs/home/cpearson/repos/comm_scope"
 
 srun -n 1 -G 8 -c 64 \
 $ROOT/build-crusher/comm_scope \
---benchmark_filter=libc_memcpy_NUMAToNUMA/0/ \
---benchmark_out="$ROOT"/scripts/crusher/libc_memcpy.csv \
+--benchmark_filter=hipMemcpyAsync_GPUToPageable/0/ \
+--benchmark_out="$ROOT"/scripts/crusher/hipMemcpyAsync_GPUToPageable.csv \
 --benchmark_out_format=csv
