@@ -8,7 +8,7 @@
 
 auto Comm_implicit_managed_GPUWrHost =
     [](benchmark::State &state, const Device &dst_gpu,
-       const MemorySpace &src_numa) {
+       const MemorySpace &src_numa, const bool coarse) {
        const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
       numa::ScopedBind sb(src_numa.numa_id());
@@ -28,6 +28,16 @@ auto Comm_implicit_managed_GPUWrHost =
 
       if (PRINT_IF_ERROR(hipMallocManaged(&ptr, bytes))) {
           state.SkipWithError(NAME " failed to perform hipMallocManaged");
+          return;
+      }
+
+      const hipMemoryAdvise advice = coarse ? hipMemAdviseSetCoarseGrain : hipMemAdviseUnsetCoarseGrain;
+      if (PRINT_IF_ERROR(hipMemAdvise(ptr, bytes, advice, dst_gpu.device_id()))) {
+          state.SkipWithError(NAME " failed to perform hipMemAdvise");
+          return;
+      }
+      if (PRINT_IF_ERROR(hipMemAdvise(ptr, bytes, advice, hipCpuDeviceId))) {
+          state.SkipWithError(NAME " failed to perform hipMemAdvise");
           return;
       }
 
@@ -83,13 +93,15 @@ auto Comm_implicit_managed_GPUWrHost =
 static void registerer() {
   for (const Device &hip : scope::system::hip_devices()) {
     for (const MemorySpace &numa : scope::system::numa_memory_spaces()) {
-      std::string name = std::string(NAME);
-      name += "/" + std::to_string(numa.numa_id()) + "/" +
-              std::to_string(hip.device_id());
-      benchmark::RegisterBenchmark(
-          name.c_str(), Comm_implicit_managed_GPUWrHost, hip, numa)
-          ->SMALL_ARGS()
-          ->UseManualTime();
+      for (const bool coarse : {true, false}) {
+        std::string name = std::string(NAME) + "_" + (coarse ? "coarse" : "fine");
+        name += "/" + std::to_string(numa.numa_id()) + "/" +
+                std::to_string(hip.device_id());
+        benchmark::RegisterBenchmark(
+            name.c_str(), Comm_implicit_managed_GPUWrHost, hip, numa, coarse)
+            ->SMALL_ARGS()
+            ->UseManualTime();
+      }
     }
   }
 }

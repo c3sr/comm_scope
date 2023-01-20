@@ -13,3 +13,7 @@ cmake .. \
 -DSCOPE_ARCH_MI250X=ON \
 -DSCOPE_USE_NUMA=ON
 ```
+
+```
+squeue -u cpearson -o %all | cut -d'|' -f9,10
+```

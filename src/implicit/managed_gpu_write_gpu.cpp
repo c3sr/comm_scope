@@ -7,7 +7,7 @@
 #define NAME "Comm_implicit_managed_GPUWrGPU"
 
 auto Comm_implicit_managed_GPUWrGPU = [](benchmark::State &state, const int src_gpu,
-                                  const int dst_gpu) {
+                                  const int dst_gpu, const bool coarse) {
 
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
@@ -33,11 +33,13 @@ auto Comm_implicit_managed_GPUWrGPU = [](benchmark::State &state, const int src_
       state.SkipWithError(NAME " failed to perform hipMallocManaged");
       return;
   }
-  if (PRINT_IF_ERROR(hipMemAdvise(ptr, bytes, hipMemAdviseSetCoarseGrain, src_gpu))) {
+
+  const hipMemoryAdvise advice = coarse ? hipMemAdviseSetCoarseGrain : hipMemAdviseUnsetCoarseGrain;
+  if (PRINT_IF_ERROR(hipMemAdvise(ptr, bytes, advice, src_gpu))) {
       state.SkipWithError(NAME " failed to perform hipMemAdvise");
       return;
   }
-  if (PRINT_IF_ERROR(hipMemAdvise(ptr, bytes, hipMemAdviseSetCoarseGrain, dst_gpu))) {
+  if (PRINT_IF_ERROR(hipMemAdvise(ptr, bytes, advice, dst_gpu))) {
       state.SkipWithError(NAME " failed to perform hipMemAdvise");
       return;
   }
@@ -98,14 +100,16 @@ static void registerer() {
 
   for (size_t i = 0; i < hips.size(); ++i) {
     for (size_t j = i; j < hips.size(); ++j) {
-      int src_gpu = hips[i].device_id();
-      int dst_gpu = hips[j].device_id();
-      std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) +
-                         "/" + std::to_string(dst_gpu);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_implicit_managed_GPUWrGPU,
-                                   src_gpu, dst_gpu)
-          ->SMALL_ARGS()
-          ->UseManualTime();
+      for (const bool coarse : {true, false}) {
+        int src_gpu = hips[i].device_id();
+        int dst_gpu = hips[j].device_id();
+        std::string name = std::string(NAME) + "_" + (coarse ? "coarse" : "fine") + "/" + std::to_string(src_gpu) +
+                          "/" + std::to_string(dst_gpu);
+        benchmark::RegisterBenchmark(name.c_str(), Comm_implicit_managed_GPUWrGPU,
+                                    src_gpu, dst_gpu, coarse)
+            ->SMALL_ARGS()
+            ->UseManualTime();
+      }
     }
   }
 }
