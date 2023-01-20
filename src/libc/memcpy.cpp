@@ -54,7 +54,7 @@ auto libc_memcpy_NUMAToNUMA = [](benchmark::State &state, const int src_id,
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
   state.counters["bytes"] = bytes;
   state.counters["src_id"] = src_id;
-  state.counters["dst_id"] = src_id;
+  state.counters["dst_id"] = dst_id;
 };
 
 static void registerer() {
