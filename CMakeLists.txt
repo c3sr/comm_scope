@@ -1,4 +1,5 @@
 option(SCOPE_USE_NUMA "Compile with support for libnuma" ON)
+option(SCOPE_USE_OPENMP "Compile with support for OpenMP" ON)
 
 # scope requires 3.17
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
