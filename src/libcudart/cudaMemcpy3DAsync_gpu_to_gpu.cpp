@@ -103,7 +103,7 @@ static void registerer() {
   for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
     for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
       for (size_t numThreads = 1;
-           numThreads <= numa::cpus_in_nodes(numa::cpu_nodes()).size();
+           numThreads <= numa::cpus_in_nodes(numa::mems()).size();
            numThreads *= 2) {
         auto gpu0 = unique_cuda_device_ids()[i];
         auto gpu1 = unique_cuda_device_ids()[j];
