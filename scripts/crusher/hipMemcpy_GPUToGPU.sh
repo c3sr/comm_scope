@@ -7,7 +7,6 @@
 #SBATCH -p batch
 #SBATCH -N 1
 #SBATCH -n 1
-#SBATCH -c 64
 #SBATCH -G 8
 
 set -eou pipefail

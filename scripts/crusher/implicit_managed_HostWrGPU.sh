@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -A CSC465_crusher
-#SBATCH -J implicit_mapped_GPURdHost_flush_0_1
+#SBATCH -J implicit_managed_HostWrGPU
 #SBATCH -o %x-%j.out
 #SBATCH -t 02:00:00
 #SBATCH -p batch
@@ -20,6 +20,6 @@ export HAS_XNACK=1
 
 srun -n 1 -G 8 -c 56 \
 $ROOT/build-crusher/comm_scope \
---benchmark_filter=implicit_mapped_GPURdHost_flush/0/1 \
---benchmark_out="$ROOT"/scripts/crusher/implicit_mapped_GPURdHost_flush_0_1.csv \
+--benchmark_filter=implicit_managed_HostWrGPU/0/ \
+--benchmark_out="$ROOT"/scripts/crusher/implicit_managed_HostWrGPU.csv \
 --benchmark_out_format=csv
