@@ -77,7 +77,7 @@ auto Comm_cudaMemcpyAsync_GPUToPinned = [](benchmark::State &state, const int nu
 static void registerer() {
   std::string name;
   for (auto cuda_id : unique_cuda_device_ids()) {
-    for (auto numa_id : numa::ids()) {
+    for (auto numa_id : numa::mems()) {
       name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
       benchmark::RegisterBenchmark(name.c_str(), Comm_cudaMemcpyAsync_GPUToPinned, numa_id, cuda_id, false)->SMALL_ARGS()->UseManualTime();
       name = std::string(NAME) + "_flush/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);

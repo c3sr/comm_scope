@@ -195,7 +195,7 @@ auto Comm_3d_kernel3D_PinnedToGPU = [](benchmark::State &state, const int numaId
 static void registerer() {
   std::string name;
   for (auto cudaId : unique_cuda_device_ids()) {
-    for (auto numaId : numa::ids()) {
+    for (auto numaId : numa::mems()) {
 
       name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
              std::to_string(cudaId);

@@ -84,7 +84,7 @@ auto Comm_cudaMemcpyAsync_Duplex_Host =
 static void registerer() {
   std::string name;
   for (auto cuda_id : unique_cuda_device_ids()) {
-    for (auto numa_id : numa::ids()) {
+    for (auto numa_id : numa::mems()) {
       std::vector<CudaMemcpyConfig *> transfers;
       transfers.push_back(
           new PageableCopyConfig(cudaMemcpyHostToDevice, numa_id, cuda_id));

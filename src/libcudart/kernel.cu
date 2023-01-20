@@ -65,7 +65,7 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu,
 static void registerer() {
   std::string name;
   for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (int numaId : numa::ids()) {
+    for (int numaId : numa::mems()) {
       for (size_t numThreads = 1;
            numThreads <= numa::cpus_in_node(numaId).size(); numThreads *= 2) {
         auto gpu = unique_cuda_device_ids()[i];

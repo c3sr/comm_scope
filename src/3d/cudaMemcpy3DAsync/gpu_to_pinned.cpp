@@ -107,7 +107,7 @@ auto Comm_3d_cudaMemcpy3DAsync_GPUToPinned = [](benchmark::State &state, const i
 static void registerer() {
   std::string name;
 for (auto cudaId : unique_cuda_device_ids()) {
-    for (auto numaId : numa::ids()) {
+    for (auto numaId : numa::mems()) {
 
           name = std::string(NAME) + "/" + std::to_string(numaId) + "/" + std::to_string(cudaId);
           benchmark::RegisterBenchmark(name.c_str(), Comm_3d_cudaMemcpy3DAsync_GPUToPinned, numaId, cudaId)

@@ -80,7 +80,7 @@ auto Comm_UM_Latency_GPUToHost = [] (benchmark::State &state,
 
 static void registerer() {
   for (auto cuda_id : unique_cuda_device_ids()) {
-    for (auto numa_id : numa::ids()) {
+    for (auto numa_id : numa::mems()) {
       std::string name = std::string(NAME)
                        + "/" + std::to_string(numa_id) 
                        + "/" + std::to_string(cuda_id);

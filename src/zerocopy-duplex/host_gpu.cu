@@ -165,7 +165,7 @@ auto Comm_ZeroCopy_Duplex_HostGPU = [](benchmark::State &state, const int numa,
 static void registerer() {
 
   for (auto cuda : unique_cuda_device_ids()) {
-    for (auto numa : numa::ids()) {
+    for (auto numa : numa::mems()) {
 
       std::string name(NAME2);
       name += "/" + std::to_string(numa) + "/" + std::to_string(cuda);

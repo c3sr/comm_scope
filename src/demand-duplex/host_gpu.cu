@@ -107,7 +107,7 @@ static void registerer() {
     //   access", cuda_id, NAME); continue;
     // }
 
-    for (auto numa_id : numa::ids()) {
+    for (auto numa_id : numa::mems()) {
       std::string name = std::string(NAME) + "/" + std::to_string(numa_id) +
                          "/" + std::to_string(cuda_id);
       benchmark::RegisterBenchmark(name.c_str(), Comm_Demand_Duplex_HostGPU,

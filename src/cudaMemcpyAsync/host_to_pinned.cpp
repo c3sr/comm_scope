@@ -67,8 +67,8 @@ auto Comm_cudaMemcpyAsync_HostToPinned = [](benchmark::State &state,
 
 static void registerer() {
   std::string name;
-  for (auto src_numa : numa::ids()) {
-    for (auto dst_numa : numa::ids()) {
+  for (auto src_numa : numa::mems()) {
+    for (auto dst_numa : numa::mems()) {
       name = std::string(NAME) + "/" + std::to_string(src_numa) + "/" +
              std::to_string(dst_numa);
       benchmark::RegisterBenchmark(name.c_str(), Comm_cudaMemcpyAsync_HostToPinned,

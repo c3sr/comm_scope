@@ -75,7 +75,7 @@ auto Comm_ZeroCopy_GPUToHost = [](benchmark::State &state, const int src_numa,
 static void registerer() {
 
   for (auto cuda_id : unique_cuda_device_ids()) {
-    for (auto numa_id : numa::ids()) {
+    for (auto numa_id : numa::mems()) {
       std::string name = std::string(NAME) + "/" + std::to_string(numa_id) +
                          "/" + std::to_string(cuda_id);
       benchmark::RegisterBenchmark(name.c_str(), Comm_ZeroCopy_GPUToHost,

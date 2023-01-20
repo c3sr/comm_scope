@@ -74,7 +74,7 @@ auto Comm_cudaMemcpyAsync_Duplex_Pinned = [](benchmark::State &state, std::vecto
 static void registerer() {
   std::string name;
   for (auto cuda_id : unique_cuda_device_ids()) {
-    for (auto numa_id : numa::ids()) {
+    for (auto numa_id : numa::mems()) {
       std::vector<CudaMemcpyConfig*> transfers;
       transfers.push_back(new PinnedCopyConfig(cudaMemcpyHostToDevice, numa_id, cuda_id));
       transfers.push_back(new PinnedCopyConfig(cudaMemcpyDeviceToHost, cuda_id, numa_id));
