@@ -47,3 +47,12 @@ __global__ void gpu_read(const void *ptr, void *flag, const size_t bytes) {
     }
   }
 }
+
+template <typename write_t>
+void cpu_write(void *ptr, const size_t bytes, const int off = 0) {
+  const size_t num_elems = bytes / sizeof(write_t);
+  #pragma omp parallel for
+  for (size_t i = 0; i < num_elems; ++i) {
+    reinterpret_cast<write_t*>(ptr)[i] = i + off;
+  }  
+}
