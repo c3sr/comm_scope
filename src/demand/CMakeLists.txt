@@ -2,7 +2,6 @@
 if(SCOPE_USE_HIP)
     set(comm_SOURCES ${comm_SOURCES}
     ${CMAKE_CURRENT_LIST_DIR}/demand.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/gpu_to_host_mt.cpp
     ${CMAKE_CURRENT_LIST_DIR}/host_to_gpu_write_dst.cpp
     PARENT_SCOPE)
 endif()
