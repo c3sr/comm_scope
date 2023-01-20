@@ -7,21 +7,21 @@
 #define NAME "Comm_implicit_managed_GPUWrHost"
 
 auto Comm_implicit_managed_GPUWrHost =
-    [](benchmark::State &state, const Device &src_gpu,
-       const MemorySpace &dst_numa) {
+    [](benchmark::State &state, const Device &dst_gpu,
+       const MemorySpace &src_numa) {
        const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
-      numa::ScopedBind sb(dst_numa.numa_id());
+      numa::ScopedBind sb(src_numa.numa_id());
       void *ptr;
       hipEvent_t start;
       hipEvent_t stop;
 
-      if (PRINT_IF_ERROR(scope::hip_reset_device(src_gpu.device_id()))) {
+      if (PRINT_IF_ERROR(scope::hip_reset_device(dst_gpu.device_id()))) {
           state.SkipWithError(NAME " failed to reset hip src device");
           return;
       }
 
-      if (PRINT_IF_ERROR(hipSetDevice(src_gpu.device_id()))) {
+      if (PRINT_IF_ERROR(hipSetDevice(dst_gpu.device_id()))) {
           state.SkipWithError(NAME " failed to set hip write device");
           return;
       }
@@ -50,7 +50,7 @@ auto Comm_implicit_managed_GPUWrHost =
 
       for (auto _ : state) {
         if (PRINT_IF_ERROR(hipMemPrefetchAsync(ptr, bytes, hipCpuDeviceId))) {
-          state.SkipWithError(NAME "failed to prefetch");
+          state.SkipWithError(NAME "failed to prefetch to CPU");
           return; 
         }
         if (PRINT_IF_ERROR(hipDeviceSynchronize())) {
@@ -76,8 +76,8 @@ auto Comm_implicit_managed_GPUWrHost =
 
       state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
       state.counters["bytes"] = bytes;
-      state.counters["dst_numa"] = dst_numa.numa_id();
-      state.counters["src_gpu"] = src_gpu.device_id();
+      state.counters["src_numa"] = src_numa.numa_id();
+      state.counters["dst_gpu"] = dst_gpu.device_id();
     };
 
 static void registerer() {

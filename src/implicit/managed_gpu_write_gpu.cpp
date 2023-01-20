@@ -25,12 +25,20 @@ auto Comm_implicit_managed_GPUWrGPU = [](benchmark::State &state, const int src_
   }
 
   if (PRINT_IF_ERROR(hipSetDevice(dst_gpu))) {
-      state.SkipWithError(NAME " failed to set hip src device");
+      state.SkipWithError(NAME " failed to set hip dst device");
       return;
   }
 
   if (PRINT_IF_ERROR(hipMallocManaged(&ptr, bytes))) {
       state.SkipWithError(NAME " failed to perform hipMallocManaged");
+      return;
+  }
+  if (PRINT_IF_ERROR(hipMemAdvise(ptr, bytes, hipMemAdviseSetCoarseGrain, src_gpu))) {
+      state.SkipWithError(NAME " failed to perform hipMemAdvise");
+      return;
+  }
+  if (PRINT_IF_ERROR(hipMemAdvise(ptr, bytes, hipMemAdviseSetCoarseGrain, dst_gpu))) {
+      state.SkipWithError(NAME " failed to perform hipMemAdvise");
       return;
   }
 
