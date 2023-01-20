@@ -1,7 +1,7 @@
 #!/bin/bash
 #BSUB -W 0:30
 #BSUB -nnodes 1
-#BSUB -P csc362
+#BSUB -P csc465
 #BSUB -J UM_Demand_GPUToGPU
 
 module reset
@@ -10,7 +10,7 @@ module load cuda
 
 set -eou pipefail
 
-export SCRATCH=/gpfs/alpine/scratch/cpearson/csc362
+export SCRATCH=/gpfs/alpine/scratch/cpearson/csc465
 
 date
 # -n (total rs)

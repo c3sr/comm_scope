@@ -23,7 +23,7 @@ date
 jsrun -n1 -a1 -g6 -c42 -b rs js_task_info $ROOT/build-summit/comm_scope \
 --benchmark_out_format=csv \
 --benchmark_out=$SCRATCH/$CSV \
---benchmark_filter="cudaMemcpyAsync_PinnedToGPU/0/*"
+--benchmark_filter="cudaMemcpyAsync_PinnedToGPU..*/0/*"
 
 mv -v $SCRATCH/$CSV $SCRIPTS/$CSV
 

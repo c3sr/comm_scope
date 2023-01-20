@@ -1,7 +1,7 @@
 #!/bin/bash
 #BSUB -W 0:30
 #BSUB -nnodes 1
-#BSUB -P csc362
+#BSUB -P csc465
 #BSUB -J cudaMemcpyPeerAsync_Duplex_GPUGPU
 
 module reset
@@ -11,7 +11,7 @@ module load nsight-systems/2020.3.1.71
 
 set -eou pipefail
 
-export SCRATCH=/gpfs/alpine/scratch/cpearson/csc362
+export SCRATCH=/gpfs/alpine/scratch/cpearson/csc465
 
 date
 # -n (total rs)
