@@ -15,8 +15,8 @@ ROOT="/ccs/home/cpearson/repos/comm_scope"
 
 . $ROOT/load-env.sh
 
-echo export HAS_XNACK=1
-export HAS_XNACK=1
+echo export HSA_XNACK=1
+export HSA_XNACK=1
 
 srun -n 1 -G 8 -c 56 \
 $ROOT/build-crusher/comm_scope \
