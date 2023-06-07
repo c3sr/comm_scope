@@ -15,11 +15,11 @@ ROOT="/ccs/home/cpearson/repos/comm_scope"
 
 . $ROOT/load-env.sh
 
-echo export HAS_XNACK=1
-export HAS_XNACK=1
+echo export HSA_XNACK=1
+export HSA_XNACK=1
 
 srun -n 1 -G 8 -c 56 \
 $ROOT/build-crusher/comm_scope \
 --benchmark_filter=implicit_managed_GPURdHost_coarse/0 \
---benchmark_out="$ROOT"/scripts/crusher/implicit_managed_GPURdHost.csv \
+--benchmark_out="$ROOT"/scripts/crusher/implicit_managed_GPURdHost_coarse.csv \
 --benchmark_out_format=csv
