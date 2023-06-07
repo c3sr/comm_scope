@@ -5,9 +5,9 @@
 #define NAME "Comm_cudaMemcpyAsync_HostToPinned"
 
 auto Comm_cudaMemcpyAsync_HostToPinned = [](benchmark::State &state,
-                                       const int src_numa, const int dst_numa,
-                                       const bool flush) {
-
+                                            const int src_numa,
+                                            const int dst_numa,
+                                            const bool flush) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   numa::bind_node(src_numa);
@@ -67,18 +67,28 @@ auto Comm_cudaMemcpyAsync_HostToPinned = [](benchmark::State &state,
 
 static void registerer() {
   std::string name;
-  for (auto src_numa : numa::mems()) {
-    for (auto dst_numa : numa::mems()) {
+
+  const std::vector<MemorySpace> numaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::numa);
+
+  for (auto src : numaSpaces) {
+    for (auto dst : numaSpaces) {
+
+      auto src_numa = src.numa_id();
+      auto dst_numa = dst.numa_id();
+
       name = std::string(NAME) + "/" + std::to_string(src_numa) + "/" +
              std::to_string(dst_numa);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_cudaMemcpyAsync_HostToPinned,
-                                   src_numa, dst_numa, false)
+      benchmark::RegisterBenchmark(name.c_str(),
+                                   Comm_cudaMemcpyAsync_HostToPinned, src_numa,
+                                   dst_numa, false)
           ->SMALL_ARGS()
           ->UseManualTime();
       name = std::string(NAME) + "_flush/" + std::to_string(src_numa) + "/" +
              std::to_string(dst_numa);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_cudaMemcpyAsync_HostToPinned,
-                                   src_numa, dst_numa, true)
+      benchmark::RegisterBenchmark(name.c_str(),
+                                   Comm_cudaMemcpyAsync_HostToPinned, src_numa,
+                                   dst_numa, true)
           ->SMALL_ARGS()
           ->UseManualTime();
     }

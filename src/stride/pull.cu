@@ -26,7 +26,7 @@ auto Comm_stride_pull = [](benchmark::State &state, const int gpu0,
                            const int gpu1) {
   const int stride = state.range(0);
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
   {
     std::stringstream name;
     name << NAME << "/" << gpu0 << "/" << gpu1 << "/" << state.range(0) << "/"
@@ -119,17 +119,18 @@ auto Comm_stride_pull = [](benchmark::State &state, const int gpu0,
   OR_SKIP_AND_RETURN(cudaStreamDestroy(stream), "cudaStreamDestroy");
   OR_SKIP_AND_RETURN(cudaFree(src), "cudaFree");
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
   nvtxRangePop();
 #endif
 };
 
 static void registerer() {
   std::string name;
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
-      auto gpu0 = unique_cuda_device_ids()[i];
-      auto gpu1 = unique_cuda_device_ids()[j];
+  const std::vector<Device> cudas = scope::system::cuda_devices();
+  for (size_t i = 0; i < cudas.size(); ++i) {
+    for (size_t j = i; j < cudas.size(); ++j) {
+      auto gpu0 = cudas[i];
+      auto gpu1 = cudas[j];
       int ok1, ok2;
       if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok1, gpu0, gpu1)) &&
           !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok2, gpu1, gpu0))) {

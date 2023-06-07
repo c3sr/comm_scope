@@ -1,11 +1,11 @@
-#include "scope/scope.hpp"
 #include "args.hpp"
+#include "scope/scope.hpp"
 
 #define NAME "Comm_prefetch_managed_GPUToGPU"
 
-auto Comm_prefetch_managed_GPUToGPU = [](benchmark::State &state, const int src_gpu, const int dst_gpu) {
-
-  const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
+auto Comm_prefetch_managed_GPUToGPU = [](benchmark::State &state,
+                                         const int src_gpu, const int dst_gpu) {
+  const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   if (PRINT_IF_ERROR(scope::hip_reset_device(src_gpu))) {
     state.SkipWithError(NAME " failed to reset hip src device");
@@ -83,12 +83,16 @@ static void registerer() {
 
   std::vector<Device> hips = scope::system::hip_devices();
 
-  for (size_t i = 0; i <  hips.size(); ++i) {
+  for (size_t i = 0; i < hips.size(); ++i) {
     for (size_t j = i; j < hips.size(); ++j) {
       auto src_gpu = hips[i].device_id();
       auto dst_gpu = hips[j].device_id();
-      std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) + "/" + std::to_string(dst_gpu);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_prefetch_managed_GPUToGPU, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
+      std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) +
+                         "/" + std::to_string(dst_gpu);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_prefetch_managed_GPUToGPU,
+                                   src_gpu, dst_gpu)
+          ->SMALL_ARGS()
+          ->UseManualTime();
     }
   }
 }

@@ -9,7 +9,7 @@
 __global__ void Comm_3d_pack_cudaMemcpyPeer_unpack_pack_kernel(
     void *__restrict__ dst, const void *__restrict__ src,
     const cudaExtent allocExtent, // in elements
-    const cudaExtent copyExtent, // in elements
+    const cudaExtent copyExtent,  // in elements
     const size_t elemSize) {
 
   const unsigned int tz = blockDim.z * blockIdx.z + threadIdx.z;
@@ -120,7 +120,7 @@ inline dim3 make_block_dim(const cudaExtent extent, int64_t threads) {
 auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
                                              const int gpu0, const int gpu1) {
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
   {
     std::stringstream name;
     name << NAME << "/" << gpu0 << "/" << gpu1 << "/" << state.range(0) << "/"
@@ -129,18 +129,22 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
   }
 #endif
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0), NAME " failed to reset CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1), NAME " failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0),
+                     NAME " failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1),
+                     NAME " failed to reset CUDA device");
 
   // create stream on src gpu for pack + copy
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME " failed to set device");
   cudaStream_t srcStream = nullptr;
-  OR_SKIP_AND_RETURN(cudaStreamCreate(&srcStream), NAME " failed to create source stream");
+  OR_SKIP_AND_RETURN(cudaStreamCreate(&srcStream),
+                     NAME " failed to create source stream");
 
   // create a stream on the dst gpu for unpack
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to set device");
   cudaStream_t dstStream = nullptr;
-  OR_SKIP_AND_RETURN(cudaStreamCreate(&dstStream), NAME "failed to create dst stream");
+  OR_SKIP_AND_RETURN(cudaStreamCreate(&dstStream),
+                     NAME "failed to create dst stream");
 
   // Start and stop events on src gpu
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to create stream");
@@ -151,12 +155,14 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
 
   // event to serialize unpack after copy
   cudaEvent_t copyDone = nullptr;
-  OR_SKIP_AND_RETURN(cudaEventCreate(&copyDone), NAME " failed to create event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&copyDone),
+                     NAME " failed to create event");
 
   // event to serialize stop after unpack
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), "cudaSetDevice");
   cudaEvent_t unpackDone = nullptr;
-  OR_SKIP_AND_RETURN(cudaEventCreate(&unpackDone), " failed to created unpackDone event");
+  OR_SKIP_AND_RETURN(cudaEventCreate(&unpackDone),
+                     " failed to created unpackDone event");
 
   // target size to transfer
   cudaExtent copyExt;
@@ -167,8 +173,8 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
 
   // properties of the allocation
   cudaExtent allocExt;
-  allocExt.width = 768 * 4;  // how many bytes in a row
-  allocExt.height = 768; // how many rows in a plane
+  allocExt.width = 768 * 4; // how many bytes in a row
+  allocExt.height = 768;    // how many rows in a plane
   allocExt.depth = 768;
 
   // 3D regions
@@ -179,10 +185,11 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
 
   // allocate on gpu0 and enable peer access
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), NAME "failed to set device");
-  OR_SKIP_AND_RETURN(cudaMalloc3D(&src, allocExt), NAME " failed to perform cudaMalloc3D");
+  OR_SKIP_AND_RETURN(cudaMalloc3D(&src, allocExt),
+                     NAME " failed to perform cudaMalloc3D");
   allocExt.width = src.pitch;
   OR_SKIP_AND_RETURN(cudaMalloc(&srcBuf, copyBytes),
-          NAME " failed to alloc flat src buffer");
+                     NAME " failed to alloc flat src buffer");
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0);
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
@@ -192,9 +199,10 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
 
   // allocate on gpu1 and enable peer access
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), NAME "failed to set device");
-  OR_SKIP_AND_RETURN(cudaMalloc3D(&dst, allocExt), NAME " failed to perform cudaMalloc3D");
+  OR_SKIP_AND_RETURN(cudaMalloc3D(&dst, allocExt),
+                     NAME " failed to perform cudaMalloc3D");
   OR_SKIP_AND_RETURN(cudaMalloc(&dstBuf, copyBytes),
-          NAME " failed to alloc flat dst buffer");
+                     NAME " failed to alloc flat dst buffer");
   if (gpu0 != gpu1) {
     cudaError_t err = cudaDeviceEnablePeerAccess(gpu0, 0);
     if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
@@ -289,25 +297,30 @@ auto Comm_3d_pack_cudaMemcpyPeer_unpack = [](benchmark::State &state,
   OR_SKIP_AND_RETURN(cudaEventDestroy(copyDone), "cudaEventDestroy");
   OR_SKIP_AND_RETURN(cudaEventDestroy(unpackDone), "cudaEventDestroy");
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
   nvtxRangePop();
 #endif
 };
 
 static void registerer() {
   std::string name;
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
-      auto gpu0 = unique_cuda_device_ids()[i];
-      auto gpu1 = unique_cuda_device_ids()[j];
+
+  const std::vector<MemorySpace> cudaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+
+  for (const auto &space0 : cudaSpaces) {
+    for (const auto &space1 : cudaSpaces) {
+
+      auto id0 = space0.device_id();
+      auto id1 = space1.device_id();
       int ok1, ok2;
-      if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok1, gpu0, gpu1)) &&
-          !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok2, gpu1, gpu0))) {
-        if ((ok1 && ok2) || i == j) {
-          name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" +
-                 std::to_string(gpu1);
+      if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok1, id0, id1)) &&
+          !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok2, id1, id0))) {
+        if ((ok1 && ok2) || id0 == id1) {
+          name = std::string(NAME) + "/" + std::to_string(id0) + "/" +
+                 std::to_string(id1);
           benchmark::RegisterBenchmark(
-              name.c_str(), Comm_3d_pack_cudaMemcpyPeer_unpack, gpu0, gpu1)
+              name.c_str(), Comm_3d_pack_cudaMemcpyPeer_unpack, id0, id1)
               ->ASTAROTH_ARGS()
               ->UseManualTime();
         }

@@ -85,7 +85,7 @@ auto Comm_ZeroCopy_HostToGPU = [](benchmark::State &state, const int src_numa,
 
 static void registerer() {
   for (auto flush : {ShouldFlush::No, ShouldFlush::Yes}) {
-    for (auto cuda_id : unique_cuda_device_ids()) {
+    for (int cuda_id : scope::system::cuda_devices()) {
       for (auto numa_id : numa::mems()) {
         std::string name = std::string(NAME) + to_string(flush) + "/" + std::to_string(numa_id) +
                            "/" + std::to_string(cuda_id);

@@ -6,7 +6,7 @@ CUDA- and NUMA-Aware Multi-CPU / Multi-GPU communication benchmarks.
 
 ## Prerequisites
 
-* CMake 3.17+
+* CMake 3.18+
 * g++ >= 4.9
 * CUDA toolkit >= 8.0
 

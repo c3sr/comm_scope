@@ -58,7 +58,7 @@ auto Comm_cudart_cudaGraphInstantiate_kernel = [](benchmark::State &state,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 static void registerer() {
-  for (auto cudaId : unique_cuda_device_ids()) {
+  for (int cudaId : scope::system::cuda_devices()) {
     for (auto numaId : numa::mems()) {
       std::string name = std::string(NAME) + "/" + std::to_string(numaId) +
                          "/" + std::to_string(cudaId);

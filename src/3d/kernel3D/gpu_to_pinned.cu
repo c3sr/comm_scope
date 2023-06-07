@@ -80,7 +80,7 @@ inline dim3 make_block_dim(const cudaExtent extent, int64_t threads) {
 auto Comm_3d_kernel3D_GPUToPinned = [](benchmark::State &state, const int numaId,
                                      const int cudaId) {
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
   {
     std::stringstream name;
     name << NAME << "/" << numaId << "/" << cudaId << "/" << state.range(0)
@@ -187,15 +187,21 @@ auto Comm_3d_kernel3D_GPUToPinned = [](benchmark::State &state, const int numaId
   OR_SKIP_AND_RETURN(cudaStreamDestroy(stream), "cudaStreamDestroy");
   OR_SKIP_AND_RETURN(cudaFree(src.ptr), NAME "failed to cudaFree");
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
   nvtxRangePop();
 #endif
 };
 
 static void registerer() {
   std::string name;
-  for (auto cudaId : unique_cuda_device_ids()) {
-    for (auto numaId : numa::mems()) {
+  std::vector<MemorySpace> cudaSpaces = scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+  std::vector<MemorySpace> numaSpaces = scope::system::memory_spaces(MemorySpace::Kind::numa);
+
+  for (const auto &cudaSpace : cudaSpaces) {
+    for (const auto &numaSpace : numaSpaces) {
+
+      const int cudaId = cudaSpace.device_id();
+      const int numaId = numaSpace.numa_id();
 
       name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
              std::to_string(cudaId);

@@ -182,10 +182,10 @@ auto Comm_ZeroCopy_GPUGPU = [](benchmark::State &state, const int gpu0,
 };
 
 static void registerer() {
-
+  const std::vector<Device> cudas = scope::system::cuda_devices();
   for (auto workload : {READ, WRITE}) {
-    for (auto src_gpu : unique_cuda_device_ids()) {
-      for (auto dst_gpu : unique_cuda_device_ids()) {
+    for (int src_gpu : cudas) {
+      for (int dst_gpu : cudas) {
         if (src_gpu < dst_gpu) {
 
           int s2d = false;

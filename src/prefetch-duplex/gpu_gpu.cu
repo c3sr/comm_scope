@@ -89,8 +89,11 @@ auto Comm_Prefetch_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0,
 };
 
 static void registerer() {
-  for (size_t i : unique_cuda_device_ids()) {
-    for (size_t j : unique_cuda_device_ids()) {
+
+  const std::vector<Device> cudas = scope::system::cuda_devices();
+
+  for (int i : cudas) {
+    for (int j : cudas) {
       if (i < j) {
         std::string name = std::string(NAME) + "/" + std::to_string(i) + "/" +
                            std::to_string(j);

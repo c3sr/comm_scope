@@ -59,7 +59,7 @@ auto Comm_cudart_cudaGraphInstantiate_cudaMemcpyAsync =
     };
 
 static void registerer() {
-  for (auto cudaId : unique_cuda_device_ids()) {
+  for (int cudaId : scope::system::cuda_devices()) {
     for (auto numaId : numa::mems()) {
       std::string name = std::string(NAME) + "/" + std::to_string(numaId) +
                          "/" + std::to_string(cudaId);

@@ -156,10 +156,13 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPU = [](benchmark::State &state,
 
 
 static void registerer() {
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
-      auto gpu0 = unique_cuda_device_ids()[i];
-      auto gpu1 = unique_cuda_device_ids()[j];
+  const std::vector<MemorySpace> cudaSpaces = scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+
+  for (const auto &space0 : cudaSpaces) {
+    for (const auto &space1 : cudaSpaces) {
+
+      auto gpu0 = space0.device_id();
+      auto gpu1 = space1.device_id();
       std::string name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" +
       std::to_string(gpu1);
       benchmark::RegisterBenchmark(

@@ -34,7 +34,7 @@ static __global__ void Comm_chunk_pull_kernel(read_t *__restrict__ src,
 auto Comm_chunk_pull = [](benchmark::State &state, const int gpu0,
                           const int gpu1) {
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
   {
     std::stringstream name;
     name << NAME << "/" << gpu0 << "/" << gpu1 << "/" << state.range(0) << "/"
@@ -136,21 +136,24 @@ auto Comm_chunk_pull = [](benchmark::State &state, const int gpu0,
   OR_SKIP_AND_RETURN(cudaStreamDestroy(stream), "cudaStreamDestroy");
   OR_SKIP_AND_RETURN(cudaFree(src), "cudaFree");
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
   nvtxRangePop();
 #endif
 };
 
 static void registerer() {
   std::string name;
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
-      auto gpu0 = unique_cuda_device_ids()[i];
-      auto gpu1 = unique_cuda_device_ids()[j];
+  const std::vector<MemorySpace> cudaSpaces = scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+
+  for (const auto &space0 : cudaSpaces) {
+    for (const auto &space1 : cudaSpaces) {
+
+      auto gpu0 = space0.device_id();
+      auto gpu1 = space1.device_id();
       int ok1, ok2;
       if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok1, gpu0, gpu1)) &&
           !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok2, gpu1, gpu0))) {
-        if ((ok1 && ok2) || i == j) {
+        if ((ok1 && ok2) || gpu0 == gpu1) {
           name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" +
                  std::to_string(gpu1);
           benchmark::RegisterBenchmark(name.c_str(), Comm_chunk_pull, gpu0,

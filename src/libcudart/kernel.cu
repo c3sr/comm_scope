@@ -64,11 +64,12 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu,
 
 static void registerer() {
   std::string name;
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
+  const std::vector<Device> cudas = scope::system::cuda_devices();
+  for (size_t i = 0; i < cudas.size(); ++i) {
     for (int numaId : numa::mems()) {
       for (size_t numThreads = 1;
            numThreads <= numa::cpus_in_node(numaId).size(); numThreads *= 2) {
-        auto gpu = unique_cuda_device_ids()[i];
+        int gpu = cudas[i];
         name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
                std::to_string(gpu);
         benchmark::RegisterBenchmark(name.c_str(), Comm_cudart_kernel, gpu,

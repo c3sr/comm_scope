@@ -26,7 +26,7 @@ auto Comm_implicit_mapped_GPURdHost =
         state.SkipWithError(NAME " failed to set hip write device");
         return;
       }
-      
+
       if (PRINT_IF_ERROR(hipHostMalloc(&ptr, bytes, 0))) {
         state.SkipWithError(NAME " failed to perform hipHostMalloc");
         return;

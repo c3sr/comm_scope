@@ -114,8 +114,8 @@ auto Comm_Demand_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0,
 };
 
 static void registerer() {
-  for (size_t i : unique_cuda_device_ids()) {
-    for (size_t j : unique_cuda_device_ids()) {
+  for (size_t i : scope::system::cuda_devices()) {
+    for (size_t j : scope::system::cuda_devices()) {
       if (i < j) {
         std::string name = std::string(NAME) + "/" + std::to_string(i) + "/" +
                            std::to_string(j);

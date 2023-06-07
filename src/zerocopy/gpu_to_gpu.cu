@@ -90,10 +90,12 @@ auto Comm_ZeroCopy_GPUToGPU = [](benchmark::State &state, const int gpu0,
 
 static void registerer() {
 
+  const std::vector<Device> cudas = scope::system::cuda_devices();
+
   LOG(debug, "Registering {} benchmarks", NAME);
   for (auto workload : {READ, WRITE}) {
-    for (auto src_gpu : unique_cuda_device_ids()) {
-      for (auto dst_gpu : unique_cuda_device_ids()) {
+    for (int src_gpu : cudas) {
+      for (int dst_gpu : cudas) {
         {
 
           int s2d = false;

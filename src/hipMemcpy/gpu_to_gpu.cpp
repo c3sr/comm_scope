@@ -6,15 +6,17 @@
 
 #define NAME "Comm_hipMemcpy_GPUToGPU"
 
-auto Comm_hipMemcpy_GPUToGPU = [](benchmark::State &state, const int hipId0, const int hipId1) {
-
-  const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
+auto Comm_hipMemcpy_GPUToGPU = [](benchmark::State &state, const int hipId0,
+                                  const int hipId1) {
+  const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   void *src = nullptr;
   void *dst = nullptr;
 
-  OR_SKIP_AND_RETURN(scope::hip_reset_device(hipId0), "failed to reset HIP device");
-  OR_SKIP_AND_RETURN(scope::hip_reset_device(hipId1), "failed to reset HIP device");
+  OR_SKIP_AND_RETURN(scope::hip_reset_device(hipId0),
+                     "failed to reset HIP device");
+  OR_SKIP_AND_RETURN(scope::hip_reset_device(hipId1),
+                     "failed to reset HIP device");
 
   // Allocate src
   if (PRINT_IF_ERROR(hipSetDevice(hipId0))) {
@@ -70,18 +72,22 @@ static void registerer() {
 
   std::string name;
 
-  std::vector<MemorySpace> spaces = scope::system::memory_spaces(MemorySpace::Kind::hip_device);
+  std::vector<MemorySpace> spaces =
+      scope::system::memory_spaces(MemorySpace::Kind::hip_device);
   LOG(trace, "found {} hip_device spaces", spaces.size());
 
   for (const MemorySpace &ms0 : spaces) {
     for (const MemorySpace &ms1 : spaces) {
       const int d0 = ms0.device_id();
       const int d1 = ms1.device_id();
-      name = std::string(NAME) + "/" + std::to_string(d0) + "/" + std::to_string(d1);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_hipMemcpy_GPUToGPU, d0, d1)->SMALL_ARGS()->UseManualTime();
+      name = std::string(NAME) + "/" + std::to_string(d0) + "/" +
+             std::to_string(d1);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_hipMemcpy_GPUToGPU, d0,
+                                   d1)
+          ->SMALL_ARGS()
+          ->UseManualTime();
     }
   }
 }
 
 SCOPE_AFTER_INIT(registerer, NAME);
-

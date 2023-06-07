@@ -93,6 +93,7 @@ auto Comm_cudart_cudaGraphLaunch_cudaMemcpy3DAsync = [](benchmark::State &state,
   for (int i = 0; i < iters; ++i) {
     err = cudaMemcpy3DAsync(&params, stream);
   }
+  OR_SKIP_AND_RETURN(err, "?"); // FIXME: what is the purpose of this little looper
 
   OR_SKIP_AND_RETURN(cudaStreamEndCapture(stream, &graph), "capture error");
   OR_SKIP_AND_RETURN(cudaGraphInstantiate(&instance, graph, NULL, NULL, 0),
@@ -114,10 +115,13 @@ auto Comm_cudart_cudaGraphLaunch_cudaMemcpy3DAsync = [](benchmark::State &state,
 
 static void registerer() {
   std::string name;
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
-      auto gpu0 = unique_cuda_device_ids()[i];
-      auto gpu1 = unique_cuda_device_ids()[j];
+
+  const std::vector<Device> cudas = scope::system::cuda_devices();
+
+  for (size_t i = 0; i < cudas.size(); ++i) {
+    for (size_t j = i; j < cudas.size(); ++j) {
+      int gpu0 = cudas[i];
+      int gpu1 = cudas[j];
       int ok1, ok2;
       if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok1, gpu0, gpu1)) &&
           !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok2, gpu1, gpu0))) {

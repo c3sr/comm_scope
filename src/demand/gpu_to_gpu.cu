@@ -102,10 +102,13 @@ auto Comm_UM_Demand_GPUToGPU = [](benchmark::State &state, const int src_gpu,
 };
 
 static void registerer() {
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = i + 1; j < unique_cuda_device_ids().size(); ++j) {
-      auto src_gpu = unique_cuda_device_ids()[i];
-      auto dst_gpu = unique_cuda_device_ids()[j];
+  const std::vector<MemorySpace> cudaSpaces = scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+
+  for (const auto &src : cudaSpaces) {
+    for (const auto &dst : cudaSpaces) {
+
+      auto src_gpu = src.device_id();
+      auto dst_gpu = dst.device_id();
       std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) +
                          "/" + std::to_string(dst_gpu);
       benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Demand_GPUToGPU,

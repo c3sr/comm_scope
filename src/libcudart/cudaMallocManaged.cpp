@@ -31,8 +31,14 @@ auto Comm_cudart_cudaMallocManaged = [](benchmark::State &state,
 };
 
 static void registerer() {
-  for (auto cuda_id : unique_cuda_device_ids()) {
+
+  std::vector<Device> cudas = scope::system::cuda_devices();
+
+  for (const auto &cuda : cudas) {
     for (auto numa_id : numa::mems()) {
+
+      auto cuda_id = cuda.device_id();
+
       std::string name = std::string(NAME) + "/" + std::to_string(numa_id) +
                          "/" + std::to_string(cuda_id);
       benchmark::RegisterBenchmark(name.c_str(), Comm_cudart_cudaMallocManaged,

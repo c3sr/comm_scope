@@ -11,6 +11,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  std::cout << "read turbo: " << state.enabled <<  " (" << turbo::get_string(state.method) << ")\n";
+  std::cout << "read turbo: " << state.enabled << " ("
+            << turbo::get_string(state.method) << ")\n";
   return 0;
 }

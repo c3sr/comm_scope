@@ -26,15 +26,8 @@ inline void cpu_write(char *ptr, const size_t n, const size_t stride,
 }
 
 template <Kind kind>
-UnaryData setup(benchmark::State &state,
-                const std::string &name,
-                const size_t bytes,
-                const int src_id,
-                const int dst_id);
-
-
-
+UnaryData setup(benchmark::State &state, const std::string &name,
+                const size_t bytes, const int src_id, const int dst_id);
 
 template <Kind kind>
 void prep_iteration(char *ptr, size_t bytes, int src_id, int dst_id);
-

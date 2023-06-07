@@ -44,7 +44,8 @@ auto Comm_cudaMemcpyAsync_Duplex_GPUGPUPeer = [](benchmark::State &state,
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), "failed to set device");
   OR_SKIP_AND_RETURN(cudaMalloc(&ptr, bytes), "failed to perform cudaMalloc");
   srcs.push_back(ptr);
-  OR_SKIP_AND_RETURN(cudaMemset(ptr, 0, bytes), "failed to perform src cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset(ptr, 0, bytes),
+                     "failed to perform src cudaMemset");
   cudaError_t err = cudaDeviceEnablePeerAccess(gpu1, 0);
   if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
     state.SkipWithError("failed to ensure peer access");
@@ -54,7 +55,8 @@ auto Comm_cudaMemcpyAsync_Duplex_GPUGPUPeer = [](benchmark::State &state,
   // allocate on gpu1 and enable peer access
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), "failed to set device");
   OR_SKIP_AND_RETURN(cudaMalloc(&ptr, bytes), "failed to perform cudaMalloc");
-  OR_SKIP_AND_RETURN(cudaMemset(ptr, 0, bytes), "failed to perform src cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset(ptr, 0, bytes),
+                     "failed to perform src cudaMemset");
   dsts.push_back(ptr);
   err = cudaDeviceEnablePeerAccess(gpu0, 0);
   if (cudaSuccess != err && cudaErrorPeerAccessAlreadyEnabled != err) {
@@ -65,12 +67,14 @@ auto Comm_cudaMemcpyAsync_Duplex_GPUGPUPeer = [](benchmark::State &state,
   // create a source and destination for second copy
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), "failed to set device");
   OR_SKIP_AND_RETURN(cudaMalloc(&ptr, bytes), "failed to perform cudaMalloc");
-  OR_SKIP_AND_RETURN(cudaMemset(ptr, 0, bytes), "failed to perform src cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset(ptr, 0, bytes),
+                     "failed to perform src cudaMemset");
   srcs.push_back(ptr);
 
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu1), "failed to set device");
   OR_SKIP_AND_RETURN(cudaMalloc(&ptr, bytes), "failed to perform cudaMalloc");
-  OR_SKIP_AND_RETURN(cudaMemset(ptr, 0, bytes), "failed to perform src cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset(ptr, 0, bytes),
+                     "failed to perform src cudaMemset");
   dsts.push_back(ptr);
 
   assert(starts.size() == stops.size());
@@ -88,12 +92,12 @@ auto Comm_cudaMemcpyAsync_Duplex_GPUGPUPeer = [](benchmark::State &state,
       auto src = srcs[i];
       auto dst = dsts[i];
       OR_SKIP_AND_BREAK(cudaEventRecord(start, stream),
-              NAME " failed to record start event");
+                        NAME " failed to record start event");
       OR_SKIP_AND_BREAK(
           cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice, stream),
           NAME " failed to start cudaMemcpyAsync");
       OR_SKIP_AND_BREAK(cudaEventRecord(stop, stream),
-              NAME " failed to record stop event");
+                        NAME " failed to record stop event");
     }
 
     // Wait for all copies to finish
@@ -107,7 +111,7 @@ auto Comm_cudaMemcpyAsync_Duplex_GPUGPUPeer = [](benchmark::State &state,
       for (const auto stop : stops) {
         float millis;
         OR_SKIP_AND_BREAK(cudaEventElapsedTime(&millis, start, stop),
-                NAME " failed to compute elapsed tiume");
+                          NAME " failed to compute elapsed tiume");
         maxMillis = std::max(millis, maxMillis);
       }
     }
@@ -128,10 +132,14 @@ auto Comm_cudaMemcpyAsync_Duplex_GPUGPUPeer = [](benchmark::State &state,
 
 static void registerer() {
   std::string name;
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = i + 1; j < unique_cuda_device_ids().size(); ++j) {
-      auto gpu0 = unique_cuda_device_ids()[i];
-      auto gpu1 = unique_cuda_device_ids()[j];
+  const std::vector<MemorySpace> cudaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+
+  for (const auto &space0 : cudaSpaces) {
+    for (const auto &space1 : cudaSpaces) {
+
+      auto gpu0 = space0.device_id();
+      auto gpu1 = space1.device_id();
       int ok1, ok2;
       if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok1, gpu0, gpu1)) &&
           !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok2, gpu1, gpu0))) {

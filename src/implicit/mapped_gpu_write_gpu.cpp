@@ -142,9 +142,9 @@ static void registerer() {
       }
       if (can) {
         std::string name = std::string(NAME) + "/" + std::to_string(wr_gpu) +
-                          "/" + std::to_string(own_gpu);
-        benchmark::RegisterBenchmark(name.c_str(), Comm_implicit_mapped_GPUWrGPU,
-                                    wr_gpu, own_gpu)
+                           "/" + std::to_string(own_gpu);
+        benchmark::RegisterBenchmark(
+            name.c_str(), Comm_implicit_mapped_GPUWrGPU, wr_gpu, own_gpu)
             ->SMALL_ARGS()
             ->UseManualTime();
       }

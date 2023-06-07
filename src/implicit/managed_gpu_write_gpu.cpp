@@ -6,9 +6,9 @@
 
 #define NAME "Comm_implicit_managed_GPUWrGPU"
 
-auto Comm_implicit_managed_GPUWrGPU = [](benchmark::State &state, const int src_gpu,
-                                  const int dst_gpu, const bool coarse) {
-
+auto Comm_implicit_managed_GPUWrGPU = [](benchmark::State &state,
+                                         const int src_gpu, const int dst_gpu,
+                                         const bool coarse) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   void *ptr;
@@ -16,61 +16,61 @@ auto Comm_implicit_managed_GPUWrGPU = [](benchmark::State &state, const int src_
   hipEvent_t stop;
 
   if (PRINT_IF_ERROR(scope::hip_reset_device(src_gpu))) {
-      state.SkipWithError(NAME " failed to reset hip src device");
-      return;
+    state.SkipWithError(NAME " failed to reset hip src device");
+    return;
   }
   if (PRINT_IF_ERROR(scope::hip_reset_device(dst_gpu))) {
-      state.SkipWithError(NAME " failed to reset hip dst device");
-      return;
+    state.SkipWithError(NAME " failed to reset hip dst device");
+    return;
   }
 
   if (PRINT_IF_ERROR(hipSetDevice(dst_gpu))) {
-      state.SkipWithError(NAME " failed to set hip dst device");
-      return;
+    state.SkipWithError(NAME " failed to set hip dst device");
+    return;
   }
 
   if (PRINT_IF_ERROR(hipMallocManaged(&ptr, bytes))) {
-      state.SkipWithError(NAME " failed to perform hipMallocManaged");
-      return;
+    state.SkipWithError(NAME " failed to perform hipMallocManaged");
+    return;
   }
 
-  const hipMemoryAdvise advice = coarse ? hipMemAdviseSetCoarseGrain : hipMemAdviseUnsetCoarseGrain;
+  const hipMemoryAdvise advice =
+      coarse ? hipMemAdviseSetCoarseGrain : hipMemAdviseUnsetCoarseGrain;
   if (PRINT_IF_ERROR(hipMemAdvise(ptr, bytes, advice, src_gpu))) {
-      state.SkipWithError(NAME " failed to perform hipMemAdvise");
-      return;
+    state.SkipWithError(NAME " failed to perform hipMemAdvise");
+    return;
   }
   if (PRINT_IF_ERROR(hipMemAdvise(ptr, bytes, advice, dst_gpu))) {
-      state.SkipWithError(NAME " failed to perform hipMemAdvise");
-      return;
+    state.SkipWithError(NAME " failed to perform hipMemAdvise");
+    return;
   }
 
   if (PRINT_IF_ERROR(hipMemset(ptr, 1, bytes))) {
-      state.SkipWithError(NAME " failed to perform hipMemset");
-      return;
+    state.SkipWithError(NAME " failed to perform hipMemset");
+    return;
   }
 
   if (PRINT_IF_ERROR(hipEventCreate(&start))) {
-      state.SkipWithError(NAME " failed to create start event");
-      return;
+    state.SkipWithError(NAME " failed to create start event");
+    return;
   }
   defer(hipEventDestroy(start));
 
   if (PRINT_IF_ERROR(hipEventCreate(&stop))) {
-      state.SkipWithError(NAME " failed to create stop event");
-      return;
+    state.SkipWithError(NAME " failed to create stop event");
+    return;
   }
-  defer(hipEventDestroy(stop));      
+  defer(hipEventDestroy(stop));
 
   for (auto _ : state) {
     if (PRINT_IF_ERROR(hipMemPrefetchAsync(ptr, bytes, src_gpu))) {
       state.SkipWithError(NAME "failed to prefetch");
-      return; 
+      return;
     }
     if (PRINT_IF_ERROR(hipDeviceSynchronize())) {
       state.SkipWithError(NAME "failed to sync");
-      return; 
+      return;
     }
-
 
     hipEventRecord(start);
     gpu_write<uint64_t><<<2048, 256>>>(ptr, bytes);
@@ -103,10 +103,12 @@ static void registerer() {
       for (const bool coarse : {true, false}) {
         int src_gpu = hips[i].device_id();
         int dst_gpu = hips[j].device_id();
-        std::string name = std::string(NAME) + "_" + (coarse ? "coarse" : "fine") + "/" + std::to_string(src_gpu) +
-                          "/" + std::to_string(dst_gpu);
-        benchmark::RegisterBenchmark(name.c_str(), Comm_implicit_managed_GPUWrGPU,
-                                    src_gpu, dst_gpu, coarse)
+        std::string name =
+            std::string(NAME) + "_" + (coarse ? "coarse" : "fine") + "/" +
+            std::to_string(src_gpu) + "/" + std::to_string(dst_gpu);
+        benchmark::RegisterBenchmark(name.c_str(),
+                                     Comm_implicit_managed_GPUWrGPU, src_gpu,
+                                     dst_gpu, coarse)
             ->SMALL_ARGS()
             ->UseManualTime();
       }
@@ -115,5 +117,3 @@ static void registerer() {
 }
 
 SCOPE_AFTER_INIT(registerer, NAME);
-
-

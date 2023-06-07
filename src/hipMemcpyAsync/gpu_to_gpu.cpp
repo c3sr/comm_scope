@@ -5,7 +5,7 @@
 #define NAME "Comm_hipMemcpyAsync_GPUToGPU"
 
 auto Comm_hipMemcpyAsync_GPUToGPU = [](benchmark::State &state, const int srcId,
-                                    const int dstId) {
+                                       const int dstId) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   if (PRINT_IF_ERROR(scope::hip_reset_device(srcId))) {
@@ -16,8 +16,6 @@ auto Comm_hipMemcpyAsync_GPUToGPU = [](benchmark::State &state, const int srcId,
     state.SkipWithError(NAME " failed to reset HIP device");
     return;
   }
-
-
 
   void *src = nullptr;
   void *dst = nullptr;
@@ -68,8 +66,7 @@ auto Comm_hipMemcpyAsync_GPUToGPU = [](benchmark::State &state, const int srcId,
     }
 
     hipEventRecord(start, NULL);
-    hipError_t err =
-        hipMemcpyAsync(dst, src, bytes, hipMemcpyHostToDevice);
+    hipError_t err = hipMemcpyAsync(dst, src, bytes, hipMemcpyHostToDevice);
     hipEventRecord(stop, NULL);
     hipEventSynchronize(stop);
 
@@ -95,7 +92,8 @@ auto Comm_hipMemcpyAsync_GPUToGPU = [](benchmark::State &state, const int srcId,
 static void registerer() {
   LOG(trace, NAME " registerer...");
 
-  std::vector<MemorySpace> hipSpaces = scope::system::memory_spaces(MemorySpace::Kind::hip_device);
+  std::vector<MemorySpace> hipSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::hip_device);
 
   std::string name;
   for (const auto &srcSpace : hipSpaces) {
@@ -105,9 +103,9 @@ static void registerer() {
       const int dstId = dstSpace.device_id();
 
       name = std::string(NAME) + "/" + std::to_string(srcId) + "/" +
-            std::to_string(dstId);
+             std::to_string(dstId);
       benchmark::RegisterBenchmark(name.c_str(), Comm_hipMemcpyAsync_GPUToGPU,
-                                  srcId, dstId)
+                                   srcId, dstId)
           ->SMALL_ARGS()
           ->UseManualTime();
     }
@@ -115,5 +113,3 @@ static void registerer() {
 }
 
 SCOPE_AFTER_INIT(registerer, NAME);
-
-

@@ -10,9 +10,9 @@ static cudaStream_t gStream;
 static cudaMemcpy3DPeerParms gParams;
 
 auto Comm_cudart_cudaMemcpy3DPeerAsync = [](benchmark::State &state,
-                                             const int gpu0, const int gpu1,
-                                             cudaStream_t &stream,
-                                             cudaMemcpy3DPeerParms &params) {
+                                            const int gpu0, const int gpu1,
+                                            cudaStream_t &stream,
+                                            cudaMemcpy3DPeerParms &params) {
   // have thread 0 set up shared structures
   if (0 == state.thread_index()) {
 
@@ -95,7 +95,7 @@ auto Comm_cudart_cudaMemcpy3DPeerAsync = [](benchmark::State &state,
     OR_SKIP_AND_RETURN(cudaFree(params.srcPtr.ptr), NAME "failed to cudaFree");
     OR_SKIP_AND_RETURN(cudaFree(params.dstPtr.ptr), NAME "failed to cudaFree");
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
     nvtxRangePop();
 #endif
   }
@@ -103,23 +103,28 @@ auto Comm_cudart_cudaMemcpy3DPeerAsync = [](benchmark::State &state,
 
 static void registerer() {
   std::string name;
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
-      for(size_t numThreads = 1; numThreads <= numa::cpus_in_nodes(numa::mems()).size(); numThreads *= 2) {
-      auto gpu0 = unique_cuda_device_ids()[i];
-      auto gpu1 = unique_cuda_device_ids()[j];
-      int ok1, ok2;
-      if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok1, gpu0, gpu1)) &&
-          !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok2, gpu1, gpu0))) {
-        if ((ok1 && ok2) || i == j) {
-          name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" +
-                 std::to_string(gpu1);
-          benchmark::RegisterBenchmark(
-              name.c_str(), Comm_cudart_cudaMemcpy3DPeerAsync, gpu0, gpu1,
-              std::ref(gStream), std::ref(gParams))
-              ->Threads(numThreads)
-              ->UseRealTime();
-        }
+
+  const std::vector<Device> cudas = scope::system::cuda_devices();
+
+  for (size_t i = 0; i < cudas.size(); ++i) {
+    for (size_t j = i; j < cudas.size(); ++j) {
+      for (size_t numThreads = 1;
+           numThreads <= numa::cpus_in_nodes(numa::mems()).size();
+           numThreads *= 2) {
+        auto gpu0 = cudas[i].device_id();
+        auto gpu1 = cudas[j].device_id();
+        int ok1, ok2;
+        if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok1, gpu0, gpu1)) &&
+            !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok2, gpu1, gpu0))) {
+          if ((ok1 && ok2) || i == j) {
+            name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" +
+                   std::to_string(gpu1);
+            benchmark::RegisterBenchmark(
+                name.c_str(), Comm_cudart_cudaMemcpy3DPeerAsync, gpu0, gpu1,
+                std::ref(gStream), std::ref(gParams))
+                ->Threads(numThreads)
+                ->UseRealTime();
+          }
         }
       }
     }

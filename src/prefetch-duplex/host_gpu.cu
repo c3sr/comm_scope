@@ -73,7 +73,7 @@ auto Comm_Prefetch_Duplex_HostGPU = [](benchmark::State &state,
 };
 
 static void registerer() {
-  for (auto cuda_id : unique_cuda_device_ids()) {
+  for (int cuda_id : scope::system::cuda_devices()) {
 
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, cuda_id);

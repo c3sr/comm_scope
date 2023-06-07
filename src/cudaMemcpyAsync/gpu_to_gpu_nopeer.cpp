@@ -4,8 +4,9 @@
 
 #define NAME "Comm_cudaMemcpyAsync_GPUToGPU"
 
-auto Comm_cudaMemcpyAsync_GPUToGPU = [](benchmark::State &state, const int numa_id,
-                                   const int src_gpu, const int dst_gpu) {
+auto Comm_cudaMemcpyAsync_GPUToGPU = [](benchmark::State &state,
+                                        const int numa_id, const int src_gpu,
+                                        const int dst_gpu) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   numa::ScopedBind binder(numa_id);
@@ -14,14 +15,15 @@ auto Comm_cudaMemcpyAsync_GPUToGPU = [](benchmark::State &state, const int numa_
   char *dst = nullptr;
 
   OR_SKIP_AND_RETURN(cuda_reset_device(src_gpu),
-                 NAME " failed to reset CUDA device");
+                     NAME " failed to reset CUDA device");
   OR_SKIP_AND_RETURN(cuda_reset_device(dst_gpu),
-                 NAME " failed to reset CUDA device");
+                     NAME " failed to reset CUDA device");
   OR_SKIP_AND_RETURN(cudaSetDevice(src_gpu), NAME " failed to set src device");
-  OR_SKIP_AND_RETURN(cudaMalloc(&src, bytes), NAME " failed to perform cudaMalloc");
+  OR_SKIP_AND_RETURN(cudaMalloc(&src, bytes),
+                     NAME " failed to perform cudaMalloc");
   defer(cudaFree(src));
   OR_SKIP_AND_RETURN(cudaMemset(src, 0, bytes),
-                 NAME " failed to perform src cudaMemset");
+                     NAME " failed to perform src cudaMemset");
 
   cudaError_t err = cudaDeviceDisablePeerAccess(dst_gpu);
   if (cudaSuccess != err && cudaErrorPeerAccessNotEnabled != err) {
@@ -30,10 +32,11 @@ auto Comm_cudaMemcpyAsync_GPUToGPU = [](benchmark::State &state, const int numa_
   }
 
   OR_SKIP_AND_RETURN(cudaSetDevice(dst_gpu), NAME " failed to set dst device");
-  OR_SKIP_AND_RETURN(cudaMalloc(&dst, bytes), NAME " failed to perform cudaMalloc");
+  OR_SKIP_AND_RETURN(cudaMalloc(&dst, bytes),
+                     NAME " failed to perform cudaMalloc");
   defer(cudaFree(dst));
-  OR_SKIP_AND_RETURN(cudaMemset(dst, 0, bytes), NAME
-                 " failed to perform dst cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset(dst, 0, bytes),
+                     NAME " failed to perform dst cudaMemset");
 
   err = cudaDeviceDisablePeerAccess(src_gpu);
   if (cudaSuccess != err && cudaErrorPeerAccessNotEnabled != err) {
@@ -48,12 +51,17 @@ auto Comm_cudaMemcpyAsync_GPUToGPU = [](benchmark::State &state, const int numa_
   for (auto _ : state) {
 
     OR_SKIP_AND_BREAK(cudaEventRecord(start, NULL), "failed to record start");
-    OR_SKIP_AND_BREAK(cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice), "failed to cudaMemcpyAsync");
-    OR_SKIP_AND_BREAK(cudaEventRecord(stop, NULL), "failed to record start");;
-    OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), "failed to sync");;
+    OR_SKIP_AND_BREAK(
+        cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice),
+        "failed to cudaMemcpyAsync");
+    OR_SKIP_AND_BREAK(cudaEventRecord(stop, NULL), "failed to record start");
+    ;
+    OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), "failed to sync");
+    ;
 
     float msecTotal = 0.0f;
-    OR_SKIP_AND_BREAK(cudaEventElapsedTime(&msecTotal, start, stop), "failed to get elapsed time");
+    OR_SKIP_AND_BREAK(cudaEventElapsedTime(&msecTotal, start, stop),
+                      "failed to get elapsed time");
     state.SetIterationTime(msecTotal / 1000);
   }
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
@@ -79,20 +87,27 @@ auto Comm_cudaMemcpyAsync_GPUToGPU = [](benchmark::State &state, const int numa_
     PRINT_IF_ERROR(err);
     state.SkipWithError(NAME " couldn't re-enable peer access");
   }
-
 };
 
 static void registerer() {
-  std::string name;
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = 0; j < unique_cuda_device_ids().size(); ++j) {
-      auto src_gpu = unique_cuda_device_ids()[i];
-      auto dst_gpu = unique_cuda_device_ids()[j];
-      for (auto numa_id : numa::mems()) {
-        name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" +
-               std::to_string(src_gpu) + "/" + std::to_string(dst_gpu);
-        benchmark::RegisterBenchmark(name.c_str(), Comm_cudaMemcpyAsync_GPUToGPU,
-                                     numa_id, src_gpu, dst_gpu)
+
+  const std::vector<MemorySpace> cudaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+  const std::vector<MemorySpace> numaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::numa);
+
+  for (const auto &src : cudaSpaces) {
+    for (const auto &dst : cudaSpaces) {
+      auto src_gpu = src.device_id();
+      auto dst_gpu = dst.device_id();
+      for (const auto &numa : numaSpaces) {
+        const auto numa_id = numa.numa_id();
+        const std::string name =
+            std::string(NAME) + "/" + std::to_string(numa_id) + "/" +
+            std::to_string(src_gpu) + "/" + std::to_string(dst_gpu);
+        benchmark::RegisterBenchmark(name.c_str(),
+                                     Comm_cudaMemcpyAsync_GPUToGPU, numa_id,
+                                     src_gpu, dst_gpu)
             ->SMALL_ARGS()
             ->UseManualTime();
       }

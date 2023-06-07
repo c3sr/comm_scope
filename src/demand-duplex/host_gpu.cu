@@ -85,7 +85,7 @@ auto Comm_Demand_Duplex_HostGPU = [](benchmark::State &state, const int numa_id,
 };
 
 static void registerer() {
-  for (auto cuda_id : unique_cuda_device_ids()) {
+  for (int cuda_id : scope::system::cuda_devices()) {
 
     cudaDeviceProp prop;
     cudaError_t err = cudaGetDeviceProperties(&prop, cuda_id);

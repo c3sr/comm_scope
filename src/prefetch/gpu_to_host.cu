@@ -82,7 +82,7 @@ auto Comm_UM_Prefetch_GPUToHost = [](benchmark::State &state, const int numa_id,
 };
 
 static void registerer() {
-  for (auto cuda_id : unique_cuda_device_ids()) {
+  for (int cuda_id : scope::system::cuda_devices()) {
     for (auto numa_id : numa::mems()) {
       std::string name = std::string(NAME) + "/" + std::to_string(numa_id) +
                          "/" + std::to_string(cuda_id);
