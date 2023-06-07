@@ -10,11 +10,11 @@ auto Comm_UM_Prefetch_GPUToGPU = [](benchmark::State &state, const int src_gpu, 
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
-  if (PRINT_IF_ERROR(cuda_reset_device(src_gpu))) {
+  if (PRINT_IF_ERROR(scope::cuda_reset_device(src_gpu))) {
     state.SkipWithError(NAME " failed to reset CUDA src device");
     return;
   }
-  if (PRINT_IF_ERROR(cuda_reset_device(dst_gpu))) {
+  if (PRINT_IF_ERROR(scope::cuda_reset_device(dst_gpu))) {
     state.SkipWithError(NAME " failed to reset CUDA src device");
     return;
   }

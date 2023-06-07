@@ -21,7 +21,7 @@ auto Comm_3d_cudaMemcpy2DAsync_PinnedToGPU = [](benchmark::State &state,
 
   // bind to CPU & reset device
   numa::ScopedBind binder(numaId);
-  OR_SKIP_AND_RETURN(cuda_reset_device(cudaId), "failed to reset GPU");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(cudaId), "failed to reset GPU");
 
   // stream for async copy
   cudaStream_t stream = nullptr;

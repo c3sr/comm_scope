@@ -49,7 +49,7 @@ auto Comm_Demand_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0,
 
   // initialize data structures for device `dev`
 #define INIT(dev)                                                              \
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu##dev), "failed to reset");          \
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu##dev), "failed to reset");          \
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu##dev), "failed to set");                \
   OR_SKIP_AND_RETURN(cudaStreamCreate(&streams[dev]),                          \
                      "failed to create stream");                               \

@@ -67,9 +67,9 @@ public:
 
   cudaError_t reset_gpu() {
     if (cudaMemcpyHostToDevice == kind_) {
-      return cuda_reset_device(dst_id_);
+      return scope::cuda_reset_device(dst_id_);
     } else if (cudaMemcpyDeviceToHost == kind_) {
-      return cuda_reset_device(src_id_);
+      return scope::cuda_reset_device(src_id_);
     } else {
       assert(0 && "Unexpected kind_");
     }

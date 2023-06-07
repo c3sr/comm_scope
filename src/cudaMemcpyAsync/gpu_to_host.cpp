@@ -18,7 +18,7 @@ auto Comm_cudaMemcpyAsync_GPUToHost = [](benchmark::State &state,
   defer(free(dst));
   std::memset(dst, 0, bytes);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(cuda_id), "failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(cuda_id), "failed to reset CUDA device");
 
   if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
     state.SkipWithError(NAME " failed to set CUDA device");
@@ -75,14 +75,11 @@ static void registerer() {
   std::string name;
   const std::vector<MemorySpace> cudaSpaces =
       scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
-  const std::vector<MemorySpace> numaSpaces =
-      scope::system::memory_spaces(MemorySpace::Kind::numa);
 
   for (const auto &cudaSpace : cudaSpaces) {
-    for (const auto &numaSpace : numaSpaces) {
+    for (int numaId : numa::mems()) {
 
       const int cudaId = cudaSpace.device_id();
-      const int numaId = numaSpace.numa_id();
 
       name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
              std::to_string(cudaId);

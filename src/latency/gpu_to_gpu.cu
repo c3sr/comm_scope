@@ -34,11 +34,11 @@ auto Comm_UM_Latency_GPUToGPU = [](benchmark::State &state, const int src_gpu,
   const size_t stride = 65536 * 2;
   const size_t bytes = sizeof(size_t) * (steps + 1) * stride;
 
-  if (PRINT_IF_ERROR(cuda_reset_device(src_gpu))) {
+  if (PRINT_IF_ERROR(scope::cuda_reset_device(src_gpu))) {
     state.SkipWithError(NAME " failed to reset src device");
     return;
   }
-  if (PRINT_IF_ERROR(cuda_reset_device(src_gpu))) {
+  if (PRINT_IF_ERROR(scope::cuda_reset_device(src_gpu))) {
     state.SkipWithError(NAME " failed to reset dst device");
     return;
   }

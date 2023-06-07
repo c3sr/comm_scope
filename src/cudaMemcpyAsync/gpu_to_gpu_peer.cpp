@@ -8,9 +8,9 @@ auto Comm_Memcpy_GPUToGPUPeer = [](benchmark::State &state, const int src_gpu,
                                    const int dst_gpu) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(src_gpu),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(src_gpu),
                      "failed to reset src CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(dst_gpu),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(dst_gpu),
                      "failed to reset dst CUDA device");
 
   char *src = nullptr;

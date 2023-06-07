@@ -15,7 +15,7 @@ auto Comm_cudart_cudaGraphLaunch_kernel = [](benchmark::State &state,
 
   numa::ScopedBind binder(numaId);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(cudaId), "failed to reset device");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(cudaId), "failed to reset device");
   OR_SKIP_AND_RETURN(cudaSetDevice(cudaId), "failed to set CUDA dst device");
 
   cudaGraph_t graph;

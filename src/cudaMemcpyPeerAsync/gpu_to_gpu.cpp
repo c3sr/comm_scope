@@ -11,9 +11,9 @@ auto Comm_cudaMemcpyPeerAync_GPUToGPU = [](benchmark::State &state,
                                            const int srcGpu, const int dstGpu) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(srcGpu),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(srcGpu),
                      NAME " failed to reset src CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(dstGpu),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(dstGpu),
                      NAME " failed to reset dst CUDA device");
 
   void *src = nullptr;

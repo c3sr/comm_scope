@@ -14,9 +14,9 @@ auto Comm_cudaMemcpyAsync_GPUToGPU = [](benchmark::State &state,
   char *src = nullptr;
   char *dst = nullptr;
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(src_gpu),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(src_gpu),
                      NAME " failed to reset CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(dst_gpu),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(dst_gpu),
                      NAME " failed to reset CUDA device");
   OR_SKIP_AND_RETURN(cudaSetDevice(src_gpu), NAME " failed to set src device");
   OR_SKIP_AND_RETURN(cudaMalloc(&src, bytes),

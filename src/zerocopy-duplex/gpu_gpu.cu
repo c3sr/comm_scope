@@ -54,8 +54,8 @@ auto Comm_ZeroCopy_GPUGPU = [](benchmark::State &state, const int gpu0,
   cudaEvent_t stop = nullptr;
   cudaEvent_t other = nullptr;
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0), "");
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1), "");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu0), "");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu1), "");
 
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), "");
   {

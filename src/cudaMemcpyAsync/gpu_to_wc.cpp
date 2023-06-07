@@ -9,7 +9,7 @@ auto Comm_cudaMemcpyAsync_GPUToWC = [](benchmark::State &state,
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   numa::bind_node(numa_id);
-  if (PRINT_IF_ERROR(cuda_reset_device(cuda_id))) {
+  if (PRINT_IF_ERROR(scope::cuda_reset_device(cuda_id))) {
     state.SkipWithError(NAME " failed to reset CUDA device");
     return;
   }

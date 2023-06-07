@@ -47,9 +47,9 @@ auto Comm_chunk_pull = [](benchmark::State &state, const int gpu0,
   const int chunkSize = state.range(0);
   const int chunkFill = state.range(1);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu0),
                      NAME " failed to reset CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu1),
                      NAME " failed to reset CUDA device");
 
   // create stream on dst gpu (pull)

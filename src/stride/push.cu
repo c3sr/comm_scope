@@ -31,9 +31,9 @@ auto Comm_stride_push = [](benchmark::State &state, const int gpu0,
   }
 #endif
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu0),
                      NAME " failed to reset CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu1),
                      NAME " failed to reset CUDA device");
 
   // fixed number of loads regardless of stride

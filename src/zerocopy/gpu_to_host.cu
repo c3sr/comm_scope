@@ -16,7 +16,7 @@ auto Comm_ZeroCopy_GPUToHost = [](benchmark::State &state, const int src_numa,
 
   numa::ScopedBind binder(src_numa);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(dst_cuda), "");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(dst_cuda), "");
   OR_SKIP_AND_RETURN(cudaSetDevice(dst_cuda), "");
 
   void *ptr = aligned_alloc(pageSize, bytes);

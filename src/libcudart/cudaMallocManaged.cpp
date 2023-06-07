@@ -10,7 +10,7 @@ auto Comm_cudart_cudaMallocManaged = [](benchmark::State &state,
 
   numa::ScopedBind binder(numa_id);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(cuda_id), "failed to reset device");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(cuda_id), "failed to reset device");
   OR_SKIP_AND_RETURN(cudaSetDevice(cuda_id), "failed to set CUDA dst device");
 
   char *ptr = nullptr;

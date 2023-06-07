@@ -10,7 +10,7 @@ auto Comm_cudart_cudaMemcpyAsync_PinnedToGPU = [](benchmark::State &state,
                                                   const int numa_id) {
   numa::ScopedBind binder(numa_id);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu), "failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu), "failed to reset CUDA device");
 
   // Create One stream per copy
   cudaStream_t stream = nullptr;

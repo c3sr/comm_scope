@@ -10,8 +10,8 @@ auto Comm_cudaMemcpyAsync_Duplex_GPUGPUPeer = [](benchmark::State &state,
                                                  const int gpu1) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0), "failed to reset CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1), "failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu0), "failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu1), "failed to reset CUDA device");
 
   // There are two copies, one gpu0 -> gpu1, one gpu1 -> gpu0
 

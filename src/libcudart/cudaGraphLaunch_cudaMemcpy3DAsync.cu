@@ -14,9 +14,9 @@ auto Comm_cudart_cudaGraphLaunch_cudaMemcpy3DAsync = [](benchmark::State &state,
                                                         const int gpu1) {
   const int iters = state.range(0);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu0),
                      NAME " failed to reset CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu1),
                      NAME " failed to reset CUDA device");
 
   cudaGetLastError(); // clear any previous errors

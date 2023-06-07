@@ -19,9 +19,9 @@ auto Comm_3d_cudaMemcpy3DPeerAsync_GPUToGPU = [](benchmark::State &state,
   }
 #endif
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu0),
                      NAME " failed to reset CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu1),
                      NAME " failed to reset CUDA device");
 
   // Create One stream per copy

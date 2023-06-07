@@ -27,7 +27,7 @@ auto Comm_Prefetch_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0,
   cudaEvent_t stop1 = nullptr;
 
 #define INIT(dev)                                                              \
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu##dev), "");                         \
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu##dev), "");                         \
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu##dev), "");                             \
   OR_SKIP_AND_RETURN(cudaStreamCreate(&streams[dev]), "");                     \
   OR_SKIP_AND_RETURN(cudaMallocManaged(&ptrs[dev], bytes), "");                \

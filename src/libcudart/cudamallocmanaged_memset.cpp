@@ -10,7 +10,7 @@ auto Comm_UM_CudaMallocManaged_Memset =
 
       numa::bind_node(numa_id);
 
-      if (PRINT_IF_ERROR(cuda_reset_device(cuda_id))) {
+      if (PRINT_IF_ERROR(scope::cuda_reset_device(cuda_id))) {
         state.SkipWithError(NAME " failed to reset device");
         return;
       }

@@ -27,8 +27,8 @@ auto Comm_ZeroCopy_GPUToGPU = [](benchmark::State &state, const int gpu0,
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
   void *ptr = nullptr;
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0), "");
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1), "");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu0), "");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu1), "");
 
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), "");
   {

@@ -28,9 +28,9 @@ auto Comm_cudaMemcpyPeerAsync_Duplex_GPUGPU = [](benchmark::State &state,
                                                  const int gpu1) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu0),
                      NAME " failed to reset src CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu1),
                      NAME " failed to reset dst CUDA device");
 
   void *src0 = nullptr;

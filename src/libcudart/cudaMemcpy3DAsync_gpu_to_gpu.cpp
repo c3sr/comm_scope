@@ -15,9 +15,9 @@ auto Comm_cudart_cudaMemcpy3DAsync = [](benchmark::State &state, const int gpu0,
   // have thread 0 set up shared structures
   if (0 == state.thread_index()) {
 
-    OR_SKIP_AND_RETURN(cuda_reset_device(gpu0),
+    OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu0),
                        NAME " failed to reset CUDA device");
-    OR_SKIP_AND_RETURN(cuda_reset_device(gpu1),
+    OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu1),
                        NAME " failed to reset CUDA device");
 
     // small enough transfer that the runtime cost is larger
