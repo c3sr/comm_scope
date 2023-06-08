@@ -8,7 +8,7 @@ CUDA- and NUMA-Aware Multi-CPU / Multi-GPU communication benchmarks.
 
 * CMake 3.18+
 * g++ >= 4.9
-* CUDA toolkit >= 8.0
+* CUDA toolkit >= 8.0 or ROCm >= 5.2.0
 
 ## Getting started
 
@@ -95,27 +95,12 @@ Comm_cudaMemcpyAsync_PinnedToGPU/0/0/log2(N):12/manual_time             3070 ns 
 
 ```
 
-## OLCF Summit
+## Recipies for Specific Systems
 
-Get a launch node: `bsub -W 2:00 -nnodes 1 -P csc362 -Is /bin/zsh`
-
-You will need to load a newer gcc, as well as CUDA, to build **and run** Comm|Scope
-```
-module load cuda
-module load gcc/5.4.0
-```
-
-Then to build, do
-
-```
-cmake ..
-make -j
-```
-
-Example job submission scripts are in `scripts/summit`.
-
-You may ignore messages like the following, where libscope fails to control CPU turbo and the governor.
-On managed systems like Summit, this is not necessary.
+* [OLCF summit](summit.md)
+* [Sandia Caraway](caraway.md)
+* [Sandia Weaver](weaver.md)
+* [OLCF crusher](crusher.md)
 
 ```
 [2020-07-15 17:58:00.763] [scope] [error] unable to disable CPU turbo: no permission. Run with higher privileges?
@@ -168,7 +153,7 @@ git remote set-url origin git@github.com:cwpearson/libscope.git
 
 ## Contributors
 
-* [Carl Pearson](mailto:pearson@illinois.edu)
+* [Carl Pearson](mailto:cwpears@sandia.gov)
 * [Sarah Hashash](mailto:hashash2@illinois.edu)
 
 # Changelog
