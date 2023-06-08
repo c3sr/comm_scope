@@ -22,5 +22,9 @@ cmake \
 m -C $COMM_SCOPE_BUILD \
 | tee $COMM_SCOPE_BUILD/build.log
 
-$COMM_SCOPE_BUILD/comm_scope --benchmark_filter="Comm_cudaMemcpyAsync_(PinnedToGPU|GPUToPinned)/0/0" --benchmark_format=csv --benchmark_list_tests
+$COMM_SCOPE_BUILD/comm_scope \
+--benchmark_filter="Comm_cudaMemcpyAsync_(PinnedToGPU|GPUToPinned)/0/0" \
+--benchmark_format=csv \
+--benchmark_repetitions=5
+--benchmark_list_tests
 ```
