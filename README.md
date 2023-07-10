@@ -1,8 +1,6 @@
 # Comm|Scope
 
-[![Build Status](https://travis-ci.com/c3sr/comm_scope.svg?branch=master)](https://travis-ci.com/c3sr/comm_scope)
-
-CUDA- and NUMA-Aware Multi-CPU / Multi-GPU communication benchmarks.
+![Build Status](https://github.com/c3sr/comm_scope/actions/workflows/docker-image.yml/badge.svg)
 
 ## Prerequisites
 
