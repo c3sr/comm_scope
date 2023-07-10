@@ -1,25 +1,25 @@
-/*! \file sync.cpp Measure the runtime cost of cudaDeviceSynchronize
+/*! \file sync.cpp Measure the runtime cost of hipDeviceSynchronize
  */
 
 #include "scope/scope.hpp"
 
-#define NAME "Comm_cudaDeviceSynchronize"
+#define NAME "Comm_hipDeviceSynchronize"
 
-auto Comm_cudaDeviceSynchronize = [](benchmark::State &state, const int gpu,
-                                     const int numaId) {
+auto Comm_hipDeviceSynchronize = [](benchmark::State &state, const int gpu,
+                                    const int numaId) {
   numa::ScopedBind binder(numaId);
 
   if (0 == state.thread_index()) {
-    OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu),
-                       "failed to reset CUDA device");
+    OR_SKIP_AND_RETURN(scope::hip_reset_device(gpu),
+                       "failed to reset HIP device");
   }
 
-  OR_SKIP_AND_RETURN(cudaSetDevice(gpu), "");
-  OR_SKIP_AND_RETURN(cudaFree(0), "failed to init");
+  OR_SKIP_AND_RETURN(hipSetDevice(gpu), "");
+  OR_SKIP_AND_RETURN(hipFree(0), "failed to init");
 
-  cudaError_t err = cudaSuccess;
+  hipError_t err = hipSuccess;
   for (auto _ : state) {
-    err = cudaDeviceSynchronize();
+    err = hipDeviceSynchronize();
   }
 
   OR_SKIP_AND_RETURN(err, "failed to lsync");
@@ -30,15 +30,15 @@ auto Comm_cudaDeviceSynchronize = [](benchmark::State &state, const int gpu,
 
 static void registerer() {
   std::string name;
-  const std::vector<Device> cudas = scope::system::cuda_devices();
-  for (size_t i = 0; i < cudas.size(); ++i) {
+  const std::vector<Device> hips = scope::system::hip_devices();
+  for (size_t i = 0; i < hips.size(); ++i) {
     for (int numaId : numa::mems()) {
       for (size_t numThreads = 1;
            numThreads <= numa::cpus_in_node(numaId).size(); numThreads *= 2) {
-        int gpu = cudas[i];
+        int gpu = hips[i];
         name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
                std::to_string(gpu);
-        benchmark::RegisterBenchmark(name.c_str(), Comm_cudaDeviceSynchronize,
+        benchmark::RegisterBenchmark(name.c_str(), Comm_hipDeviceSynchronize,
                                      gpu, numaId)
             ->Threads(numThreads)
             ->UseRealTime();
