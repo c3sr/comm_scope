@@ -1,4 +1,4 @@
-FROM nvidia/cuda:10.2-devel-ubuntu18.04
+FROM nvidia/cuda:11.0.3-devel-ubuntu16.04
 
 # Install NUMA
 ENV DEBIAN_FRONTEND noninteractive
@@ -7,7 +7,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends --no-install-su
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# ubuntu 20.04 has cmake 3.16, too low for comm_scope
 RUN mkdir -p /opt
 WORKDIR /opt
 RUN wget -q https://github.com/Kitware/CMake/releases/download/v3.25.1/cmake-3.25.1-linux-x86_64.tar.gz

@@ -14,7 +14,7 @@ jobs:
       with: 
         submodules: recursive
     - name: Build the Docker image
-      run: docker build . --file amd64_cuda10.2.Dockerfile --tag c3sr/comm_scope:$(date +%s)
+      run: docker build . --file amd64_cuda11.0.3.Dockerfile --tag c3sr/comm_scope:$(date +%s)
   build-amd64_cuda11-5-1:
     runs-on: ubuntu-latest
     steps:
@@ -22,7 +22,7 @@ jobs:
       with: 
         submodules: recursive
     - name: Build the Docker image
-      run: docker build . --file amd64_cuda11.5.1.Dockerfile --tag c3sr/comm_scope:$(date +%s)
+      run: docker build . --file amd64_cuda11.5.2.Dockerfile --tag c3sr/comm_scope:$(date +%s)
   build-amd64_cuda12-0-0:
     runs-on: ubuntu-latest
     steps:
