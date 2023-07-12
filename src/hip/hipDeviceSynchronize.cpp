@@ -9,20 +9,16 @@ auto Comm_hipDeviceSynchronize = [](benchmark::State &state, const int gpu,
                                     const int numaId) {
   numa::ScopedBind binder(numaId);
 
-  if (0 == state.thread_index()) {
-    OR_SKIP_AND_RETURN(scope::hip_reset_device(gpu),
-                       "failed to reset HIP device");
-  }
-
   OR_SKIP_AND_RETURN(hipSetDevice(gpu), "");
   OR_SKIP_AND_RETURN(hipFree(0), "failed to init");
+  OR_SKIP_AND_RETURN(hipDeviceSynchronize(), "failed to init sync");
 
   hipError_t err = hipSuccess;
   for (auto _ : state) {
     err = hipDeviceSynchronize();
   }
 
-  OR_SKIP_AND_RETURN(err, "failed to lsync");
+  OR_SKIP_AND_RETURN(err, "failed to sync");
 
   state.SetItemsProcessed(state.iterations());
   state.counters["gpu"] = gpu;

@@ -19,13 +19,9 @@ auto Comm_hip_kernel = [](benchmark::State &state, const int gpu,
                           const int numaId) {
   numa::ScopedBind binder(numaId);
 
-  if (0 == state.thread_index()) {
-    OR_SKIP_AND_RETURN(scope::hip_reset_device(gpu),
-                       "failed to reset HIP device");
-  }
-
   OR_SKIP_AND_RETURN(hipSetDevice(gpu), "");
   OR_SKIP_AND_RETURN(hipFree(0), "failed to init");
+  OR_SKIP_AND_RETURN(hipDeviceSynchronize(), "failed to init sync");
 
   const size_t nArgs = state.range(0);
 
@@ -59,10 +55,10 @@ auto Comm_hip_kernel = [](benchmark::State &state, const int gpu,
   }
 #undef LAUNCH
   OR_SKIP_AND_RETURN(hipGetLastError(), "failed to launch kernel");
+  OR_SKIP_AND_RETURN(hipDeviceSynchronize(), "failed to synchronize");
 
   state.SetItemsProcessed(state.iterations());
   state.counters["gpu"] = gpu;
-  OR_SKIP_AND_RETURN(hipDeviceSynchronize(), "failed to synchronize");
 };
 
 static void registerer() {
