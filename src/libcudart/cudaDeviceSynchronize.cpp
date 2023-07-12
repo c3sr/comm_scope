@@ -9,13 +9,11 @@ auto Comm_cudaDeviceSynchronize = [](benchmark::State &state, const int gpu,
                                      const int numaId) {
   numa::ScopedBind binder(numaId);
 
-  if (0 == state.thread_index()) {
-    OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu),
-                       "failed to reset CUDA device");
-  }
-
+  // need each thread to set the device, but there's no way to reset
+  // the device on a single thread first, because there's no thread barrier
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu), "");
   OR_SKIP_AND_RETURN(cudaFree(0), "failed to init");
+  OR_SKIP_AND_RETURN(cudaDeviceSynchronize(), "failed to sync");
 
   cudaError_t err = cudaSuccess;
   for (auto _ : state) {
