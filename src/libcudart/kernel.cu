@@ -17,12 +17,9 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu,
                              const int numaId) {
   numa::ScopedBind binder(numaId);
 
-  if (0 == state.thread_index()) {
-    OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu), "failed to reset CUDA device");
-  }
-
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu), "");
   OR_SKIP_AND_RETURN(cudaFree(0), "failed to init");
+  OR_SKIP_AND_RETURN(cudaDeviceSynchronize(), "failed to sync");
 
   const size_t nArgs = state.range(0);
 
@@ -56,10 +53,11 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu,
   }
 #undef LAUNCH
   OR_SKIP_AND_RETURN(cudaGetLastError(), "failed to launch kernel");
+  OR_SKIP_AND_RETURN(cudaDeviceSynchronize(), "failed to synchronize");
 
   state.SetItemsProcessed(state.iterations());
   state.counters["gpu"] = gpu;
-  OR_SKIP_AND_RETURN(cudaDeviceSynchronize(), "failed to synchronize");
+  
 };
 
 static void registerer() {
