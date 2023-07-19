@@ -5,7 +5,7 @@
 #define NAME "Comm_hipMemcpy_NUMAToGPU"
 
 auto Comm_hipMemcpy_NUMAToGPU = [](benchmark::State &state, const int numaId,
-                                    const int hipId, const bool flush) {
+                                   const int hipId, const bool flush) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   numa::bind_node(numaId);
@@ -44,8 +44,7 @@ auto Comm_hipMemcpy_NUMAToGPU = [](benchmark::State &state, const int numaId,
     }
 
     auto start = scope::clock::now();
-    hipError_t err =
-        hipMemcpy(dst, src, bytes, hipMemcpyHostToDevice);
+    hipError_t err = hipMemcpy(dst, src, bytes, hipMemcpyHostToDevice);
     double elapsed = scope::duration(scope::clock::now() - start).count();
     if (PRINT_IF_ERROR(err)) {
       state.SkipWithError(NAME " failed to perform memcpy");
@@ -65,8 +64,10 @@ auto Comm_hipMemcpy_NUMAToGPU = [](benchmark::State &state, const int numaId,
 static void registerer() {
   LOG(trace, NAME " registerer...");
 
-  std::vector<MemorySpace> hipSpaces = scope::system::memory_spaces(MemorySpace::Kind::hip_device);
-  std::vector<MemorySpace> numaSpaces = scope::system::memory_spaces(MemorySpace::Kind::numa);
+  std::vector<MemorySpace> hipSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::hip_device);
+  std::vector<MemorySpace> numaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::numa);
 
   std::string name;
   for (const auto &hipSpace : hipSpaces) {
@@ -77,15 +78,15 @@ static void registerer() {
 
       if (numa::can_execute_in_node(numaId)) {
         name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
-              std::to_string(hipId);
+               std::to_string(hipId);
         benchmark::RegisterBenchmark(name.c_str(), Comm_hipMemcpy_NUMAToGPU,
-                                    numaId, hipId, false)
+                                     numaId, hipId, false)
             ->SMALL_ARGS()
             ->UseManualTime();
         name = std::string(NAME) + "_flush/" + std::to_string(numaId) + "/" +
-              std::to_string(hipId);
+               std::to_string(hipId);
         benchmark::RegisterBenchmark(name.c_str(), Comm_hipMemcpy_NUMAToGPU,
-                                    numaId, hipId, true)
+                                     numaId, hipId, true)
             ->SMALL_ARGS()
             ->UseManualTime();
       }

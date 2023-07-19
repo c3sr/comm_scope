@@ -1,7 +1,3 @@
 #pragma once
 
-enum class Kind {
-  GPUToGPU,
-  GPUToHost,
-  HostToGPU
-};
+enum class Kind { GPUToGPU, GPUToHost, HostToGPU };

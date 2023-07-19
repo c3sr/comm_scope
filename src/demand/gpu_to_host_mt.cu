@@ -60,7 +60,7 @@ auto Comm_UM_Demand_GPUToHost_Mt = [](benchmark::State &state,
 
   numa::ScopedBind binder(numa_id);
 
-  if (PRINT_IF_ERROR(cuda_reset_device(cuda_id))) {
+  if (PRINT_IF_ERROR(scope::cuda_reset_device(cuda_id))) {
     state.SkipWithError(NAME " failed to reset device");
     return;
   }
@@ -167,7 +167,7 @@ auto Comm_UM_Demand_GPUToHost_Mt = [](benchmark::State &state,
 
 static void registerer() {
   for (auto num_threads : {1, 2, 4, 6, 8, 10}) {
-    for (auto cuda_id : unique_cuda_device_ids()) {
+    for (int cuda_id : scope::system::cuda_devices()) {
       for (auto numa_id : numa::mems()) {
         std::string name = std::string(NAME) + "/" + std::to_string(numa_id) +
                            "/" + std::to_string(cuda_id) + "/" +

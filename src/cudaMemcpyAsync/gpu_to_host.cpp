@@ -6,9 +6,10 @@
 
 #define NAME "Comm_cudaMemcpyAsync_GPUToHost"
 
-auto Comm_cudaMemcpyAsync_GPUToHost = [](benchmark::State &state, const int numa_id, const int cuda_id, const bool flush) {
-
-  const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
+auto Comm_cudaMemcpyAsync_GPUToHost = [](benchmark::State &state,
+                                         const int numa_id, const int cuda_id,
+                                         const bool flush) {
+  const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   numa::bind_node(numa_id);
 
@@ -17,7 +18,7 @@ auto Comm_cudaMemcpyAsync_GPUToHost = [](benchmark::State &state, const int numa
   defer(free(dst));
   std::memset(dst, 0, bytes);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(cuda_id), "failed to reset CUDA device");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(cuda_id), "failed to reset CUDA device");
 
   if (PRINT_IF_ERROR(cudaSetDevice(cuda_id))) {
     state.SkipWithError(NAME " failed to set CUDA device");
@@ -45,7 +46,8 @@ auto Comm_cudaMemcpyAsync_GPUToHost = [](benchmark::State &state, const int numa
       flush_all(dst, bytes);
     }
     cudaEventRecord(start, NULL);
-    const auto cuda_err = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToHost);
+    const auto cuda_err =
+        cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToHost);
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
 
@@ -71,15 +73,28 @@ auto Comm_cudaMemcpyAsync_GPUToHost = [](benchmark::State &state, const int numa
 
 static void registerer() {
   std::string name;
-  for (auto cuda_id : unique_cuda_device_ids()) {
-    for (auto numa_id : numa::mems()) {
-      name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_cudaMemcpyAsync_GPUToHost, numa_id, cuda_id, false)->SMALL_ARGS()->UseManualTime();
-      name = std::string(NAME) + "_flush/" + std::to_string(numa_id) + "/" + std::to_string(cuda_id);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_cudaMemcpyAsync_GPUToHost, numa_id, cuda_id, true)->SMALL_ARGS()->UseManualTime();
+  const std::vector<MemorySpace> cudaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+
+  for (const auto &cudaSpace : cudaSpaces) {
+    for (int numaId : numa::mems()) {
+
+      const int cudaId = cudaSpace.device_id();
+
+      name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
+             std::to_string(cudaId);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_cudaMemcpyAsync_GPUToHost,
+                                   numaId, cudaId, false)
+          ->SMALL_ARGS()
+          ->UseManualTime();
+      name = std::string(NAME) + "_flush/" + std::to_string(numaId) + "/" +
+             std::to_string(cudaId);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_cudaMemcpyAsync_GPUToHost,
+                                   numaId, cudaId, true)
+          ->SMALL_ARGS()
+          ->UseManualTime();
     }
   }
 }
 
 SCOPE_AFTER_INIT(registerer, NAME);
-

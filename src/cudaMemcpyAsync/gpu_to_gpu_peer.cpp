@@ -8,9 +8,9 @@ auto Comm_Memcpy_GPUToGPUPeer = [](benchmark::State &state, const int src_gpu,
                                    const int dst_gpu) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(src_gpu),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(src_gpu),
                      "failed to reset src CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(dst_gpu),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(dst_gpu),
                      "failed to reset dst CUDA device");
 
   char *src = nullptr;
@@ -63,10 +63,14 @@ auto Comm_Memcpy_GPUToGPUPeer = [](benchmark::State &state, const int src_gpu,
 
 static void registerer() {
   std::string name;
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = 0; j < unique_cuda_device_ids().size(); ++j) {
-      auto src_gpu = unique_cuda_device_ids()[i];
-      auto dst_gpu = unique_cuda_device_ids()[j];
+  const std::vector<MemorySpace> cudaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+
+  for (const auto &src : cudaSpaces) {
+    for (const auto &dst : cudaSpaces) {
+
+      auto src_gpu = src.device_id();
+      auto dst_gpu = dst.device_id();
       int s2d, d2s;
       if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&s2d, src_gpu, dst_gpu)) &&
           !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&d2s, dst_gpu, src_gpu))) {

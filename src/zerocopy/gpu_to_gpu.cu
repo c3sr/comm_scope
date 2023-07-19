@@ -27,8 +27,8 @@ auto Comm_ZeroCopy_GPUToGPU = [](benchmark::State &state, const int gpu0,
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
   void *ptr = nullptr;
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0), "");
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1), "");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu0), "");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu1), "");
 
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu0), "");
   {
@@ -90,10 +90,12 @@ auto Comm_ZeroCopy_GPUToGPU = [](benchmark::State &state, const int gpu0,
 
 static void registerer() {
 
+  const std::vector<Device> cudas = scope::system::cuda_devices();
+
   LOG(debug, "Registering {} benchmarks", NAME);
   for (auto workload : {READ, WRITE}) {
-    for (auto src_gpu : unique_cuda_device_ids()) {
-      for (auto dst_gpu : unique_cuda_device_ids()) {
+    for (int src_gpu : cudas) {
+      for (int dst_gpu : cudas) {
         {
 
           int s2d = false;

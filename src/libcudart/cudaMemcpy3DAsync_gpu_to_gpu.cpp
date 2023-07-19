@@ -15,9 +15,9 @@ auto Comm_cudart_cudaMemcpy3DAsync = [](benchmark::State &state, const int gpu0,
   // have thread 0 set up shared structures
   if (0 == state.thread_index()) {
 
-    OR_SKIP_AND_RETURN(cuda_reset_device(gpu0),
+    OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu0),
                        NAME " failed to reset CUDA device");
-    OR_SKIP_AND_RETURN(cuda_reset_device(gpu1),
+    OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu1),
                        NAME " failed to reset CUDA device");
 
     // small enough transfer that the runtime cost is larger
@@ -92,21 +92,22 @@ auto Comm_cudart_cudaMemcpy3DAsync = [](benchmark::State &state, const int gpu0,
     OR_SKIP_AND_RETURN(cudaFree(params.srcPtr.ptr), NAME "failed to cudaFree");
     OR_SKIP_AND_RETURN(cudaFree(params.dstPtr.ptr), NAME "failed to cudaFree");
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
     nvtxRangePop();
 #endif
   }
 };
 
 static void registerer() {
+  const std::vector<Device> cudas = scope::system::cuda_devices();
   std::string name;
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
+  for (size_t i = 0; i < cudas.size(); ++i) {
+    for (size_t j = i; j < cudas.size(); ++j) {
       for (size_t numThreads = 1;
            numThreads <= numa::cpus_in_nodes(numa::mems()).size();
            numThreads *= 2) {
-        auto gpu0 = unique_cuda_device_ids()[i];
-        auto gpu1 = unique_cuda_device_ids()[j];
+        auto gpu0 = cudas[i].device_id();
+        auto gpu1 = cudas[j].device_id();
         int ok1, ok2;
         if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok1, gpu0, gpu1)) &&
             !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok2, gpu1, gpu0))) {

@@ -12,7 +12,7 @@ static __global__ void Comm_chunk_push_kernel(write_t *__restrict__ dst,
                                               const int chunkSize,
                                               const int chunkFill,
                                               const int n // number of chunks
-                                              ) {
+) {
   // use one warp for each chunk
   assert(chunkFill <= 32);
 
@@ -21,7 +21,7 @@ static __global__ void Comm_chunk_push_kernel(write_t *__restrict__ dst,
   const int bd = blockDim.x / 32;  // dimension of block in warps
 
   // assign one warp to each chunk
-  for (int i = bd *blockIdx.x + wi; i < n; i += gridDim.x * bd) {
+  for (int i = bd * blockIdx.x + wi; i < n; i += gridDim.x * bd) {
     if (li < chunkFill) {
       dst[i * chunkSize + li] = i;
     }
@@ -31,7 +31,7 @@ static __global__ void Comm_chunk_push_kernel(write_t *__restrict__ dst,
 auto Comm_chunk_push = [](benchmark::State &state, const int gpu0,
                           const int gpu1) {
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
   {
     std::stringstream name;
     name << NAME << "/" << gpu0 << "/" << gpu1 << "/" << state.range(0) << "/"
@@ -44,9 +44,9 @@ auto Comm_chunk_push = [](benchmark::State &state, const int gpu0,
   const int chunkSize = state.range(0);
   const int chunkFill = state.range(1);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu0),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu0),
                      NAME " failed to reset CUDA device");
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu1),
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu1),
                      NAME " failed to reset CUDA device");
 
   // create stream, start and stop events on src gpu on src gpu
@@ -132,21 +132,25 @@ auto Comm_chunk_push = [](benchmark::State &state, const int gpu0,
   OR_SKIP_AND_RETURN(cudaStreamDestroy(stream), "cudaStreamDestroy");
   OR_SKIP_AND_RETURN(cudaFree(ptr), "cudaFree");
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
   nvtxRangePop();
 #endif
 };
 
 static void registerer() {
   std::string name;
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = i; j < unique_cuda_device_ids().size(); ++j) {
-      auto gpu0 = unique_cuda_device_ids()[i];
-      auto gpu1 = unique_cuda_device_ids()[j];
+  const std::vector<MemorySpace> cudaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+
+  for (const auto &space0 : cudaSpaces) {
+    for (const auto &space1 : cudaSpaces) {
+
+      auto gpu0 = space0.device_id();
+      auto gpu1 = space1.device_id();
       int ok1, ok2;
       if (!PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok1, gpu0, gpu1)) &&
           !PRINT_IF_ERROR(cudaDeviceCanAccessPeer(&ok2, gpu1, gpu0))) {
-        if ((ok1 && ok2) || i == j) {
+        if ((ok1 && ok2) || gpu0 == gpu1) {
           name = std::string(NAME) + "/" + std::to_string(gpu0) + "/" +
                  std::to_string(gpu1);
           benchmark::RegisterBenchmark(name.c_str(), Comm_chunk_push, gpu0,

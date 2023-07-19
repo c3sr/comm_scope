@@ -4,12 +4,13 @@
 
 #define NAME "Comm_cudaMemcpyAsync_HostToGPU"
 
-auto Comm_cudaMemcpyAsync_HostToGPU = [](benchmark::State &state, const int numa_id,
-                                    const int cuda_id, const bool flush) {
+auto Comm_cudaMemcpyAsync_HostToGPU = [](benchmark::State &state,
+                                         const int numa_id, const int cuda_id,
+                                         const bool flush) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   numa::bind_node(numa_id);
-  if (PRINT_IF_ERROR(cuda_reset_device(cuda_id))) {
+  if (PRINT_IF_ERROR(scope::cuda_reset_device(cuda_id))) {
     state.SkipWithError(NAME " failed to reset CUDA device");
     return;
   }
@@ -74,18 +75,26 @@ auto Comm_cudaMemcpyAsync_HostToGPU = [](benchmark::State &state, const int numa
 
 static void registerer() {
   std::string name;
-  for (auto cuda_id : unique_cuda_device_ids()) {
-    for (auto numa_id : numa::mems()) {
-      name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" +
-             std::to_string(cuda_id);
+  const std::vector<MemorySpace> cudaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+  const std::vector<MemorySpace> numaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::numa);
+
+  for (const auto &cudaSpace : cudaSpaces) {
+    for (const auto &numaSpace : numaSpaces) {
+
+      const int cudaId = cudaSpace.device_id();
+      const int numaId = numaSpace.numa_id();
+      name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
+             std::to_string(cudaId);
       benchmark::RegisterBenchmark(name.c_str(), Comm_cudaMemcpyAsync_HostToGPU,
-                                   numa_id, cuda_id, false)
+                                   numaId, cudaId, false)
           ->SMALL_ARGS()
           ->UseManualTime();
-      name = std::string(NAME) + "_flush/" + std::to_string(numa_id) + "/" +
-             std::to_string(cuda_id);
+      name = std::string(NAME) + "_flush/" + std::to_string(numaId) + "/" +
+             std::to_string(cudaId);
       benchmark::RegisterBenchmark(name.c_str(), Comm_cudaMemcpyAsync_HostToGPU,
-                                   numa_id, cuda_id, true)
+                                   numaId, cudaId, true)
           ->SMALL_ARGS()
           ->UseManualTime();
     }

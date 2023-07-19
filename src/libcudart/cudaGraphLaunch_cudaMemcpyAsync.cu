@@ -14,7 +14,7 @@ auto Comm_cudart_cudaGraphLaunch_cudaMemcpyAsync = [](benchmark::State &state,
 
   numa::ScopedBind binder(numaId);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(cudaId), "failed to reset device");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(cudaId), "failed to reset device");
   OR_SKIP_AND_RETURN(cudaSetDevice(cudaId), "failed to set CUDA dst device");
 
   cudaGraph_t graph;
@@ -60,7 +60,7 @@ auto Comm_cudart_cudaGraphLaunch_cudaMemcpyAsync = [](benchmark::State &state,
 };
 
 static void registerer() {
-  for (auto cudaId : unique_cuda_device_ids()) {
+  for (int cudaId : scope::system::cuda_devices()) {
     for (auto numaId : numa::mems()) {
       std::string name = std::string(NAME) + "/" + std::to_string(numaId) +
                          "/" + std::to_string(cudaId);

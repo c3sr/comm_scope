@@ -83,8 +83,10 @@ auto Comm_hipMemcpyAsync_Duplex_Pageable =
 
 static void registerer() {
 
-  std::vector<MemorySpace> hipSpaces = scope::system::memory_spaces(MemorySpace::Kind::hip_device);
-  std::vector<MemorySpace> numaSpaces = scope::system::memory_spaces(MemorySpace::Kind::numa);
+  std::vector<MemorySpace> hipSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::hip_device);
+  std::vector<MemorySpace> numaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::numa);
 
   for (auto hipSpace : hipSpaces) {
     for (auto numaSpace : numaSpaces) {

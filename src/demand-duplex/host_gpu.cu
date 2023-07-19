@@ -34,7 +34,7 @@ auto Comm_Demand_Duplex_HostGPU = [](benchmark::State &state, const int numa_id,
 
   numa::ScopedBind binder(numa_id);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(cuda_id), "");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(cuda_id), "");
   OR_SKIP_AND_RETURN(cudaSetDevice(cuda_id), "");
 
   char *ptrs[2] = {nullptr};
@@ -85,7 +85,7 @@ auto Comm_Demand_Duplex_HostGPU = [](benchmark::State &state, const int numa_id,
 };
 
 static void registerer() {
-  for (auto cuda_id : unique_cuda_device_ids()) {
+  for (int cuda_id : scope::system::cuda_devices()) {
 
     cudaDeviceProp prop;
     cudaError_t err = cudaGetDeviceProperties(&prop, cuda_id);

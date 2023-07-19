@@ -4,8 +4,8 @@
 
 #define NAME "Comm_prefetch_managed_GPUToHost"
 
-auto Comm_prefetch_managed_GPUToHost = [](benchmark::State &state, const int numa_id,
-                                     const int hip_id) {
+auto Comm_prefetch_managed_GPUToHost = [](benchmark::State &state,
+                                          const int numa_id, const int hip_id) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   numa::bind_node(numa_id);
@@ -81,16 +81,18 @@ auto Comm_prefetch_managed_GPUToHost = [](benchmark::State &state, const int num
 
 static void registerer() {
 
-  std::vector<MemorySpace> numaSpaces = scope::system::memory_spaces(MemorySpace::Kind::numa);
+  std::vector<MemorySpace> numaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::numa);
 
   for (auto hip : scope::system::hip_devices()) {
     for (auto ns : numaSpaces) {
       const int numa_id = ns.numa_id();
       if (numa::can_execute_in_node(numa_id)) {
         std::string name = std::string(NAME) + "/" + std::to_string(numa_id) +
-                          "/" + std::to_string(hip.device_id());
-        benchmark::RegisterBenchmark(name.c_str(), Comm_prefetch_managed_GPUToHost,
-                                    numa_id, hip.device_id())
+                           "/" + std::to_string(hip.device_id());
+        benchmark::RegisterBenchmark(name.c_str(),
+                                     Comm_prefetch_managed_GPUToHost, numa_id,
+                                     hip.device_id())
             ->SMALL_ARGS()
             ->UseManualTime();
       }

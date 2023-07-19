@@ -19,7 +19,7 @@ auto Comm_Prefetch_Duplex_HostGPU = [](benchmark::State &state,
 
   numa::ScopedBind binder(numa_id);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(cuda_id), "");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(cuda_id), "");
   OR_SKIP_AND_RETURN(cudaSetDevice(cuda_id), "");
 
   // one stream for h2d, one stream for d2h
@@ -73,7 +73,7 @@ auto Comm_Prefetch_Duplex_HostGPU = [](benchmark::State &state,
 };
 
 static void registerer() {
-  for (auto cuda_id : unique_cuda_device_ids()) {
+  for (int cuda_id : scope::system::cuda_devices()) {
 
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, cuda_id);

@@ -7,10 +7,10 @@
 #define NAME "Comm_3d_cudaMemcpy2DAsync_GPUToPinned"
 
 auto Comm_3d_cudaMemcpy2DAsync_GPUToPinned = [](benchmark::State &state,
-                                              const int numaId,
-                                              const int cudaId) {
+                                                const int numaId,
+                                                const int cudaId) {
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
   {
     std::stringstream name;
     name << NAME << "/" << numaId << "/" << cudaId << "/" << state.range(0)
@@ -21,7 +21,7 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToPinned = [](benchmark::State &state,
 
   // bind to CPU & reset device
   numa::ScopedBind binder(numaId);
-  OR_SKIP_AND_RETURN(cuda_reset_device(cudaId), "failed to reset GPU");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(cudaId), "failed to reset GPU");
 
   // stream for async copy
   cudaStream_t stream = nullptr;
@@ -42,43 +42,48 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToPinned = [](benchmark::State &state,
 
   // properties of the allocation
   cudaExtent allocExt;
-  allocExt.width  = 768*4;  // how many bytes in a row
-  allocExt.height = 768; // how many rows in a plane
-  allocExt.depth  = 768;
+  allocExt.width = 768 * 4; // how many bytes in a row
+  allocExt.height = 768;    // how many rows in a plane
+  allocExt.depth = 768;
 
   cudaPitchedPtr src, dst;
 
   // allocate on cudaId.
   OR_SKIP_AND_RETURN(cudaSetDevice(cudaId), NAME "failed to set device");
-  OR_SKIP_AND_RETURN(cudaMalloc3D(&src, allocExt), "failed to perform cudaMalloc3D");
+  OR_SKIP_AND_RETURN(cudaMalloc3D(&src, allocExt),
+                     "failed to perform cudaMalloc3D");
   allocExt.width = src.pitch; // cudaMalloc3D may adjust pitch for alignment
   const size_t allocBytes = allocExt.width * allocExt.height * allocExt.depth;
-  OR_SKIP_AND_RETURN(cudaMemset3D(src, 0, allocExt), "failed to perform src cudaMemset");
+  OR_SKIP_AND_RETURN(cudaMemset3D(src, 0, allocExt),
+                     "failed to perform src cudaMemset");
 
   // allocate on CPU.
   dst.ptr = aligned_alloc(page_size(), allocBytes);
   dst.pitch = src.pitch;
   dst.xsize = src.xsize;
   dst.ysize = src.ysize;
-  OR_SKIP_AND_RETURN(cudaHostRegister(dst.ptr, allocBytes, cudaHostRegisterPortable),
-          "cudaHostRegister()");
+  OR_SKIP_AND_RETURN(
+      cudaHostRegister(dst.ptr, allocBytes, cudaHostRegisterPortable),
+      "cudaHostRegister()");
   std::memset(dst.ptr, 0, allocBytes);
 
   for (auto _ : state) {
     // Start copy
     OR_SKIP_AND_BREAK(cudaEventRecord(start, stream),
-                 " failed to record start event");
+                      " failed to record start event");
     // use a bunch of 2D copies to do the 3D copy
     for (size_t z = 0; z < copyExt.depth; ++z) {
       void *srcP = (char *)src.ptr + allocExt.width * allocExt.height * z;
       void *dstP = (char *)dst.ptr + allocExt.width * allocExt.height * z;
 
-      OR_SKIP_AND_BREAK(cudaMemcpy2DAsync(dstP, allocExt.width, srcP, allocExt.width,
-                                     copyExt.width, copyExt.height,
-                                     cudaMemcpyDeviceToHost, stream),
-                   NAME " failed to start 2D copy");
+      OR_SKIP_AND_BREAK(cudaMemcpy2DAsync(dstP, allocExt.width, srcP,
+                                          allocExt.width, copyExt.width,
+                                          copyExt.height,
+                                          cudaMemcpyDeviceToHost, stream),
+                        NAME " failed to start 2D copy");
     }
-    OR_SKIP_AND_BREAK(cudaEventRecord(stop, stream), " failed to record stop event");
+    OR_SKIP_AND_BREAK(cudaEventRecord(stop, stream),
+                      " failed to record stop event");
 
     // Wait for all copies to finish
     OR_SKIP_AND_BREAK(cudaEventSynchronize(stop), "failed to synchronize");
@@ -86,7 +91,7 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToPinned = [](benchmark::State &state,
     // Get the transfer time
     float millis;
     OR_SKIP_AND_BREAK(cudaEventElapsedTime(&millis, start, stop),
-                 "failed to compute elapsed time");
+                      "failed to compute elapsed time");
     state.SetIterationTime(millis / 1000);
   }
 
@@ -103,18 +108,26 @@ auto Comm_3d_cudaMemcpy2DAsync_GPUToPinned = [](benchmark::State &state,
   OR_SKIP_AND_RETURN(cudaFree(src.ptr), NAME "failed to cudaFree");
   numa::bind_node(-1);
 
-#if SCOPE_USE_NVTX == 1
+#if defined(SCOPE_USE_NVTX)
   nvtxRangePop();
 #endif
 };
 
 static void registerer() {
-  std::string name;
-  for (auto cudaId : unique_cuda_device_ids()) {
-    for (auto numaId : numa::mems()) {
+  std::vector<MemorySpace> cudaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+  std::vector<MemorySpace> numaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::numa);
 
-      name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
-             std::to_string(cudaId);
+  for (const auto &cudaSpace : cudaSpaces) {
+    for (const auto &numaSpace : numaSpaces) {
+
+      const int cudaId = cudaSpace.device_id();
+      const int numaId = numaSpace.numa_id();
+
+      const std::string name = std::string(NAME) + "/" +
+                               std::to_string(numaId) + "/" +
+                               std::to_string(cudaId);
       benchmark::RegisterBenchmark(
           name.c_str(), Comm_3d_cudaMemcpy2DAsync_GPUToPinned, numaId, cudaId)
           ->ASTAROTH_ARGS()

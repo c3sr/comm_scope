@@ -6,10 +6,8 @@
 
 template <>
 UnaryData setup<Kind::GPUToGPU>(benchmark::State &state,
-                  const std::string &name,
-                  const size_t bytes,
-                  const int src_id,
-                  const int dst_id) {
+                                const std::string &name, const size_t bytes,
+                                const int src_id, const int dst_id) {
 
   UnaryData data;
   data.error = false;
@@ -52,7 +50,6 @@ UnaryData setup<Kind::GPUToGPU>(benchmark::State &state,
     return data;
   }
 
-
   if (PRINT_IF_ERROR(hipEventCreate(&data.stop))) {
     state.SkipWithError((name + " failed to create stop event").c_str());
     data.error = true;
@@ -64,10 +61,8 @@ UnaryData setup<Kind::GPUToGPU>(benchmark::State &state,
 
 template <>
 UnaryData setup<Kind::GPUToHost>(benchmark::State &state,
-                  const std::string &name,
-                  const size_t bytes,
-                  const int src_id,
-                  const int /*dst_id*/) {
+                                 const std::string &name, const size_t bytes,
+                                 const int src_id, const int /*dst_id*/) {
 
   UnaryData data;
   data.ptr = nullptr;
@@ -92,8 +87,8 @@ UnaryData setup<Kind::GPUToHost>(benchmark::State &state,
     return data;
   }
 
-  if (PRINT_IF_ERROR(hipMemAdvise(
-          data.ptr, bytes, hipMemAdviseSetPreferredLocation, src_id))) {
+  if (PRINT_IF_ERROR(hipMemAdvise(data.ptr, bytes,
+                                  hipMemAdviseSetPreferredLocation, src_id))) {
     state.SkipWithError((name + " failed to hipMemAdvise").c_str());
     data.error = true;
     return data;
@@ -111,7 +106,6 @@ UnaryData setup<Kind::GPUToHost>(benchmark::State &state,
     return data;
   }
 
-
   if (PRINT_IF_ERROR(hipEventCreate(&data.stop))) {
     state.SkipWithError((name + " failed to create stop event").c_str());
     data.error = true;
@@ -123,10 +117,8 @@ UnaryData setup<Kind::GPUToHost>(benchmark::State &state,
 
 template <>
 UnaryData setup<Kind::HostToGPU>(benchmark::State &state,
-                  const std::string &name,
-                  const size_t bytes,
-                  const int /*src_id*/,
-                  const int dst_id) {
+                                 const std::string &name, const size_t bytes,
+                                 const int /*src_id*/, const int dst_id) {
 
   UnaryData data;
   data.error = false;
@@ -164,7 +156,6 @@ UnaryData setup<Kind::HostToGPU>(benchmark::State &state,
     return data;
   }
 
-
   if (PRINT_IF_ERROR(hipEventCreate(&data.stop))) {
     state.SkipWithError((name + " failed to create stop event").c_str());
     data.error = true;
@@ -175,25 +166,28 @@ UnaryData setup<Kind::HostToGPU>(benchmark::State &state,
 }
 
 template <>
-void prep_iteration<Kind::GPUToGPU>(char *ptr, size_t bytes, int src_id, int dst_id) {
-    hipMemPrefetchAsync(ptr, bytes, src_id);
-    hipSetDevice(src_id);
-    hipDeviceSynchronize();
-    hipSetDevice(dst_id);
-    hipDeviceSynchronize();
+void prep_iteration<Kind::GPUToGPU>(char *ptr, size_t bytes, int src_id,
+                                    int dst_id) {
+  hipMemPrefetchAsync(ptr, bytes, src_id);
+  hipSetDevice(src_id);
+  hipDeviceSynchronize();
+  hipSetDevice(dst_id);
+  hipDeviceSynchronize();
 }
 
 template <>
-void prep_iteration<Kind::GPUToHost>(char *ptr, size_t bytes, int src_id, int /*dst_id*/) {
-    flush_all(ptr, bytes);
-    hipSetDevice(src_id);
-    hipMemPrefetchAsync(ptr, bytes, src_id);
-    hipDeviceSynchronize();
+void prep_iteration<Kind::GPUToHost>(char *ptr, size_t bytes, int src_id,
+                                     int /*dst_id*/) {
+  flush_all(ptr, bytes);
+  hipSetDevice(src_id);
+  hipMemPrefetchAsync(ptr, bytes, src_id);
+  hipDeviceSynchronize();
 }
 
 template <>
-void prep_iteration<Kind::HostToGPU>(char *ptr, size_t bytes, int /*src_id*/, int dst_id) {
-    hipMemPrefetchAsync(ptr, bytes, hipCpuDeviceId);
-    hipSetDevice(dst_id);
-    hipDeviceSynchronize();
+void prep_iteration<Kind::HostToGPU>(char *ptr, size_t bytes, int /*src_id*/,
+                                     int dst_id) {
+  hipMemPrefetchAsync(ptr, bytes, hipCpuDeviceId);
+  hipSetDevice(dst_id);
+  hipDeviceSynchronize();
 }

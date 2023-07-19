@@ -10,7 +10,7 @@ auto Comm_cudart_cudaMallocManaged = [](benchmark::State &state,
 
   numa::ScopedBind binder(numa_id);
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(cuda_id), "failed to reset device");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(cuda_id), "failed to reset device");
   OR_SKIP_AND_RETURN(cudaSetDevice(cuda_id), "failed to set CUDA dst device");
 
   char *ptr = nullptr;
@@ -31,8 +31,14 @@ auto Comm_cudart_cudaMallocManaged = [](benchmark::State &state,
 };
 
 static void registerer() {
-  for (auto cuda_id : unique_cuda_device_ids()) {
+
+  std::vector<Device> cudas = scope::system::cuda_devices();
+
+  for (const auto &cuda : cudas) {
     for (auto numa_id : numa::mems()) {
+
+      auto cuda_id = cuda.device_id();
+
       std::string name = std::string(NAME) + "/" + std::to_string(numa_id) +
                          "/" + std::to_string(cuda_id);
       benchmark::RegisterBenchmark(name.c_str(), Comm_cudart_cudaMallocManaged,

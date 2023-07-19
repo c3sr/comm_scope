@@ -27,7 +27,12 @@ auto Comm_libc_malloc = [](benchmark::State &state, const int numa_id) {
 };
 
 static void registerer() {
-  for (auto numa_id : numa::mems()) {
+  const std::vector<MemorySpace> numaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::numa);
+
+  for (const auto &numa : numaSpaces) {
+
+    const auto numa_id = numa.numa_id();
     std::string name = std::string(NAME) + "/" + std::to_string(numa_id);
     benchmark::RegisterBenchmark(name.c_str(), Comm_libc_malloc, numa_id)
         ->BYTE_ARGS();

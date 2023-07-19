@@ -7,4 +7,3 @@ struct UnaryData {
   size_t pageSize;
   bool error;
 };
-

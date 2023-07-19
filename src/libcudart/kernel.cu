@@ -17,12 +17,9 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu,
                              const int numaId) {
   numa::ScopedBind binder(numaId);
 
-  if (0 == state.thread_index()) {
-    OR_SKIP_AND_RETURN(cuda_reset_device(gpu), "failed to reset CUDA device");
-  }
-
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu), "");
   OR_SKIP_AND_RETURN(cudaFree(0), "failed to init");
+  OR_SKIP_AND_RETURN(cudaDeviceSynchronize(), "failed to sync");
 
   const size_t nArgs = state.range(0);
 
@@ -56,19 +53,21 @@ auto Comm_cudart_kernel = [](benchmark::State &state, const int gpu,
   }
 #undef LAUNCH
   OR_SKIP_AND_RETURN(cudaGetLastError(), "failed to launch kernel");
+  OR_SKIP_AND_RETURN(cudaDeviceSynchronize(), "failed to synchronize");
 
   state.SetItemsProcessed(state.iterations());
   state.counters["gpu"] = gpu;
-  OR_SKIP_AND_RETURN(cudaDeviceSynchronize(), "failed to synchronize");
+  
 };
 
 static void registerer() {
   std::string name;
-  for (size_t i = 0; i < unique_cuda_device_ids().size(); ++i) {
+  const std::vector<Device> cudas = scope::system::cuda_devices();
+  for (size_t i = 0; i < cudas.size(); ++i) {
     for (int numaId : numa::mems()) {
       for (size_t numThreads = 1;
            numThreads <= numa::cpus_in_node(numaId).size(); numThreads *= 2) {
-        auto gpu = unique_cuda_device_ids()[i];
+        int gpu = cudas[i];
         name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
                std::to_string(gpu);
         benchmark::RegisterBenchmark(name.c_str(), Comm_cudart_kernel, gpu,

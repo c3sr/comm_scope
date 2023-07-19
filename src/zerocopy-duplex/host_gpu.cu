@@ -43,7 +43,7 @@ auto Comm_ZeroCopy_Duplex_HostGPU = [](benchmark::State &state, const int numa,
   cudaEvent_t start[2] = {};
   cudaEvent_t stop[2] = {};
 
-  OR_SKIP_AND_RETURN(cuda_reset_device(cuda), "");
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(cuda), "");
 
   cpu[0] = aligned_alloc(pageSize, bytes);
   cpu[1] = aligned_alloc(pageSize, bytes);
@@ -164,7 +164,7 @@ auto Comm_ZeroCopy_Duplex_HostGPU = [](benchmark::State &state, const int numa,
 
 static void registerer() {
 
-  for (auto cuda : unique_cuda_device_ids()) {
+  for (int cuda : scope::system::cuda_devices()) {
     for (auto numa : numa::mems()) {
 
       std::string name(NAME2);

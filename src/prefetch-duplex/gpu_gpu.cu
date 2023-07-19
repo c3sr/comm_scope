@@ -27,7 +27,7 @@ auto Comm_Prefetch_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0,
   cudaEvent_t stop1 = nullptr;
 
 #define INIT(dev)                                                              \
-  OR_SKIP_AND_RETURN(cuda_reset_device(gpu##dev), "");                         \
+  OR_SKIP_AND_RETURN(scope::cuda_reset_device(gpu##dev), "");                         \
   OR_SKIP_AND_RETURN(cudaSetDevice(gpu##dev), "");                             \
   OR_SKIP_AND_RETURN(cudaStreamCreate(&streams[dev]), "");                     \
   OR_SKIP_AND_RETURN(cudaMallocManaged(&ptrs[dev], bytes), "");                \
@@ -89,8 +89,11 @@ auto Comm_Prefetch_Duplex_GPUGPU = [](benchmark::State &state, const int gpu0,
 };
 
 static void registerer() {
-  for (size_t i : unique_cuda_device_ids()) {
-    for (size_t j : unique_cuda_device_ids()) {
+
+  const std::vector<Device> cudas = scope::system::cuda_devices();
+
+  for (int i : cudas) {
+    for (int j : cudas) {
       if (i < j) {
         std::string name = std::string(NAME) + "/" + std::to_string(i) + "/" +
                            std::to_string(j);

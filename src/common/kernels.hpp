@@ -1,8 +1,7 @@
 #pragma once
 
-#include "scope/do_not_optimize.hpp"
 #include "scope/clobber.hpp"
-
+#include "scope/do_not_optimize.hpp"
 
 template <typename write_t>
 __global__ void gpu_write(void *ptr, const size_t bytes, const int off = 0) {
@@ -10,7 +9,7 @@ __global__ void gpu_write(void *ptr, const size_t bytes, const int off = 0) {
   const size_t num_elems = bytes / sizeof(write_t);
 
   for (size_t i = gx; i < num_elems; i += gridDim.x * blockDim.x) {
-    reinterpret_cast<write_t*>(ptr)[i] = i + off;
+    reinterpret_cast<write_t *>(ptr)[i] = i + off;
   }
 }
 
@@ -20,7 +19,7 @@ __global__ void gpu_write_zero(void *ptr, const size_t bytes) {
   const size_t num_elems = bytes / sizeof(write_t);
 
   for (size_t i = gx; i < num_elems; i += gridDim.x * blockDim.x) {
-    reinterpret_cast<write_t*>(ptr)[i] = 0;
+    reinterpret_cast<write_t *>(ptr)[i] = 0;
   }
 }
 
@@ -41,9 +40,9 @@ __global__ void gpu_read(const void *ptr, void *flag, const size_t bytes) {
   // #pragma unroll(1)
   for (size_t i = gx; i < num_elems; i += gridDim.x * blockDim.x) {
     read_t t;
-    scope::do_not_optimize(t = reinterpret_cast<const read_t*>(ptr)[i]);
+    scope::do_not_optimize(t = reinterpret_cast<const read_t *>(ptr)[i]);
     if (flag) {
-      *reinterpret_cast<read_t*>(flag) = t;
+      *reinterpret_cast<read_t *>(flag) = t;
     }
   }
 }
@@ -51,8 +50,8 @@ __global__ void gpu_read(const void *ptr, void *flag, const size_t bytes) {
 template <typename write_t>
 void cpu_write(void *ptr, const size_t bytes, const int off = 0) {
   const size_t num_elems = bytes / sizeof(write_t);
-  #pragma omp parallel for
+#pragma omp parallel for
   for (size_t i = 0; i < num_elems; ++i) {
-    reinterpret_cast<write_t*>(ptr)[i] = i + off;
-  }  
+    reinterpret_cast<write_t *>(ptr)[i] = i + off;
+  }
 }

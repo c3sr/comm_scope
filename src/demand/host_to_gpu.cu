@@ -35,7 +35,7 @@ auto Comm_UM_Demand_HostToGPU = [](benchmark::State &state, const int numa_id,
 
   numa::ScopedBind binder(numa_id);
 
-  if (PRINT_IF_ERROR(cuda_reset_device(cuda_id))) {
+  if (PRINT_IF_ERROR(scope::cuda_reset_device(cuda_id))) {
     state.SkipWithError(NAME " failed to reset device");
     return;
   }
@@ -103,7 +103,7 @@ auto Comm_UM_Demand_HostToGPU = [](benchmark::State &state, const int numa_id,
 };
 
 static void registerer() {
-  for (auto cuda_id : unique_cuda_device_ids()) {
+  for (int cuda_id : scope::system::cuda_devices()) {
 
     for (auto numa_id : numa::mems()) {
 

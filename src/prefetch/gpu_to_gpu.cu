@@ -10,11 +10,11 @@ auto Comm_UM_Prefetch_GPUToGPU = [](benchmark::State &state, const int src_gpu, 
 
   const auto bytes  = 1ULL << static_cast<size_t>(state.range(0));
 
-  if (PRINT_IF_ERROR(cuda_reset_device(src_gpu))) {
+  if (PRINT_IF_ERROR(scope::cuda_reset_device(src_gpu))) {
     state.SkipWithError(NAME " failed to reset CUDA src device");
     return;
   }
-  if (PRINT_IF_ERROR(cuda_reset_device(dst_gpu))) {
+  if (PRINT_IF_ERROR(scope::cuda_reset_device(dst_gpu))) {
     state.SkipWithError(NAME " failed to reset CUDA src device");
     return;
   }
@@ -83,10 +83,13 @@ auto Comm_UM_Prefetch_GPUToGPU = [](benchmark::State &state, const int src_gpu, 
 };
 
 static void registerer() {
-  for (size_t i = 0; i <  unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = i + 1; j < unique_cuda_device_ids().size(); ++j) {
-      auto src_gpu = unique_cuda_device_ids()[i];
-      auto dst_gpu = unique_cuda_device_ids()[j];
+
+  const std::vector<Device> cudas = scope::system::cuda_devices();
+
+  for (size_t i = 0; i <  cudas.size(); ++i) {
+    for (size_t j = i + 1; j < cudas.size(); ++j) {
+      auto src_gpu = cudas[i];
+      auto dst_gpu = cudas[j];
       std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) + "/" + std::to_string(dst_gpu);
       benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Prefetch_GPUToGPU, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
     }

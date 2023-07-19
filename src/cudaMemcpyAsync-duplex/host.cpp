@@ -83,21 +83,29 @@ auto Comm_cudaMemcpyAsync_Duplex_Host =
 
 static void registerer() {
   std::string name;
-  for (auto cuda_id : unique_cuda_device_ids()) {
-    for (auto numa_id : numa::mems()) {
+  const std::vector<MemorySpace> cudaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::cuda_device);
+  const std::vector<MemorySpace> numaSpaces =
+      scope::system::memory_spaces(MemorySpace::Kind::numa);
+
+  for (const auto &cudaSpace : cudaSpaces) {
+    for (const auto &numaSpace : numaSpaces) {
+
+      const int cudaId = cudaSpace.device_id();
+      const int numaId = numaSpace.numa_id();
       std::vector<CudaMemcpyConfig *> transfers;
       transfers.push_back(
-          new PageableCopyConfig(cudaMemcpyHostToDevice, numa_id, cuda_id));
+          new PageableCopyConfig(cudaMemcpyHostToDevice, numaId, cudaId));
       transfers.push_back(
-          new PageableCopyConfig(cudaMemcpyDeviceToHost, cuda_id, numa_id));
-      name = std::string(NAME) + "/" + std::to_string(numa_id) + "/" +
-             std::to_string(cuda_id);
+          new PageableCopyConfig(cudaMemcpyDeviceToHost, cudaId, numaId));
+      name = std::string(NAME) + "/" + std::to_string(numaId) + "/" +
+             std::to_string(cudaId);
       benchmark::RegisterBenchmark(
           name.c_str(), Comm_cudaMemcpyAsync_Duplex_Host, transfers, false)
           ->SMALL_ARGS()
           ->UseManualTime();
-      name = std::string(NAME) + "_flush" + "/" + std::to_string(numa_id) +
-             "/" + std::to_string(cuda_id);
+      name = std::string(NAME) + "_flush" + "/" + std::to_string(numaId) + "/" +
+             std::to_string(cudaId);
       benchmark::RegisterBenchmark(
           name.c_str(), Comm_cudaMemcpyAsync_Duplex_Host, transfers, true)
           ->SMALL_ARGS()

@@ -4,8 +4,7 @@
 
 #include <cuda_runtime.h>
 
- #include "scope/scope.hpp"
- 
+#include "scope/scope.hpp"
 
 #include "args.hpp"
 
@@ -24,8 +23,8 @@ __global__ void gpu_traverse(size_t *ptr, const size_t steps) {
   ptr[next] = 1;
 }
 
-auto Comm_UM_Latency_GPUToGPU = [](benchmark::State &state, const int src_gpu, const int dst_gpu) {
-
+auto Comm_UM_Latency_GPUToGPU = [](benchmark::State &state, const int src_gpu,
+                                   const int dst_gpu) {
   if (src_gpu == dst_gpu) {
     state.SkipWithError(NAME "src and dst GPU should be different");
     return;
@@ -33,13 +32,13 @@ auto Comm_UM_Latency_GPUToGPU = [](benchmark::State &state, const int src_gpu, c
 
   const size_t steps = state.range(0);
   const size_t stride = 65536 * 2;
-  const size_t bytes  = sizeof(size_t) * (steps + 1) * stride;
+  const size_t bytes = sizeof(size_t) * (steps + 1) * stride;
 
-  if (PRINT_IF_ERROR(cuda_reset_device(src_gpu))) {
+  if (PRINT_IF_ERROR(scope::cuda_reset_device(src_gpu))) {
     state.SkipWithError(NAME " failed to reset src device");
     return;
   }
-  if (PRINT_IF_ERROR(cuda_reset_device(src_gpu))) {
+  if (PRINT_IF_ERROR(scope::cuda_reset_device(src_gpu))) {
     state.SkipWithError(NAME " failed to reset dst device");
     return;
   }
@@ -130,12 +129,17 @@ auto Comm_UM_Latency_GPUToGPU = [](benchmark::State &state, const int src_gpu, c
 };
 
 static void registerer() {
-  for (size_t i = 0; i <  unique_cuda_device_ids().size(); ++i) {
-    for (size_t j = i + 1; j < unique_cuda_device_ids().size(); ++j) {
-      auto src_gpu = unique_cuda_device_ids()[i];
-      auto dst_gpu = unique_cuda_device_ids()[j];
-      std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) + "/" + std::to_string(dst_gpu);
-      benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Latency_GPUToGPU, src_gpu, dst_gpu)->SMALL_ARGS()->UseManualTime();
+  const std::vector<Device> cudas = scope::system::cuda_devices();
+  for (size_t i = 0; i < cudas.size(); ++i) {
+    for (size_t j = i + 1; j < cudas.size(); ++j) {
+      auto src_gpu = cudas[i];
+      auto dst_gpu = cudas[j];
+      std::string name = std::string(NAME) + "/" + std::to_string(src_gpu) +
+                         "/" + std::to_string(dst_gpu);
+      benchmark::RegisterBenchmark(name.c_str(), Comm_UM_Latency_GPUToGPU,
+                                   src_gpu, dst_gpu)
+          ->SMALL_ARGS()
+          ->UseManualTime();
     }
   }
 }
