@@ -67,6 +67,7 @@ endif()
 # causes lots of warnings in CUDA includes
 # -Xcompiler=-Wundef;
 # -Xcompiler=-Wredundant-decls;
+# -Xcompiler=-fmax-errors=1;
 target_compile_options(comm_scope PRIVATE
 $<$<COMPILE_LANGUAGE:CUDA>:
     -lineinfo;
@@ -81,7 +82,6 @@ $<$<COMPILE_LANGUAGE:CUDA>:
     -Xcompiler=-Wswitch-enum;
     -Xcompiler=-Wfloat-equal;
     -Xcompiler=-Wvla;
-    -Xcompiler=-fmax-errors=1;
     -Xcompiler=-Wfatal-errors;
 >
   )
