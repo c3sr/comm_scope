@@ -37,7 +37,7 @@ auto Comm_implicit_mapped_GPUWrHost =
   defer(hipHostUnregister(ptr));
   defer(free(ptr));
 #else
-      if (PRINT_IF_ERROR(hipHostMalloc(&ptr, bytes, 0))) {
+      if (PRINT_IF_ERROR(hipHostMalloc(&ptr, bytes, hipHostMallocNumaUser | hipHostMallocNonCoherent))) {
         state.SkipWithError(NAME " failed to perform hipHostMalloc");
         return;
       }
