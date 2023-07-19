@@ -8,7 +8,8 @@
 
 auto Comm_implicit_managed_HostWrGPU =
     [](benchmark::State &state, const Device &src_gpu,
-       const MemorySpace &dst_numa, const bool coarse) {
+       const MemorySpace &dst_numa, const bool coarse,
+       const bool flush) {
        const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
       numa::ScopedBind sb(dst_numa.numa_id());
@@ -40,23 +41,24 @@ auto Comm_implicit_managed_HostWrGPU =
           return;
       }
 
-      if (PRINT_IF_ERROR(hipMemset(ptr, 1, bytes))) {
-          state.SkipWithError(NAME " failed to perform hipMemset");
-          return;
-      }  
-
+      uint64_t iter = 1;
       for (auto _ : state) {
+        if (flush) flush_all(ptr, bytes);
         if (PRINT_IF_ERROR(hipMemPrefetchAsync(ptr, bytes, src_gpu.device_id()))) {
           state.SkipWithError(NAME "failed to prefetch");
           return; 
         }
+        if (PRINT_IF_ERROR(hipMemset(ptr, iter, bytes))) {
+            state.SkipWithError(NAME " failed to perform hipMemset");
+            return;
+        }  
         if (PRINT_IF_ERROR(hipDeviceSynchronize())) {
           state.SkipWithError(NAME "failed to sync");
           return; 
         }
 
         auto start = scope::clock::now();
-        cpu_write<uint64_t>(ptr, bytes);
+        cpu_write<uint64_t>(ptr, bytes, iter+1);
         auto stop = scope::clock::now();
         scope::duration elapsed = stop - start;
         state.SetIterationTime(elapsed.count());
@@ -75,13 +77,17 @@ static void registerer() {
   for (const Device &hip : scope::system::hip_devices()) {
     for (const MemorySpace &numa : scope::system::numa_memory_spaces()) {
       for (const bool coarse : {true, false}) {
-        std::string name = std::string(NAME) + "_" + (coarse ? "coarse" : "fine");
-        name += "/" + std::to_string(numa.numa_id()) + "/" +
-                std::to_string(hip.device_id());
-        benchmark::RegisterBenchmark(
-            name.c_str(), Comm_implicit_managed_HostWrGPU, hip, numa, coarse)
-            ->SMALL_ARGS()
-            ->UseManualTime();
+        for (const bool flush : {true, false}) {
+          std::string name = std::string(NAME);
+          name += std::string("_") + (coarse ? "coarse" : "fine");
+          if (flush) name += "_flush";
+          name += "/" + std::to_string(numa.numa_id()) + "/" +
+                  std::to_string(hip.device_id());
+          benchmark::RegisterBenchmark(
+              name.c_str(), Comm_implicit_managed_HostWrGPU, hip, numa, coarse, flush)
+              ->SMALL_ARGS()
+              ->UseManualTime();
+        }
       }
     }
   }

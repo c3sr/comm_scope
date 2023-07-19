@@ -7,8 +7,8 @@
 #define NAME "Comm_implicit_mapped_GPURdHost"
 
 auto Comm_implicit_mapped_GPURdHost =
-    [](benchmark::State &state, const Device &own_gpu,
-       const MemorySpace &wr_numa, bool flush) {
+    [](benchmark::State &state, const Device &rd_gpu,
+       const MemorySpace &own_numa, bool flush) {
       const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
       void *ptr = nullptr;
@@ -16,18 +16,18 @@ auto Comm_implicit_mapped_GPURdHost =
       hipEvent_t start;
       hipEvent_t stop;
 
-      numa::ScopedBind sb(wr_numa.numa_id());
-      if (PRINT_IF_ERROR(scope::hip_reset_device(own_gpu.device_id()))) {
+      numa::ScopedBind sb(own_numa.numa_id());
+      if (PRINT_IF_ERROR(scope::hip_reset_device(rd_gpu.device_id()))) {
         state.SkipWithError(NAME " failed to reset hip src device");
         return;
       }
 
-      if (PRINT_IF_ERROR(hipSetDevice(own_gpu.device_id()))) {
+      if (PRINT_IF_ERROR(hipSetDevice(rd_gpu.device_id()))) {
         state.SkipWithError(NAME " failed to set hip write device");
         return;
       }
       
-      if (PRINT_IF_ERROR(hipHostMalloc(&ptr, bytes, 0))) {
+      if (PRINT_IF_ERROR(hipHostMalloc(&ptr, bytes, hipHostMallocNumaUser | hipHostMallocNonCoherent))) {
         state.SkipWithError(NAME " failed to perform hipHostMalloc");
         return;
       }
@@ -75,8 +75,8 @@ auto Comm_implicit_mapped_GPURdHost =
 
       state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytes));
       state.counters["bytes"] = bytes;
-      state.counters["wr_numa"] = wr_numa.numa_id();
-      state.counters["own_gpu"] = own_gpu.device_id();
+      state.counters["own_numa"] = own_numa.numa_id();
+      state.counters["rd_gpu"] = rd_gpu.device_id();
     };
 
 static void registerer() {
