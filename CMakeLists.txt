@@ -51,18 +51,8 @@ $<$<COMPILE_LANGUAGE:CXX>:
     -Wfloat-equal;
     -Wundef;
     -Wvla;
-    -Wfatal-errors;
 >
 )
-
-if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  target_compile_options(comm_scope PRIVATE
-  $<$<COMPILE_LANGUAGE:CXX>:
-      -fmax-errors=1;
-  >
-  )
-endif()
-
 
 # causes lots of warnings in CUDA includes
 # -Xcompiler=-Wundef;
@@ -82,7 +72,6 @@ $<$<COMPILE_LANGUAGE:CUDA>:
     -Xcompiler=-Wswitch-enum;
     -Xcompiler=-Wfloat-equal;
     -Xcompiler=-Wvla;
-    -Xcompiler=-Wfatal-errors;
 >
   )
 
