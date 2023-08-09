@@ -3,7 +3,7 @@ option(SCOPE_USE_OPENMP "Compile with support for OpenMP" ON)
 
 # scope requires 3.18
 cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
-project(Comm|Scope LANGUAGES CXX VERSION 0.11.2)
+project(Comm|Scope LANGUAGES CXX VERSION 0.12.0)
 
 # enable CUDA if desired and available
 include(CheckLanguage)
