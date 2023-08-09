@@ -156,6 +156,14 @@ git remote set-url origin git@github.com:cwpearson/libscope.git
 
 # Changelog
 
+## v0.12.0 (Aug 9 2023)
+* cwpearson/libscope 124999dc0017b437adcbebeaded52cf9d973ac28
+* improve compiler compatibility
+* improve CMake support
+* add device synchronize benchmarks
+* add libc memcpy benchmark
+* add HIP benchmarks
+
 ## v0.11.2 (July 17 2020)
 * cwpearson/libscope v1.1.2
 * silence some warnings
