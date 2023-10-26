@@ -4,14 +4,15 @@
 
 #define NAME "libc_memcpy_NUMAToNUMA"
 
+#if !defined(__HIPCC__) // crashes rocm/5.7.0
 auto libc_memcpy_NUMAToNUMA = [](benchmark::State &state, const int src_id,
                                  const int dst_id, const bool flush) {
   const auto bytes = 1ULL << static_cast<size_t>(state.range(0));
 
   // allocate
-  void *src = numa::alloc_onnode(bytes, src_id);
+  void *src = numa::alloc_node<char>(bytes, src_id);
   defer(numa::free(src, bytes));
-  void *dst = numa::alloc_onnode(bytes, dst_id);
+  void *dst = numa::alloc_node<char>(bytes, dst_id);
   defer(numa::free(dst, bytes));
 
   // touch
@@ -87,3 +88,4 @@ static void registerer() {
 }
 
 SCOPE_AFTER_INIT(registerer, NAME);
+#endif // defined(__HIPCC__)
